@@ -1,0 +1,215 @@
+linux人员培训后应该掌握以下知识：
+1.bootload与内核怎样传参 
+========================
+	Documentation/arm/Booting
+1)- CPU register settings
+  r0 = 0,
+  r1 = machine type number discovered in (3) above. 
+		S3C2440(362)
+  r2 = physical address of tagged list in system RAM.
+
+2)- CPU mode
+	All forms of interrupts must be disabled (IRQs and FIQs)
+	The CPU must be in SVC mode.  (A special exception exists for Angel)
+
+3)- Caches, MMUs
+	The MMU must be off.
+	Instruction cache may be on or off.
+	Data cache must be off.
+
+4)- goto kernel entry
+mov pc, 0x30008000
+
+5)内核就启动
+
+
+
+2. ARM Linux内核启动详细流程
+===========================
+arch/arm/kernel/head$(MMUEXT).o -> head.S
+arch/arm/kernel/vmlinux.lds ->  ENTRY(stext), 0xC0008000
+
+stext: <head.S>
+	关中断，SVC	
+	查询是否支持processor_ID, Machine_ID
+	.proc.info.init
+	 __arm920_proc_info:
+		b   __arm920_setup
+		初始化cpu
+			Cache, TLB, CP15 C1, 初始化工作
+
+	enable mmu
+		domain
+		建立内核页(4K)
+
+	 __mmap_switched:
+		拷贝必要的段
+		清除BSS
+		保存ProcessorID, MachineID
+		设置sp
+
+	b   start_kernel
+
+内核C语言入口start_kernel(init/main.c)
+start_kernel:
+	lock_kernel();
+	tick_init();
+	page_address_init();
+	printk(KERN_NOTICE);
+	setup_arch(&command_line);
+		根据bootload传参，初始化arch->对应的arm arch
+		全局的指针init_irq -> machine(mach-mini2440.c)
+
+		.phys_io    = S3C2410_PA_UART,
+		.io_pg_offst    = (((u32)S3C24XX_VA_UART) >> 18) & 0xfffc,
+		.boot_params    = S3C2410_SDRAM_PA + 0x100,
+
+		.init_irq   = s3c24xx_init_irq,
+		.map_io     = mini2440_map_io,
+		.init_machine   = mini2440_machine_init,
+		.timer      = &s3c24xx_timer,
+
+	. sched_init();
+	. trap_init();
+	. init_IRQ();
+		init_irq
+			-> s3c24xx_init_irq
+
+	. init_timers();
+	. softirq_init();
+	. time_init();
+	. console_init();
+	. mem_init();
+	
+
+	.  rest_init();
+
+. rest_init:
+	 kernel_thread(kernel_init)
+
+. kernel_init:
+	do_basic_setup
+
+. do_basic_setup:
+	do_initcalls();
+
+. do_initcalls:
+	 for (call = __early_initcall_end; call < __initcall_end; call+    +)
+	 do_one_initcall(*call);
+	 驱动初始化
+
+. init_post();
+	run_init_process("/sbin/init");
+	sh rc.local
+	bash shell
+
+. #login:
+
+3. 字符设备的整体框架及怎么样与上层用户交互数据
+================================================
+1) 驱动层
+insmod test.ko ->
+	module_init(test_init) ->
+		register_chrdev(253, &fops)
+		内核建立了253 - fops
+		
+
+2) 应用层
+./app ->
+	open("/dev/test") ->
+		sys_open ->
+			给内核一个253
+			内核去查表, 找到(253)fops
+			fops->open ->
+				test_open.
+
+	read ->
+		sys_read ->
+			fops->read ->
+				test_read 
+				copy_to_user()
+
+		app<-kernel<-
+
+4. ARM Linux内核中断怎样处理
+============================
+1) 中断硬件上是如何发生
+	key(电平变化 "0")->SOC(VIC)->CPU
+
+	发生异常, 保存现场, 跳到异常向量表对应的异常模式
+
+	irq:
+		bl do_irq	
+
+2) ARM Linux内核
+	1. 驱动
+		request_irq(注册中断处理函数)
+
+	2. 异常向量表
+		start_kernel ->
+			trap_init
+
+	3. 初始化中断
+		start_kernel ->
+			init_IRQ
+			绑定了驱动注册的处理函数和异常向量表跳转的函数指针
+			asm_do_IRQ
+
+	4. 当中断发生
+
+5. 几种内核锁的使用环境
+=======================
+内核锁
+	. spin_lock (实现本质)
+		. 多cpu
+		. 中断
+		. 上锁时间不要太长
+
+	. semaphore (本质)
+		. 长时间上锁	
+		. 上下文中有休眠函数
+	
+		
+	. 互斥量mutex (sema升级版)
+
+	. 顺序锁(多个lock)
+
+	. 读写锁(读多写少)
+
+	. RCU(读写锁优化)
+
+	. 原子操作
+
+	. 完成量
+		
+
+6.  根文件系统的制作
+====================
+. 什么是根文件系统
+	根文件系统(RamDisk) -> 内存起来 ->磁盘驱动->大的真的文件系统
+
+	init
+	rc.local
+	insmod driver.ko
+
+. build root fs
+	. busybox
+	生成命令(arm)	
+
+	. 建立一些文件系统必要目录
+		/etc
+		/lib
+		/bin
+		/tmp
+		/dev
+			console
+			sys
+			proc
+
+	. 几种使用
+		1) nfs rootfs
+		2) yaffs2 mtdbolck2 of nandflash
+		3) RamDisk
+
+
+

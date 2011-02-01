@@ -1,0 +1,66 @@
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          netradio
+# Required-Start:    
+# Required-Stop:
+# Default-Start: 
+# Default-Stop:
+# Short-Description: netradio
+### END INIT INFO
+
+lockdir=/var/lock/netradio
+lockfile=$lockdir/pid.lck
+netradio=/usr/local/bin/netradio_server
+
+
+. /etc/rc.d/init.d/functions
+. /etc/init.d/functions
+
+case "$1" in
+	start)
+		if [ -f $lockfile ];then
+			read tempid < $lockfile
+			if [ -d /proc/$tempid ];then
+				echo -n "Netradio is running" && warning
+				echo
+			else
+				echo -n "Starting netradio daemon" && success
+    			daemon $netradio
+				echo
+			fi
+		else
+			if [ ! -d $lockdir ];then
+				mkdir -m 777 -p $lockdir
+			fi
+    		daemon $netradio
+			echo -n "Starting netradio daemon" && success
+			echo
+		fi
+	;;
+	restart|reload|force-reload)
+		echo -n "Error: argument '$1' not supported" >&2 && warning
+		echo
+		exit 3
+	;;
+	stop)
+		if [ -f $lockfile ];then
+			read tempid < $lockfile
+			if [ -d /proc/$tempid ];then
+				kill -2 $tempid
+    			echo -n "Stop netradio daemon" && success
+				echo
+			else
+    			echo -n "netradio not start" && warning
+				echo
+			fi
+		else
+    		echo -n "netradio not start" && warning
+			echo
+		fi
+	;;
+	*)
+		echo -n "Usage: $0 start|stop" >&2 && warning
+		echo
+		exit 3
+	;;
+esac

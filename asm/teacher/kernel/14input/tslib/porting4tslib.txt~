@@ -1,0 +1,72 @@
+1. 生成configure
+	#./autogen.sh
+
+2. 用configure 生成Makefile.
+	#./configure --host=arm-linux --prefix=/nfs_rootfs/nfsroot-29/tslib --exec-prefix=/nfs_rootfs/nfsroot-29/tslib ac_cv_func_malloc_0_nonnull=yes  --enable-inputapi=no
+
+
+	说明:
+	1)ac_cv_func_malloc_0_nonnull=yes
+	其中ac_cv_func_malloc_0_nonnull=yes 是为解决如下编译错误设置的
+	-------------------------------------------------------------
+	ts_test.o: In function `main':
+	ts_test.c:(.text+0x1d8): undefined reference to `rpl_malloc'
+	fbutils.o: In function `open_framebuffer':
+	fbutils.c:(.text+0xa20): undefined reference to `rpl_malloc'
+	collect2: ld returned 1 exit status
+	-------------------------------------------------------------
+
+	2) --enable-inputapi=no
+	--enable-inputapi=no. 是为了解决运行中提示 ts_open:Inappropriate ioctol for device,它表示
+	即不使用ioctl来控制触摸屏。但是我在几个板没有碰到这样提示--enable-inputapi=no
+3.编译安装
+   	#make
+	#make install
+
+4. 配置
+	4.1.  tslib 运行时需要一个关键的ts.conf来设置采用哪一种驱动。另外还需要设定一些环境变量。当编译完tslib安装后，在安装目录的etc下有一个ts.conf的模板。如果使用h3600设备，则使用module_raw h3600,如果是使用输入设备，则使用module_raw input.
+	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	cd /nfs_rootfs/nfsroot-29/tslib/
+
+	vim etc/ts.conf 
+	注意配置项要顶格写，如果有空格，tslib将会u有段错误。这是它的bug.
+	--------------------
+	module_raw input
+	#module_raw h3600
+
+	module pthres pmin=1
+	module variance delta=30
+	module dejitter delta=100
+	module linear
+	--------------------
+
+	4.2. 正常运行tslib 也需要配置一系列环境变量
+	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	#取决具体的设备驱动了,事件驱动用
+	export TSLIB_TSDEVICE=/dev/input/event0
+
+	#触摸屏定位文件保存位置
+ 	export TSLIB_CALIBFILE=/tslib/etc/pointercal
+
+	#tslib配置文件内容
+ 	export TSLIB_CONFFILE=/tslib/etc/ts.conf
+
+	#tslib 插件目录  
+  	export TSLIB_PLUGINDIR=/tslib/lib/ts
+  	export TSLIB_CONSOLEDEVICE=none
+
+	#LCD设备结点  
+  	export TSLIB_FBDEVICE=/dev/fb0
+
+	#把libts.so加入动态搜索路径
+  	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/tslib/lib
+	---------------------------------------------------------------
+
+
+5. 测试
+	insmod driver.ko
+	cd /tslib/bin
+	./ts_test
+	./ts_calibrate
+	

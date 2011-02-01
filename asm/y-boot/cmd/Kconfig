@@ -1,0 +1,14 @@
+config ECHO
+bool "enable command echo"
+
+config NAND
+bool "enable command nand"
+
+config BOOTM
+
+bool "enable command bootm"
+
+config AUDIO
+bool "enable command audio"
+
+

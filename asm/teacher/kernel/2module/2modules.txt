@@ -1,0 +1,51 @@
+. Makefile of Module
+	make M=drivers/hello modules	
+	make -C /nfs_rootfs/linux-2.6.29/ M=`pwd` modules
+	make -C /nfs_rootfs/linux-2.6.29/ M=`pwd` modules clean
+
+. src
+	#include <linux/module.h>
+	#include <linux/init.h>
+
+	int xxx_init(void)
+	{
+		return  0;
+	}
+
+	void xxx_exit(void)
+	{
+	
+	}
+
+	module_init(xxx_init);
+	module_exit(xxx_exit);
+
+. 1st
+	insmod test.ko
+	lsmod
+	rmmod test
+
+	 make -C /nfs_rootfs/linux-2.6.29/ M=`pwd` modules_install INSTALL_MOD_PATH=/nfs_rootfs/nfsroot-29/
+
+. 2nd:
+	modinfo
+
+. 3rd:
+	kernel/printk.c
+
+. 4th:
+	insmod test.ko a=11
+
+. 5th:	
+	
+. 6th:
+	EXPORT_SYMBOL
+	cat /proc/kallsyms
+	lsmod
+			
+	
+
+	
+
+
+

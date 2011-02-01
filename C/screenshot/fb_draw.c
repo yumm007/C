@@ -1,0 +1,118 @@
+#include "fb_draw.h"
+
+struct fb_st {
+     struct fb_fix_screeninfo fix;
+     struct fb_var_screeninfo var;
+     unsigned long bpp;
+     int fd;
+     char *fbp;
+};
+
+static struct fb_st fb0;
+
+int fb_open(void)
+{
+     int ret;
+
+     fb0.fd = open("/dev/fb0", O_RDWR);
+     if (-1 == fb0.fd) {
+	  perror("open");
+	  goto error;
+     }
+
+     /* get fb_var_screeninfo */
+     ret = ioctl(fb0.fd, FBIOGET_VSCREENINFO, &fb0.var);
+     if (-1 == ret) {
+	  perror("ioctl(fb0.var)");
+	  goto close_fd;
+     }
+
+     fb0.bpp = fb0.var.bits_per_pixel / 8;
+
+     /* get fb_fix_screeninfo */
+     ioctl(fb0.fd, FBIOGET_FSCREENINFO, &fb0.fix);
+     if (-1 == ret) {
+	  perror("ioctl(fb0.fix)");
+	  goto close_fd;
+     }
+
+     /* get framebuffer start address */
+     fb0.fbp = mmap(NULL, fb0.fix.smem_len, PROT_READ | PROT_WRITE, MAP_SHARED, fb0.fd, 0);
+     if ((void *)-1 == fb0.fbp) {
+	  perror("mmap");
+	  goto close_fd;
+     }
+
+     return 0;
+
+close_fd:
+     close(fb0.fd);
+error:
+     return -1;
+}
+
+void fb_close()
+{
+     munmap(fb0.fbp, fb0.fix.smem_len);
+     close(fb0.fd);
+}
+
+void fb_draw_point(int x, int y, int color)
+{
+     unsigned long offet;
+
+     offet = fb0.bpp * (x + y * fb0.var.xres);
+     memset(fb0.fbp + offet, color, fb0.bpp);
+}
+
+
+void fb_draw_point_v2(int x, int y, struct color_v *color)
+{
+     unsigned long offet = 0;
+	  char *p;
+
+     offet = fb0.bpp * (x + y * fb0.var.xres);
+	  p = fb0.fbp + offet;
+
+	  memcpy(p, color, fb0.bpp);
+}
+
+
+void fb_draw_point_v3(int x, int y, struct color_v *color)
+{
+     unsigned long offet = 0;
+	  struct color_v temp;
+	  char *p;
+
+	  get_fb_draw_point(x, y, &temp);
+#if 1
+	  temp.b = (temp.b - 10 < 0 ? 0:temp.b - 10);
+	  temp.g = (temp.g - 30 < 0 ? 0:temp.g - 30);
+	  temp.r = (temp.r - 10 < 0 ? 0:temp.r - 10);
+#endif
+     offet = fb0.bpp * (x-8 + (y-8) * fb0.var.xres);
+	  p = fb0.fbp + offet;
+
+	  memcpy(p, &temp, fb0.bpp);
+}
+
+
+void get_fb_draw_point(int x, int y, struct color_v *color) {
+     unsigned long offet = 0;
+	  char *p;
+
+     offet = fb0.bpp * (x + y * fb0.var.xres);
+	  p = fb0.fbp + offet;
+
+	  memcpy(color, p, fb0.bpp);
+}
+
+int xres(void)
+{
+     return fb0.var.xres;
+}
+
+int yres(void)
+{
+     return fb0.var.yres;
+}

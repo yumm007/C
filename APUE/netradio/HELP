@@ -1,0 +1,32 @@
+网络收音机使用方法：
+
+服务器端：
+========================
+Netradio的服务以daemon方式运行，服务启动时加载 /etc/netradio.conf 的配置信息。
+启动服务：	service netradio start 
+停止服务:	service netradio stop
+（这两个命令可能需要管理员权限）
+
+以下是服务器端配置文件说明：
+media_path 		= /usr/local/netradio/medialib	；媒体库路径
+recieve_port		= 18761				；广播端口
+multicast_group		= 224.2.4.5			；广播组
+
+媒体库说明：
+库目录下面，一级目录为广播频道，目录里面为频道说明文件 desc.txt 和mp3格式文件。为了保证收听品质，请在这个目录里存储128kbps格式的mp3文件。
+如果需要添加新的频道，只要在媒体路目录下新建一个频道目录，将mp3格式的广播节目复制到此目录里，并在desc.txt文件里（如果没有请创建）添加频道说明。
+频道说明信息最长为1024个字符。
+添加频道后需要重启才有效。
+
+
+客户端：
+========================
+启动客户端：			netradio
+客户端使用默认的参数启动，也可以指定如下参数：
+
+-m "player and palyer argv"		; 播放器级播放器参数， 要用双引号引起它们
+-p received_port						；接受端口
+-g multicast_group					；广播组
+-h help									；打印此客户端帮助菜单
+
+

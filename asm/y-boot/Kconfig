@@ -1,0 +1,8 @@
+menu "Drivers"
+source "drivers/Kconfig"
+endmenu
+
+menu "Command"
+source "cmd/Kconfig"
+endmenu
+

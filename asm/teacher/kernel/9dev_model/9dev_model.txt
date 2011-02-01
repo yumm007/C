@@ -1,0 +1,74 @@
+9.Dev_Model
+===========
+Kernel Map
+----------
+. 功能模块(从上到下)
+. 分层思想
+
+设备模型组件
+-----------
+. kobject
+	. name -- /sys/目录/子目录	
+. kset
+	. 容器，具有同一类型的kobject的集合
+
+. subsystem
+	. 子系统， kset的集合
+	. /sys/顶层目录
+
+. kobj_type.attribute -- /sys/文件
+
+总线、设备、驱动
+----------------
+. bus_type
+. device
+. device_driver
+. include/linux/device.h
+
+Linux总线设备驱动框架(usb)
+--------------------------
+1st 基本框架
+	一个数据结构、一个注册函数
+	. bus:
+		bus_type
+		bus_register
+	
+	. device:
+		device
+		device_register
+	
+	. driver:
+		device_driver
+		driver_register
+
+
+	. check:
+		ls /sys/bus/
+		insmod usb_bus.ko
+		ls /sys/bus/usb-bus/devices/
+		lsmod
+
+		insmod device.ko
+		ls /sys/bus/usb-bus/devices/
+
+
+2nd 配对
+	bus:
+		match
+
+	driver:
+		probe
+
+3rd 一个驱动可以驱动多个设备
+
+4th 分层思想
+
+5th 面向对象化
+
+6th 热插拔
+
+
+
+
+
+

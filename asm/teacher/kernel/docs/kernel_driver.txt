@@ -1,0 +1,126 @@
+1. Linux内核
+	. 系统体系结构(app-posix-kernel-hardware)
+	. 内核的功能模块
+	. linux-2.6.29
+		. 版本号 (git, cvs, svn, vss)
+		. patch (diff, 看补丁)
+	. 内核源码目录	(look, ctags -R)	
+	. 内核Makefile
+		obj-$(CONFIG_TEST)	+= test.o
+	. 内核Kconfig	(.config)
+		config	TEST
+			bool "haha test"
+			depends on TEST1
+
+	. 配置、编译内核
+	. 搭建一下开发环境	
+
+2. Linux模块编程
+	. 模块Makefile
+	. insmod、lsmod、rmmod、modinfo
+	. /lib/modules
+	. 模块编程
+		. EXPORT_SYMBOL
+
+3. Linux字符设备驱动
+	. 字符设备驱动体系结构
+		app->库->kernel->char->arm_driver->hardware
+
+	. register
+	. file_operations
+	. open/release
+	. read/write
+		copy_xxx_user
+	. ioctl
+	. private_data
+		container_of
+	. lseek
+	
+
+	. 阻塞式I/O
+		. if(wait_event_interruptible)
+			return -ERESTARTSYS;
+	. 轮询式I/O
+		. select/poll
+
+	. 异步通知
+		. signal/fasync
+
+4. Linux的互斥机制
+	. 进程管理
+	. 进程调度
+	. 内核编程注意事项
+	. 内核随时发生并发与竞态
+	. 讨论什么情景环境需要互斥
+	. 自旋锁(spin_lock)
+	. 信号量(semaphore)
+	. spin_lock PK sema	
+	. 其他锁机制
+	
+5. Linux内存管理
+	. I/O内存	
+	. 内存管理
+		. mmu
+
+	. 分配内存	
+	. ioremap
+	. 访问I/O内存
+	. 静态I/O映射
+	. Linux字符设备驱动 -- led
+	. 移植qt
+	. 嵌入式qt应用程序+led驱动 = 嵌入式系统
+	
+
+6. Linux中断管理
+	. ARM 中断原理
+	. key中断
+		. 注意
+	. 共享中断线
+		. 注意
+
+	. 调试中断代码
+
+	. ARM Linux内核中断代码分析
+		. Arm Linux kernel booting
+	
+	. 中断底半部
+
+7. Linux时间管理
+	. jiffies
+	. 内核定时器
+
+8. Linux设备模型
+	. 设备模型组件
+	. Linux总线设备驱动框架(usb)	
+	
+9. platform总线设备驱动
+
+10. class/udev(自动管理设备文件)
+	
+11. misc杂设备类驱动
+
+12. Linux平台类字符设备杂设备类的看门狗驱动
+
+
+13. input子系统/触摸屏驱动
+	. 时钟子系统
+	. 防抖动
+	. input子系统
+
+14. Linux LCD设备驱动
+	. dma
+	. mmap
+	. 数码相框
+
+15. Linux audio驱动
+	. oss
+
+16. Linux 网卡驱动框架
+
+14. Linux 块设备驱动框架
+
+
+
+
+
+

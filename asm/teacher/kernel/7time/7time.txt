@@ -1,0 +1,32 @@
+7time
+=====
+硬件计时
+--------
+. HZ
+. timer -- cpu时钟滴答 -- 周期
+. jiffies
+. 未来的1s
+	jiffies + 1*HZ
+
+. cat /proc/uptime
+	jiffies/uptime = HZ
+
+内核延时
+--------
+linux/delay.h
+
+内核定时器
+---------
+linux/timer.h
+struct timer_list *timer
+init：
+	init_timer
+start:
+	add_timer
+
+	del_timer
+
+
+
+
+

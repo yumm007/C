@@ -1,0 +1,12 @@
+udev:
+=====================================
+1.  vim /udev/Makefile  修改 安装路径和编译器
+    prefix = /qt2440e/s3c2440_nfs
+    CROSS_COMPILE = /usr/local/arm/3.4.1/bin/arm-linux-
+
+2.  vim /qt2440e/s3c2440_nfs/etc/init.d/rcS 加上
+    mount -t tmpfs tmpfs /dev
+    /sbin/udevd -d
+    /sbin/udevstart
+    开机自动挂载
+

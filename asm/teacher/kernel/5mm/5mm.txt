@@ -1,0 +1,81 @@
+5. Linux内存管理
+================
+. I/O内存
+	. I/O和内存统一编址
+
+. 内存管理
+	. mmu
+
+. ioremap
+
+. 访问I/O内存
+	ioread32/iowrite32
+
+
+. 静态I/O映射
+	 mini2440_map_io
+		 s3c24xx_init_io()
+
+	0xeeee0000 -- 0x56000000	
+
+	-------------------------------------------
+	vim arch/arm/mach-s3c2440/mach-mini2440.c
+	static struct map_desc mini2440_iodesc[] __initdata = {
+	        {0xeeee0000, 0x56000, 0x1000, MT_DEVICE},
+	};
+	-------------------------------------------
+
+. 巧用板级移植
+	vim arch/arm/mach-s3c2440/mach-qt2440.c
+	static struct map_desc mini2440_iodesc[] __initdata = {
+	        {0xeeee0000, 0x65000, 0x1000, MT_DEVICE},
+	};
+
+	s3c24xx_led.c
+	iowrite32(ioread32(S3C2440_VA_LED) | (1 << 13), S3C2440_VA_LED);
+
+	s3c24xx.h
+	#define S3C_ADDR_BASE		(0xEEEE0000)
+	#define S3C_GPIO_BASE(x)	(S3C_ADDR_BASE + x)
+	#define S3C2440_VA_LED		S3C_GIPO_BASE(0x40);
+
+. Linux字符设备驱动 -- led
+	app->driver->hw
+	./app on/off
+
+. 移植qt
+
+. 嵌入式qt应用程序+led驱动 = 嵌入式系统
+	./led_qt -qws
+		-> qt库
+		-> posix
+		-> libc
+			-> kernel
+			-> char driver
+				->hw
+
+. arm mmu 机制
+
+. 分配内存
+	. page
+	. gfp_mask 标志 GFP_KERNEL
+	. kmalloc
+		. 分配原理
+		. 逻辑区
+		. __va(x) / __pa(x)
+
+	. vmalloc
+		分配大内存
+		. 虚拟区
+
+	. 注意:	
+		kmalloc分配动作
+			. GFP_KERNEL	-- 有可能睡眠
+			. GFP_ATOMIC	-- 不会睡
+
+		kmalloc(GFP_KERNEL)绝对不能用在中断上下文。
+		kmalloc(GFP_ATOMIC)可以用在中断里, 一定要判断返回值
+
+
+
+

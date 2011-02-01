@@ -1,0 +1,5 @@
+
+
+config DIR
+	bool "select dir"
+	default y

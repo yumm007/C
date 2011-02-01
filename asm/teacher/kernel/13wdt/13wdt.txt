@@ -1,0 +1,16 @@
+. Linux平台总线字符设备杂设备类的看门狗驱动
+	.platform
+	.misc(char + class + udev)
+
+. 无人职守系统
+	./app	
+
+. 1st:
+	硬件
+
+. 2nd:
+	总线
+
+. 3rd:
+	类+char
+	app

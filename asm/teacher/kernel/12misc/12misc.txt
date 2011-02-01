@@ -1,0 +1,19 @@
+. 杂设备类 = char + class
+
+. src
+	linux/miscdevice.h
+	struct miscdevice  {
+		int minor;
+		const char *name;
+		const struct file_operations *fops;
+	}
+	int misc_register(struct miscdevice * misc);
+	int misc_deregister(struct miscdevice *misc);
+
+. old
+	dev_t devno = MKDEV(10, minor);
+	register_chrdev(10, &fops);	
+	class_create(THIS_MODULE, "misc");
+	device_create(misc, NULL, devno, NULL, "%s", name);
+
+

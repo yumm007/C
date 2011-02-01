@@ -1,0 +1,20 @@
+#!/bin/bash
+
+cp service/netradio.conf /etc/netradio.conf
+
+cat /proc/version | grep 'Red Hat' >/dev/null 2>&1
+if [ $? -eq 0 ]
+then
+	cp service/netradio_service_redhat /etc/init.d/netradio
+	exit
+fi
+
+cat /proc/version | grep 'Ubuntu' >/dev/null 2>&1
+if [ $? -eq 0 ] 
+then
+	cp service/netradio_service_ubuntu /etc/init.d/netradio
+	exit
+fi
+
+cp service/netradio_service_other /etc/init.d/netradio
+

@@ -1,0 +1,29 @@
+
+=== udev
+在设备被发现时自动加载对应驱动模块。(热插拔，设备被发现时，自动创建dev文件，并加载驱动模块)
+1.	vim /udev/Makefile	修改 安装路径和编译器
+	prefix = /nfs_rootfs/nfsroot-29		(开发板的根文件系统)
+	CROSS_COMPILE = /usr/local/arm/4.3.2/bin/arm-linux-	(交叉编译器)
+	
+	make 
+	make install
+
+2.	vim /nfs_rootfs/nfsroot-29/etc/init.d/rcS 加上
+	/sbin/udevd -d
+	/sbin/udevstart
+	开机自动挂载
+
+3. 设备模型-- class类
+	------------------ src -------------------------
+struct class *my_class;
+static int create_my_class(void)
+{
+        my_class =class_create(THIS_MODULE, "my_class");
+        device_create(my_class, NULL, MKDEV(253, 0), NULL, "%s", "test-led");
+}
+
+static void destroy_my_class(void)
+{
+        device_destroy(my_class, MKDEV(253, 0));
+        class_destroy(my_class);
+}

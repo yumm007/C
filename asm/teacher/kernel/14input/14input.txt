@@ -1,0 +1,92 @@
+14input 触摸屏驱动
+==================
+1st	模块驱动
+	. 时钟子系统
+	--------   driver   ---------------
+	struct clk *adc_clk;
+	adc_clk = clk_get(NULL, "adc"); 
+
+	clk_enable(adc_clk)	->
+		(clk->enable)(clk, 1);
+		s3c2410_clkcon_enable(clk, 1)
+
+	----------------------------------
+
+	----------- clk init booting ---
+	start_kernel:
+		mini2440_map_io
+			s3c24xx_init_clocks(12000000);
+
+	s3c24xx_init_clocks:	
+		 (cpu->init_clocks)(xtal);
+		<arch/arm/plat-s3c24xx/cpu.c>
+		static struct cpu_table cpu_ids[] __initdata = {
+			 {
+				.idcode         = 0x32440001,
+				.idmask         = 0xffffffff,
+				.map_io         = s3c244x_map_io,
+				.init_clocks    = s3c244x_init_clocks,
+				.init_uarts     = s3c244x_init_uarts,
+				.init           = s3c2440_init,
+				.name           = name_s3c2440a
+			},
+		}
+
+	s3c244x_init_clocks:	-->
+		//将主时钟加入内核clk链表中
+		s3c24xx_register_baseclocks(xtal);	-->
+			s3c24xx_register_clock();
+
+		//初始化内核clk链表的频率值
+		s3c244x_setup_clocks();	-->
+			s3c24xx_setup_clocks(fclk, hclk, pclk);
+
+		//将设备时钟加链表中
+		s3c2410_baseclk_add();	-->
+			clkp = init_clocks;
+			(arch/arm/plat-s3c24xx/s3c2410-clock.c )
+			 s3c24xx_register_clock(clkp);
+
+			clkp = init_clocks_disable;
+			s3c24xx_register_clock(clkp);
+			s3c2410_clkcon_enable(clkp, 0);
+	--------------------------------
+
+2nd	防抖动
+	nop
+	定时器延时防抖动
+	mod_timer
+
+3rd	input子系统
+	. 移植tslib
+	. 实现input子系统的触摸屏驱动
+
+	. 事件
+	#define EV_SYN                  0x00
+	#define EV_KEY                  0x01
+	#define EV_REL                  0x02
+	#define EV_ABS                  0x03
+
+注册/初始化
+-----------
+	. input_allocate_device();
+	. dev->evbit[0] = BIT(EV_SYN) | BIT(EV_KEY) | BIT(EV_ABS);
+	. //初始化事件值范围
+		input_set_abs_params(dev, ABS_X, 0, 0x3FF, 0, 0);
+		input_set_abs_params(dev, ABS_Y, 0, 0x3FF, 0, 0);
+		input_set_abs_params(dev, ABS_PRESSURE, 0, 1, 0, 0);
+	.  input_register_device
+
+驱动如何与input子系统通信
+---------------------------
+	input_report_abs(t->dev, ABS_PRESSURE, 1);
+	input_sync(t->dev);
+	input_report_abs(t->dev, ABS_X, t->x);
+
+
+
+
+
+
+
+

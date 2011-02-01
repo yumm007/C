@@ -1,0 +1,1 @@
+mkimage -A arm -O linux -T kernel -C none -a 0x30008000 -e 0x30008040 -n "linux kernel" -d ~/tmp/linux-2.6.36/arch/arm/boot/zImage /tftpboot/uImage-2.6.36

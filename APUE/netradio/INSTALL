@@ -1,0 +1,16 @@
+安装方法：
+make
+make install ; 需要 root 身份运行
+
+卸载方法：
+make uninstall ; 需要 root 身份运行
+
+使用方法：
+
+服务器端， 
+启动服务命令：	service netradio start
+停止服务命令：	service netradio stop
+
+客户端：
+运行:		netradio
+

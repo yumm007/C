@@ -1,0 +1,16 @@
+#
+# Automatically generated make config: don't edit
+# Linux kernel version: KERNELVERSION
+# Tue Jan 11 16:55:16 2011
+#
+
+#
+# Drivers
+#
+
+#
+# Command
+#
+CONFIG_ECHO=y
+CONFIG_NAND=y
+CONFIG_BOOTM=y

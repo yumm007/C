@@ -1,0 +1,5 @@
+netradio [-m "player argv"] [-p port] [-g multicast_group] [-h]
+-m "player and palyer argv"		；播放器级播放器参数， 要用双引号引起它们
+-p received_port			；接受端口
+-g multicast_group			；广播组
+-h help					；打印此客户端帮助菜单

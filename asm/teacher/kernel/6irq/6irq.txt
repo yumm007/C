@@ -1,0 +1,98 @@
+6. Linux中断管理
+=================
+. ARM 中断原理
+--------------
+
+. key中断
+--------
+. 注册一个中断
+#include <linux/interrupt.h>
+int request_irq(unsigned int irq, irq_handler_t handler,
+                unsigned long irqflags, const char *devname, void *dev_id)
+	. irq -- 中断号
+	1) 原理图， sw2 -- EINT1
+	2) S3C2440 datasheet	INTMSK EINT1 对应[1]
+	3) arch/arm/mach-s3c2410/include/mach/irqs.h
+
+	. handler -- 中断处理函数
+		return IRQ_HANDLED;
+
+	. irqflags
+	 *      IRQF_SHARED             Interrupt is shared
+	 *      IRQF_DISABLED		Disable local interrupts while processing
+	 *      IRQF_SAMPLE_RANDOM      The interrupt can be used for entropy
+	 *      IRQF_TRIGGER_*          Specify active edge(s) or level（触发方式）
+		#define IRQF_TRIGGER_NONE       0x00000000
+		#define IRQF_TRIGGER_RISING     0x00000001
+		#define IRQF_TRIGGER_FALLING    0x00000002
+		#define IRQF_TRIGGER_HIGH       0x00000004
+		#define IRQF_TRIGGER_LOW        0x00000008
+		#define IRQF_TRIGGER_MASK       (IRQF_TRIGGER_HIGH | IRQF_TRIGGER_LOW | \
+					 IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING)
+	. devname -- /proc/interrupts
+
+	. dev_id -- 参数
+	
+. 释放中断线
+	void free_irq(unsigned int irq, void *dev_id)
+
+
+
+. 注意
+	1) 判断返回值
+	2) cat /proc/interrupts
+	3) grep
+
+. 共享中断线
+------------
+	IRQF_SHARED
+. 注意
+	dev_id一定不能为空
+
+. 调试中断代码
+--------------
+printk + 内核源代码调试
+调试开关
+
+. ARM Linux内核中断代码分析
+--------------------------
+	. Arm Linux kernel booting
+	. 内核源码思想
+	. porting
+
+
+
+. 中断底半部
+--------------
+. tasklet
+	struct tasklet_struct task;
+	init:
+		tasklet_init;
+	use:
+		tasklet_schedule;
+
+. work
+	#include <linux/workqueue.h>
+	struct work_struct
+	init:
+		INIT_WORK
+	use:
+		schedule_work
+
+
+. work PK tasklet
+	. 执行上下文	
+	tasklet:
+		软中断上下文
+	work:
+		普通的进程/线程上下文
+
+	. 区别
+	. 调度效率
+	tasklet:
+		快
+		不能睡眠
+	work:
+		稍慢
+		随便
+
