@@ -1,0 +1,369 @@
+学习目标：
+高级权限位
+文本编辑器
+高级文件操作命令
+正则表达式
+
+关键字
+重点
+rwx,suid,sgid,sticky都限制不住超级管理员
+－－－－SGID位－－－－－－－－
+有一个组：coder，其中有四个成员u1,u2,u3,u4
+创建了一个目录/public权限为775，且所有者是root，所属组是coder组。
+  按照上面的情形，coder组的所有成员都是可以往/public写的。需求是同组用户写入的内容，同组成员都可以再写？？？
+  chmod 2775 /public (chmod g+s /public)
+－－－－－－－－－－－－
+难点
+1、权限总结：
+对于目录来讲W权限：决定了用户是否可以在此目录下创建和删除，包括强制写其中的文件。
+
+对于普通文件来讲W权限：决定了用户是否可以正常的去修改件内容。如果没有w权限，只要用户对此文件的父目录有w权限，那么，文件将可以被强制写（强制写后的文件的所有者所属组会变化）
+
+2、一个文件是否可被删除由什么决定？
+	由此文件的父目录的权限来决定。用户对父目录可w，则可删除
+
+＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
+
+
+回顾基本权限位rwx，看高级权限位：
+set uid -- suid   u+s 给可执行文件加
+set gid --- sgid  g+s 给目录加
+sticky --  o+t        给目录加
+
+
+任意一个用户创建文件时，文件的所有者将是该用户，而所属组是该用户的主组
+
+权限总结：
+对于目录来讲W权限：决定了用户是否可以在此目录下创建和删除，包括强制写其中的文件。
+
+对于普通文件来讲W权限：决定了用户是否可以正常的去修改件内容。如果没有w权限，只要用户对此文件的父目录有w权限，那么，文件将可以被强制写（强制写后的文件的所有者所属组会变化）
+
+一个文件是否可被删除由什么决定？
+	由此文件的父目录的权限来决定。用户对父目录可w，则可删除
+
+－－－－－－－－－－－－－－－－－－－－－
+文本编辑器
+与
+文字处理工具
+区别
+
+文件编辑器的学习是为了根据需要去编辑配置文件。系统中有各种各样的配置文件。
+
+emacs
+vi----vim
+
+virtual editor 可视化编辑器
+
+   vim filename
+       ｜
+    命令模式  
+  ｉ /     \   :wq！
+ ａ /       \  /string
+   v　       v
+插入模式     末行模式
+
+ESC键，称之为归位键。表示回到命令模式
+
+
+
+  命令模式  任意字符都不会写入到文件中，而被认为是一个命令。此模式下的常用命令有：
+yy 复制当前行  5yy
+p  粘贴刚刚复制的信息到光标所在行的下一行
+dd 删除或者剪切当前行  5dd
+u 撤消上一步操作
+ctrl + r　恢复
+＋＋＋＋
+D / d$ 删除光标到行末
+d^  /  d0 删除光标到行首
+y$ 复制光标到行末
+ZZ 保存退出
+ZQ 不保存退出
+r ＋ 一个字符  表示把光标所在的字符，替换成你指定的字符
+gg 定位光标到第1行
+5gg 定位光标到第5行
+G 定位光标到文件最后一行
+＋＋＋＋
+
+进入到插入模式的命令 此种模式下，写入的所有字符都将被编辑到文件内容中。
+ｉ 表示在光标所在字符前插入
+ａ　表示在光标所在字符后插入
+ o  表示在光标所在行的下一行插入
+＋＋＋＋＋＋
+I 
+A
+O
+s
+S
+＋＋＋＋＋＋＋＋
+
+末行模式 此种模式是在屏幕的最末行操作，一般用于保存退出以及查找替换
+esc + :wq!
+esc + /string  用n切换到下一个高亮显示的字符串。切换到上一个用N 
+ :set number ＝＝  set nu 显示行号
+ :set nonumber === set nonu 取消行号显示
+ :1,$d
+ :2,10d
+ :,10d 表示把当前行到第10行删除
+:1,5s/login/LOGIN/ 表示把1到5行的login字符串找出来替换成LOGIN字符串
+
+:1,$s/BIN/bin/g
+  g表示行全局
+
+作业1：
+把  文件中所有的/ 替换成 // 
+:1,$s/\//\/\//g
+:1,$s#/#//#g
+:1,$s/^/#/
+:1,$s/^#//
+
+:set hlsearch 关于查找的相关字符串的高亮显示
+:syntax on 语法的色彩显示
+:15把光标定位到第15行
+
+
+可视化模式  用上下左右键选中
+ctrl + v 可视块 
+v 可视化
+
+[root@server /]# vim -O /pas /pass
+[root@server /]# vim -o /pas /pass
+vim /etc/vimrc
+ 42 if &t_Co > 2 || has("gui_running")
+ 43   set number
+ 44   syntax on
+ 45   set hlsearch
+ 46 endif
+
+
+
+
+－－－－－高级文件操作命令－－－－－－
+cat/more/less /head/tail/grep
+更多文件操作命令
+cut -d : -f 1,3 /etc/passwd
+cut -d : -f 1-3 /etc/passwd
+sort /etc/passwd
+sort -r /etc/passwd
+sort -n /path/filename
+按照UID排序
+sort -t : -k 3  -n /etc/passwd 
+uniq针对于文件的重复行做操作
+
+uniq /path/filename 对连续的重复行只显示一行
+uniq -c /path/filename 显示行重复次数
+
+作业2：把某文件a中，重复次数最多的行显示出来。并显示其重复多少次
+以下是文件a的内容
+1
+1
+1
+ooo
+ooo
+ooo
+ooo
+ooo
+1
+1
+12
+13
+13
+13
+13
+13
+14
+23
+ooo
+ooo
+ooo
+23
+23
+23
+23
+11
+22
+24
+2345
+     
+[root@server /]# sort   a  | uniq -c  | sort -r   | head -n 1
+
+
+
+grep  
+grep -n /path/filename
+grep -i /path/filename
+grep -c /path/filename
+grep -v /path/filename
+grep -n /path/filename
+grep -R umask /etc
+
+
+
+正则表达式 regular expression
+基本正则 
+^string   string$
+\<ro     ot\>
+.
+[abcde]  [a-e]  [0-9]  [A-Z] [a-zA-Z0-9]
+[^a-z] ^放到［］中的第一位，表示取反
+
+a*  表示0个a或者1个或者更多a
+a\{3\}
+a\{1,5\}
+a\{5,\}
+
+扩展正则 grep -E 'a+'
+a+ 表示至少一个a  
+(aa)+
+      
+^root 表示行以root字符串开头
+bash$ 表示行以bash字符串结尾
+[root@server /]# grep 'bash$' /etc/passwd
+
+[root@server /]# grep '^root' /etc/passwd
+root:x:0:0:root:/root:/bin/bash
+
+只要是以空格分格的字符串就是单词
+
+. 在正则表达式中表示任意的单个字符
+[root@server /]# grep '^r..t' /etc/passwd
+root:x:0:0:root:/root:/bin/bash
+reet:x:610:610::/home/reet:/bin/bash
+reot:x:611:611::/home/reot:/bin/bash
+
+[a-z] 表示指定范围的单个字符
+
+[root@server /]# grep '^r[a-z][a-z]t' /etc/passwd
+root:x:0:0:root:/root:/bin/bash
+reet:x:610:610::/home/reet:/bin/bash
+reot:x:611:611::/home/reot:/bin/bash
+
+[root@server /]# grep  '^[^#]' /etc/bashrc 
+
+* 看到正则中有*时,总是把＊和其前一个字符绑一块看。
+[root@server /]# grep '^ra*t' /etc/passwd
+rt:x:612:612::/home/rt:/bin/bash
+rat:x:613:613::/home/rat:/bin/bash
+raat:x:614:614::/home/raat:/bin/bash
+raaat:x:615:615::/home/raaat:/bin/bash
+
+aa* 才表示至少一个a
+
+＋＋＋＋
+.*  表示任意长度的任意字符
+^$  表示空行
+^root$ 只包含root的行
+＋＋＋
+
+
+[root@server /]# grep -E '^ra+t' /etc/passwd
+rat:x:613:613::/home/rat:/bin/bash
+raat:x:614:614::/home/raat:/bin/bash
+raaat:x:615:615::/home/raaat:/bin/bash
+
+
+ grep ':[0-9]\{3\}:' /etc/passwd
+ grep '^[^:]*:[^:]*:[0-9]\{3\}:' /etc/passwd
+
+文件的查找与压缩
+
+
+[root@server /]# alias grep='grep --color'
+[root@server /]# which ls
+alias ls='ls --color=tty'
+        /bin/ls
+[root@server /]# alias
+alias cp='cp -i'
+alias grep='grep --color'
+alias l.='ls -d .* --color=tty'
+alias ll='ls -l --color=tty'
+alias ls='ls --color=tty'
+alias mv='mv -i'
+alias rm='rm -i'
+alias which='alias | /usr/bin/which --tty-only --read-alias --show-dot --show-tilde'
+[root@server /]# unalias grep
+作业2：如何让设置的别名永久生效
+
+查看命令的路径
+会在$PATH变量的路径中找命令 
+which ls 
+whereis ls
+查找文件
+find  查找方式多样，可以精确查找。
+locate 特点是查找快。可以使用正则。
+[root@server /]# locate -r '/ls$'
+/bin/ls
+[root@server /]# locate ls 会找出所有名字中包含ls的文件
+
+                     查找范围 查找方式
+[root@server /]# find   /bin  -name   ls
+/bin/ls
+[root@server /]# find /bin -name *ls*
+/bin/alsaunmute
+/bin/false
+/bin/ls
+/bin/alsacard
+/bin/redhat_lsb_init
+
+
+[root@server /]# find /home -size +12c 
+[root@server /]# find /home -size -12c 
+[root@server /]# find /home -size 11c 
+ 
+ find /home -size -12c -ls 
+
+[root@server /]# find /home -type d
+[root@server /]# find /home -type f 
+
+[root@server /]# find /home -group pg
+[root@server /]# find /home -user pg
+
+[root@server /]# find /home -user pg -exec rm -rf {} \;
+find: /home/pg: 没有那个文件或目录
+[root@server /]# find /home -user pg 
+[root@server home]# find /home -size +10c -a -size -20c
+/home/file1
+
+find /usr/ -perm 4755
+
+
+
+
+
+文件的压缩
+zip/unzip
+gzip/gunzip
+bzip2/bunzip2
+
+--------
+zip file.zip file
+
+]# zip passwd.zip passwd 
+
+gzip file
+
+]# gzip passwd
+]# ls
+passwd.gz  
+
+bzip2  file
+
+]# bzip2 passwd
+]# ls
+passwd.bz2  
+
+以下表示对当前目录下在所有文件进行打包gzip压缩
+]# tar -zcvf all.tar.gz  *
+]# ls all.tar.gz 
+all.tar.gz
+]# tar -zxvf all.tar.gz
+
+]# tar -jcvf all.tar.bz2 *
+]# tar -jxvf all.tar.bz2
+
+
+
+
+
+
+
+

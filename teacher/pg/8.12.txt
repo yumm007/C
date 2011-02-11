@@ -1,0 +1,206 @@
+学习目标：
+linux网络配置
+linux系统管理子系统
+	任务计划
+	日志系统
+
+linux系统的X window system的使用
+
+
+
+
+－－－－－－网络配置－－－－－－－
+
+ping 192.168.1.2 
+内核会查它自己维护的一张路由表，看是否有一条路由条目定义了到192。168。1。0网络应该从哪个接口把包发出！
+192。168。1。2是哪个主机的哪块网卡
+先广播一个arp查询，问192。168。1。2的mac地址是多少，请告诉我192.168.1.254
+只有192.168.1.2才会回应这个arp的请求，告诉1.254它的Mac地址是多少
+
+tcpdump -i eth0 
+tcpdump -i eth0 -v
+
+配置IP
+永久生效：
+临时生效：
+永久生效方法有两种：
+[root@server ~]# setup
+[root@server ~]# vim /etc/sysconfig/network-scripts/ifcfg-eth0 
+
+  2 DEVICE=eth0 #定义网卡的名字
+  3 BOOTPROTO=none #定义协议可以设置为dhcp或n
+    one ，dhcp表示自动获取
+  4 BROADCAST=192.168.1.255 #定义广播地址
+  5 HWADDR=00:e0:4c:16:8c:79 #定义网卡的mac地
+    址
+  6 IPADDR=192.168.1.254 #定义此网卡的IP地址
+  7 NETMASK=255.255.255.0 #定义子网掩码
+  8 NETWORK=192.168.1.0 #定义网络地址
+  9 ONBOOT=yes #定义是否在网络服务启动的时候>    ，激活网卡
+ 10 TYPE=Ethernet # 定义网络类型为以太网
+
+务必要重新启动网络服务
+
+[root@server ~]# /etc/init.d/network restart
+正在关闭接口 eth0：                         [确定]
+关闭环回接口：                              [确定]
+弹出环回接口：                              [确定]
+弹出界面 eth0：                             [确定]
+[root@server ~]# 
+
+临时生效（如果重启动network服务，地址会还原）：
+]# ifconfig eth0 192.168.1.254 netmask 255.255.255.0 up
+
+
+有时候，需要给一块网卡设置多个IP
+ eth0:0 eth0:1 eth0:2 .... 
+
+ 临时设置
+]# ifconfig eth0:0 192.168.1.252 netmask 255.255.255.0 up
+]# ifconfig eth0:1 192.168.1.251 netmask 255.255.255.0 up
+ 
+   永久设置(记得重启网络服务)
+[root@server ~]# cd /etc/sysconfig/network-scripts/
+[root@server network-scripts]# cp ifcfg-eth0 ifcfg-eth0:0
+[root@server network-scripts]# vim ifcfg-eth0:0
+  2 DEVICE=eth0:0
+  3 BOOTPROTO=none
+  4 BROADCAST=192.168.1.255
+  5 HWADDR=00:e0:4c:16:8c:79
+  6 IPADDR=192.168.1.251
+  7 NETMASK=255.255.255.0
+  8 NETWORK=192.168.1.0
+  9 ONBOOT=yes
+ 10 TYPE=Ethernet
+~                         
+/etc/init.d/network restart
+
+
+route -n 
+查看路由表，内核会根据路由表的设定来把包从对应的接口发出
+ 在到达同一个网络有多个路由条目时的规则：
+  1 掩码位长度越长，越优先
+  2 掩码位长度一样的情况下，顺序越靠前越优先
+
+这个由内核维护的路由表，是否管理员手动修改路由条目呢？不需要。
+]# route del -net 192.168.1.0 netmask 255.255.255.0
+]# route add -net 192.168.1.0 netmask 255.255.255.0 dev eth0 
+
+
+网关：
+网关是网络的出口。
+ 当需要把包发给另外一个网络时，需要把包交给网关，由网关转发数据包到另一个网络。网关实际上是一个路由器。
+修改配置文件，指定gateway（默认路由）
+[root@server /]# cat /etc/sysconfig/network
+NETWORKING=yes
+NETWORKING_IPV6=no
+HOSTNAME=server.uplooking.com
+GATEWAY=192.168.1.254
+/etc/init.d/network restart
+[root@server /]# route -n 
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+192.168.1.0     0.0.0.0         255.255.255.0   U     0      0        0 eth0
+169.254.0.0     0.0.0.0         255.255.0.0     U     0      0        0 eth0
+0.0.0.0         192.168.1.254   0.0.0.0         UG    0      0        0 eth0
+
+通过命令添加和删除默认路由：
+[root@server /]# route del default 
+[root@server /]# route add default gw 192.168.1.254
+[root@server /]# route -n 
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+192.168.1.0     0.0.0.0         255.255.255.0   U     0      0        0 eth0
+169.254.0.0     0.0.0.0         255.255.0.0     U     0      0        0 eth0
+0.0.0.0         192.168.1.254   0.0.0.0         UG    0      0        0 eth0
+
+如果要用linux系统主机来充当路由器，需要打开路由转发功能：
+
+]# echo 1 > /proc/sys/net/ipv4/ip_forward 
+]# cat  /proc/sys/net/ipv4/ip_forward 
+1
+
+[1.2/24]---1.254[router]2.254---[2.2/24]
+192.168.2.2:
+]# route add default gw 192.168.2.254
+192.168.1.2:
+]# ping 192.168.2.2
+connect: Network is unreachable
+[root@stu2 ~]# route add default gw 192.168.1.254 
+router:
+[root@server ~]# echo 1 >  /proc/sys/net/ipv4/ip_forward 
+
+
+
+
+DNS的指向
+通过DNS服务器做域名解析（域名解析为IP）
+ 你想某一个主机，可以通过域名访问。而不用记IP
+vim /etc/resolv.conf
+nameserver 202.106.0.20
+--------
+[root@server ~]# cat /etc/resolv.conf 
+nameserver 202.106.0.20
+nameserver 202.106.46.11
+
+在局域网中，可以给每一个主机取一个好记的名字。要访问对应主机，通过对方主机名来访问即可。
+
+grep HOSTNAME /etc/sysconfig/network
+HOSTNAME=server.uplooking.com
+
+查看主机名：
+[root@server ~]# hostname
+server.uplooking.com
+
+临时修改主机名
+[root@server ~]# hostname  host1
+[root@server ~]# hostname
+host1
+
+ip地址和主机名的对应关系。用于做本地解析
+cat /etc/hosts
+# Do not remove the following line, or various programs
+# that require network functionality will fail.
+127.0.0.1               server.uplooking.com server localhost.localdomain localhost
+::1             localhost6.localdomain6 localhost6
+192.168.1.254   host1
+192.168.1.2     stu2.uplooking.com
+[root@server ~]# 
+
+
+
+
+－－－－－－－任务计划－－－－－－－－
+计划某一时刻 执行某一任务
+atd
+[root@server ~]# at 17:00 2010-08-12
+at> shutdown -h now
+at> <EOT>
+job 1 at 2010-08-12 17:00
+
+at -l 查看定义好的任务列表 == atq
+at -c N 查看指定编号 的任务的内容
+at -d N 删除指定编辑的任务 == atrm N
+
+/etc/init.d/atd start
+
+shutdown -h now 
+shutdown -r now
+
+计划按照某一周期执行某一任务
+crond
+一般会指定月，天，小时，分钟，星期几
+
+分钟 小时 天 月 星期 要执行的命令
+00－59 00－23 01－31 01－12 1－7 command
+00 18 * * 5 
+01 5 * * *
+00 00 * * * tar -zxvf /tmp/home.tar.gz /home
+举例：
+
+/etc/init.d/crond start
+
+
+
+
+

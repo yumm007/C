@@ -1,0 +1,158 @@
+学习目标：
+驱动模块管理
+内核编译
+
+关键字
+难点
+重点
+
+－－－－－－管理模块－－－－－－－－－
+]# lsmod 
+]# modinfo ext3 
+]# modinfo -F filename ext3 .config
+/lib/modules/2.6.18-128.el5/kernel/fs/ext3/ext3.ko
+]# modinfo -F description ext3 
+Second Extended Filesystem with journaling extensions
+
+[root@server /]# rmmod 8139too
+[root@server /]# insmod /lib/modules/2.6.18-128.el5/kernel/drivers/net/8139too.ko 
+[root@server /]# rmmod 8139too[root@server /]# modprobe 8139too
+自动加载
+[root@server /]# ifconfig eth0
+eth0      Link encap:Ethernet  HWaddr 00:E0:4C:16:8C:79  
+          BROADCAST MULTICAST  MTU:1500  Metric:1
+          Interrupt:217 Base address:0xc000 
+
+－－－－－－模块的依赖关系问题－－－－－－－
+[root@server pg]# lsmod  | grep mii
+mii                     9409  3 8139too,8139cp,r8169
+[root@server pg]# vim /lib/modules/2.6.18-128.el5/modules.dep 
+
+[root@server pg]# rmmod mii
+ERROR: Module mii is in use by 8139too,8139cp,r8169
+[root@server pg]# rmmod 8139too
+[root@server pg]# rmmod 8139cp
+[root@server pg]# rmmod r8169
+
+－－－－－－－－－－－－－－－－
+[root@server 2.6.18-128.el5]# ls /lib/modules/2.6.18-128.el5/modules.dep 
+/lib/modules/2.6.18-128.el5/modules.dep
+[root@server 2.6.18-128.el5]# depmod -a
+
+－－－－－－－－－－－－－－－－－－－－－－－
+[root@server /]# grep eth /etc/modprobe.conf
+alias eth0 8139too
+alias eth1 r8169
+[root@server /]# mii-tool 
+eth0: negotiated 100baseTx-FD, link ok
+
+[root@server /]# rmmod r8169[root@server /]# modprobe r8169
+[root@server /]# mii-tool 
+eth0: negotiated 100baseTx-FD, link ok
+eth1: no link
+
+＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
+为原内核添加新模块的方法:
+1、下载与当前内核同版本的源代码
+ 这边下载了一个rpm格式的源码（请大家课后自学一下关于rpm格式的源码包的安装方法）
+ 要装rpm格式的源码，必须先装rpm-build包。
+[root@server src]# yum -y install rpm-build
+ 开始安装rpm的内核源码
+]# rpm -ivh --nomd5 kernel-2.6.18-128.el5.src.rpm 
+
+# cd /usr/src/redhat/SPECS
+
+# rpmbuild -bp --target=$(uname -m) kernel-2.6.spec
+
+# cd /usr/src/redhat/BUILD/kernel-2.6.18/linux-2.6.18.i686
+
+
+
+# uname -r
+2.6.18-53.el5
+
+# head -n 5 Makefile 
+VERSION = 2
+PATCHLEVEL = 6
+SUBLEVEL = 18
+#EXTRAVERSION = -prep
+EXTRAVERSION = -128.el5
+
+# make menuconfig
+
+# make M=fs/ntfs/
+
+错误1
+
+  ERROR: Kernel configuration is invalid.
+         include/linux/autoconf.h or include/config/auto.conf are missing.
+         Run 'make oldconfig && make prepare' on kernel src to fix it.
+
+解决方法
+# make oldconfig && make prepare
+
+再次编译模块
+# make M=fs/ntfs/
+
+错误2
+  /bin/sh: scripts/mod/modpost: 没有那个文件或目录
+  make[1]: *** [__modpost] 错误 127
+  make: *** [modules] 错误 2
+解决方法
+# make scripts
+
+# make M=fs/ntfs/
+  Building modules, stage 2.
+  MODPOST
+  CC      fs/ntfs/ntfs.mod.o
+  LD [M]  fs/ntfs/ntfs.ko
+
+# cp fs/ntfs/ntfs.ko /lib/modules/2.6.18-53.el5/kernel/fs/ntfs/
+
+# depmod -a
+# modprobe ntfs
+# lsmod | grep ntfs
+ntfs                  187284  0 
+
+编译安装新的内核的方法：
+－－－－－－－－－－－
+[root@server Server]# rpm -ivh  ncurses-devel-5.5-24.20060715.i386.rpm 
+[root@server Server]# rpm -ivh  ncurses-5.5-24.20060715.i386.rpm 
+－－－－－－－－－
+
+
+[root@server src]# ls -lh linux-2.6.30.tar.bz2 
+-rwxr-xr-x 1 root root 57M 08-11 14:29 linux-2.6.30.tar.bz2
+[root@server src]# tar jxvf linux-2.6.30.tar.bz2 
+cd linux-2.6.30
+－－－－－－－－－－－－－
+指明要配置内核的哪些功能： --- 会生成一个名为.config的隐藏文件。
+make menuconfig
+make xconfig
+make gconfig
+（make oldconfig）
+
+[root@server linux-2.6.30]# ls -a .config
+.config
+[root@server linux-2.6.30]# grep NTFS .config
+CONFIG_NTFS_FS=m
+CONFIG_NTFS_DEBUG=y
+CONFIG_NTFS_RW=y
+[root@server linux-2.6.30]# grep EXT4 .config
+CONFIG_EXT4_FS=m
+CONFIG_EXT4DEV_COMPAT=y
+CONFIG_EXT4_FS_XATTR=y
+CONFIG_EXT4_FS_POSIX_ACL=y
+CONFIG_EXT4_FS_SECURITY=y
+
+－－－－－－－－－－－－
+make 
+make modules_install  (/lib/modules/2.6.30/xxxxx)
+make install (/boot/vmlinuz-2.6.30 /boot/initrd-2.6.30.img /boot/grub/grub.conf)
+
+------设备的主从设备号分配表------------
+[root@server linux-2.6.30]# vim  /usr/local/src/linux-2.6.30/Documentation/devices.txt 
+
+
+
+

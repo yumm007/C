@@ -1,0 +1,173 @@
+学习目标：
+用户和组的管理
+权限管理
+
+关键字
+重点
+1、系统通过UID来标识用户。可以创建一个UID为0用户来代表超级管理员
+[root@server pg]# useradd -o -u 0 pgadmin
+2、系统的UID为1－499范围的用户是系统内置用户，不用于登录系统，它们的登录shell是/sbin/nologin
+3、用户信息配置文件
+   /etc/passwd
+   /etc/shadow
+   组信息配置文件
+   /etc/group
+   /etc/gshadow
+4、 useradd /passwd /usermod
+    groupadd /gpasswd/groupmod
+    su / id /groups 
+    /etc/skel/.*  /etc/login.defs
+5、基本仅限位r w x，针对 所有者，所属组，其它用户 共三种对象来设置了三组权限。
+ 通过ls -l 查看文件的权限
+chown /chgrp /chmod
+6、权限分为两种表示文件，字母和数字 
+  u g o a +-= r w x 
+  r-4 w-2 x-1
+
+难点
+1、/etc/skel/.*隐藏文件的作用
+2、一些环境变量：PS1变量，PATH变量。
+echo $PATH
+3、man 7 man
+   man -f passwd
+   man 5 passwd 
+   man 1 passwd
+4、设置/etc/shadow文件的相关字段，如设置用户的过期日期（修改shadow文件的第8个字段）
+[root@server pg]# chage -E 2010-09-01 pgadmin
+
+＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
+系统中有哪些用户，存在哪？
+如何 根据需要管理自己的用户？
+ 创建删除用户
+ 把用户添加到相应的组
+－－－
+系统中的用户分为三种：
+超级管理员   UID==0 
+系统内置用户 UID 1－499  
+普通用户    UID>=500
+/etc/passwd
+[root@server pg]# head -n 1 /etc/passwd 
+root:x:0:0:root:/root:/bin/bash
+
+用户名:x:UID:GID:描述信息:用户的家目录:用户登录时所使用的shell程序
+
+useradd username
+useradd pgpg
+tail -n 1 /etc/passwd
+pgpg:x:501:501::/home/pgpg:/bin/bash
+
+/etc/group
+pgpg:x:501:
+组名:给密码:GID:组成员列表
+
+－总结：－－－－－－－－－－－
+当useradd username
+1 、 会在/etc/passwd文件中记录一行新用户的信息，一共7个字段。其中 UID字段是从500开始往后。而登录SHELL，也就是第七个字段默认是/bin/bash
+2 、 会自动创建新用户的家目录
+   默认在/home/下创建一个与用户名同名的目录
+3 、 创建一个同名的组,作为它的默认的主要的组
+
+－－－用户创建成功，需要给其设置密码－－－
+passwd username
+[root@server pg]# passwd -d pgpg
+
+man 5 passwd
+
+作业1：
+man 5 shadow
+中文解释/etc/shadow文件中9个字段的含义
+
+/etc/gshadow
+[root@server pg]# tail -n 1 /etc/gshadow
+pgpg:!::
+组名:组密码:组管理员:组成员
+
+groupadd g_name
+gpasswd -a u_name g_name
+gpasswd -d u_name g_name
+[root@server pg]# gpasswd -A pgpg g1
+[root@server pg]# tail -n 1 /etc/gshadow
+g1:!:pgpg:
+
+userdel username
+userdel -r username
+groupdel groupname
+
+
+------扩展useradd命令的更多选项--------
+[root@server /]# useradd -u 600 -c "test user" -d /testhome -s /bin/csh test1
+[root@server /]# grep test1 /etc/passwd
+test1:x:600:600:test user:/testhome:/bin/csh
+[root@server /]# groupadd -g 700 g2
+[root@server /]# grep g2 /etc/group
+g2:x:700:
+-g 选项用于指定用户的主要的组是g2组
+[root@server /]# useradd -g 700 -u 601 test2
+[root@server /]# grep test2 /etc/passwd
+test2:x:601:700::/home/test2:/bin/bash
+-G 表示把g2设置为test3的附加组
+[root@server pg]# useradd -G g2 test3
+-----------
+
+useradd -g N user1
+useradd -G N user2
+
+--修改已经存在的用户和组的相关信息-----
+usermod 
+groupmod
+
+把pgpg改名为pg
+[root@server /]# usermod -l pg pgpg
+[root@server /]# usermod -L test1[root@server /]# usermod -U test1
+
+[root@server /]# groupmod -n aa gg
+
+[root@server /]# echo 1234 | passwd --stdin test1
+
+－－－－－－－－－－－－－
+ls /etc/login.defs
+ls /etc/skel/
+
+su - username 
+id [username]
+groups [username]
+| 管道 ：把前一个命令的输出 交给后一个命令做输入
+
+＝＝＝＝权限管理＝＝＝＝＝＝＝＝＝＝＝＝＝
+ls -l 
+rwxr-xr-x root root /home
+
+chown [-R]  username  dirname
+chgrp [-R]  groupname  dirname
+
+chmod [-R]  字母法表示权限  filename
+u   user
+g   group 
+o   other
+a   all
+chmod [-R]  数字法表示权限  filename
+r  4
+w  2
+x  1
+
+作业2：证明对于普通文件的rwx权限的含义
+作业3：
+ useradd pg
+ echo 123 |　passwd --stdin pg
+ su - pg
+ $passwd 使用此命令修改自己的密码
+
+[root@server /]#ls /etc/shadow /etc/passwd -l
+-rw-r--r-- 1 root root 1708 08-03 15:47 /etc/passwd
+-r-------- 1 root root 1114 08-03 15:47 /etc/shadow
+
+
+
+
+
+
+
+
+
+
+
