@@ -1,0 +1,37 @@
+
+15. lcd
+========
+1st. module
+-----------
+	. 硬件连线图
+Frame Rate = 1/ [ { (VSPW+1) + (VBPD+1) + (LIINEVAL + 1) + (VFPD+1) } x {(HSPW+1) + (HBPD +1) + (HFPD+1) + (HOZVAL + 1) } x { 2 x ( CLKVAL+1 ) / ( HCLK ) } ]
+
+60 = 1/[{480 * 272} * {2 * (x + 1)/100mhz}]
+60 = 1/[{480 * 272} * {(x + 1)/50m}]
+60 * 480 * 272 * (x + 1) = 50m
+x + 1 = 50m/60*480*272
+x + 1 = 6
+x = 5
+
+	. datasheet
+
+	. 框图
+	
+	. 软件体系结构
+	hw->arm->ioremap->module->bus->class->char->syscall->lib->app
+
+	. framebuffer
+	void *dma_alloc_writecombine(struct device *dev, size_t size, dma_addr_t *handle, gfp_t gfp)
+
+	virt = dma_alloc_writecombine(NULL, 分配多大内存, &phys, GFP_KERNEL);	
+
+
+2nd. 总线
+---------
+	. platform
+
+3rd. char
+---------
+
+4th. 数码相框
+-------------

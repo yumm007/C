@@ -4,30 +4,32 @@
 #include <linux/errno.h>
 #include <asm/io.h>
 #include <asm/sizes.h>
+#include <linux/dma-mapping.h>
+#include <linux/platform_device.h>
 
 #include "common.h"
 
-#define LCD_WIDTH			480
+#define LCD_WIDTH		480
 #define LCD_HEIGHT		272
-#define LCD_REG_BASE		0x4D000000
+#define LCD_REG_BASE	0x4D000000
 #define GPIO_REG_BASE	0x56000000
 
 struct __lcd_st {
 	unsigned long reg_virt, gpio_virt;
 	unsigned long lcdcon[5];
 	unsigned long lcdadd[3];
+	unsigned int  lcdadd_old[3];
 	unsigned long gpbcon, gpbdat;
 	unsigned long gpccon, gpcup;
 	unsigned long gpdcon, gpdup;
 
 	int	width, height;
-	void	*fb_buf;
+	unsigned long fb_buf_virt, fb_buf_phys;
 
 	int (*config)(struct __lcd_st *);
 	int (*enable)(struct __lcd_st *);
 	int (*disable)(struct __lcd_st *);
 };
-
 static struct __lcd_st *lcd = NULL;
 
 static int lcd_config(struct __lcd_st *l) {
@@ -60,9 +62,14 @@ static int lcd_config(struct __lcd_st *l) {
 	setval(l->lcdcon[4], 0x3, 2, 8);
 	setval(l->lcdcon[4], 0x1, 1, 11);
 
-	*(unsigned int *)(l->lcdadd[0]) = (unsigned long)(l->fb_buf) >> 1;
-	*(unsigned int *)(l->lcdadd[1]) = ((unsigned long)(l->fb_buf) \
-												+ l->width * l->height * 2) >> 1;
+	//addr[3] 需要添物理地址
+	l->lcdadd_old[0] = *(unsigned int *)(l->lcdadd[0]);
+	l->lcdadd_old[1] = *(unsigned int *)(l->lcdadd[1]);
+	l->lcdadd_old[2] = *(unsigned int *)(l->lcdadd[2]);
+
+	*(unsigned int *)(l->lcdadd[0]) = l->fb_buf_phys >> 1;
+	*(unsigned int *)(l->lcdadd[1]) = (l->fb_buf_phys \
+									  + l->width * l->height * 2) >> 1;
 	*(unsigned int *)(l->lcdadd[2]) = LCD_WIDTH;
 
 	return 0;
@@ -113,8 +120,10 @@ static int fill_struct_value(struct __lcd_st *l) {
 	l->width	 = LCD_WIDTH;
 	l->height = LCD_HEIGHT;
 
-	l->fb_buf = kmalloc(LCD_WIDTH * LCD_HEIGHT * 2, GFP_KERNEL);
-	if (l->fb_buf == NULL) {
+	l->fb_buf_virt = (unsigned long)dma_alloc_writecombine(NULL, \
+								LCD_WIDTH * LCD_HEIGHT * 2, \
+								(dma_addr_t *)(&l->fb_buf_phys), GFP_KERNEL);
+	if ((unsigned int *)(l->fb_buf_virt) == NULL) {
 		printk("alloc memory for fb_buf failed.\n");
 		ret = -ENOMEM;
 		goto malloc_fb_err;
@@ -131,7 +140,17 @@ malloc_fb_err:
 	return ret;
 }
 
-static int lcd_init(void){
+#define set_col_565(r, g, b)	(((r) << 11) | (((g) & 0x3f) << 6) | ((b) & 0x1f))
+static void lcd_test(struct __lcd_st *l) {
+	unsigned short *buf = (unsigned short *)(l->fb_buf_virt);
+	int i = 0, j = l->width * l->height;
+
+	for (; i < j; i++)
+		buf[i] = (unsigned short)set_col_565(255, 0, 0);
+
+} 
+
+static int my_lcd_init(void){
 	int ret;
 
 	if ((lcd = kmalloc(sizeof(struct __lcd_st), GFP_KERNEL)) == NULL) {
@@ -146,6 +165,8 @@ static int lcd_init(void){
 	lcd->config(lcd);
 	lcd->enable(lcd);
 
+	lcd_test(lcd);
+
 	return 0;
 
 /*if error*/
@@ -155,7 +176,24 @@ malloc_lcd_err:
 	return ret;
 }
 
+static struct platform_driver my_lcd_driver = {
+	.probe	= my_lcd_init,
+	.remove	= my_lcd_remove,
+	.driver.name	= "my_lcd_device"
+};
+
+static int lcd_init(void) {
+	return platform_driver_register(&my_lcd_driver);
+}
+
 static void lcd_exit(void){
+	iounmap((unsigned int *)(lcd->reg_virt));
+	iounmap((unsigned int *)(lcd->gpio_virt));
+	*(unsigned int *)(lcd->lcdadd[0]) = lcd->lcdadd_old[0];
+	*(unsigned int *)(lcd->lcdadd[1]) = lcd->lcdadd_old[1];
+	*(unsigned int *)(lcd->lcdadd[2]) = lcd->lcdadd_old[2];
+	dma_free_coherent(NULL, lcd->width * lcd->height * 2, \
+						(void *)(lcd->fb_buf_virt), (dma_addr_t)(lcd->fb_buf_phys));
 	kfree(lcd);
 }
 
