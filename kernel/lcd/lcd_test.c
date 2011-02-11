@@ -138,6 +138,8 @@ static void restore_struct_value(struct __lcd_st *l) {
 	*(unsigned int *)(lcd->lcdadd[0]) = lcd->lcdadd_old[0];
 	*(unsigned int *)(lcd->lcdadd[1]) = lcd->lcdadd_old[1];
 	*(unsigned int *)(lcd->lcdadd[2]) = lcd->lcdadd_old[2];
+	dma_free_coherent(NULL, lcd->width * lcd->height * 2, \
+						(void *)(lcd->fb_buf_virt), (dma_addr_t)(lcd->fb_buf_phys));
 } 
 
 #define set_col_565(r, g, b)	(((r) << 11) | (((g) & 0x3f) << 6) | ((b) & 0x1f))
@@ -158,7 +160,6 @@ static void lcd_test(struct __lcd_st *l) {
 static int my_lcd_probe(struct platform_device *dev) {
 	int ret;
 
-	printk("%s\n", __func__);
 	if ((lcd = kmalloc(sizeof(struct __lcd_st), GFP_KERNEL)) == NULL) {
 		printk("malloc alloc memery for lcd failed.\n");
 		ret = -ENOMEM;
@@ -189,7 +190,10 @@ malloc_lcd_err:
 }
 
 static int my_lcd_remove(struct platform_device *dev) {
+	iounmap((unsigned int *)(lcd->reg_virt));
+	iounmap((unsigned int *)(lcd->gpio_virt));
 	restore_struct_value(lcd);
+	kfree(lcd);
 	return 0;
 }
 
@@ -204,12 +208,7 @@ static int lcd_init(void) {
 }
 
 static void lcd_exit(void){
-	iounmap((unsigned int *)(lcd->reg_virt));
-	iounmap((unsigned int *)(lcd->gpio_virt));
-	dma_free_coherent(NULL, lcd->width * lcd->height * 2, \
-						(void *)(lcd->fb_buf_virt), (dma_addr_t)(lcd->fb_buf_phys));
 	platform_driver_unregister(&my_lcd_driver);
-	kfree(lcd);
 }
 
 module_init(lcd_init);
