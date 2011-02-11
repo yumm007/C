@@ -3,5 +3,5 @@ name = lcd_test
 obj-m := $(name).o
 
 clean:
-	@rm -f $(name).ko $(name).mod.c  $(name).mod.o  $(name).o  modules.order  Module.symvers
+	@rm -f testopen $(name).ko $(name).mod.c  $(name).mod.o  *.o  modules.order  Module.symvers
 

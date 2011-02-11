@@ -2,6 +2,7 @@
 #include <linux/init.h>
 #include <linux/slab.h>
 #include <linux/errno.h>
+#include <linux/fs.h>
 #include <asm/io.h>
 #include <asm/sizes.h>
 #include <linux/dma-mapping.h>
@@ -153,8 +154,47 @@ static void lcd_test(struct __lcd_st *l) {
 } 
 
 //字符设备杂设备类
+static int lcd_open(struct inode *node, struct file *filp) {
+	lcd_test(lcd);
+	return 0;
+}
+static int lcd_release(struct inode *node, struct file *filp) {
 
+	return 0;
+}
+static ssize_t lcd_read(struct file *filp, char __user *user_buf, size_t buf_size, loff_t *off) {
 
+	return 0;
+}
+
+static ssize_t lcd_write(struct file *filp, const char __user *userbuf, size_t buf_size, loff_t *off) {
+
+	return 0;
+}
+
+static int lcd_mmap(struct file *filp, struct vm_area_struct *vm) {
+
+	return 0;
+}
+
+static int lcd_fasync(int fd, struct file *filp, int mode) {
+
+	return 0;
+}
+		
+static struct file_operations lcd_fops = {
+	.read	= lcd_read,
+	.write	= lcd_write,
+	.mmap	= lcd_mmap,
+	.open	= lcd_open,
+	.fasync	= lcd_fasync,
+	.release= lcd_release,
+};
+
+static struct miscdevice lcd_misc = {
+	.name	= "my_lcd",
+	.fops	= &lcd_fops,
+};
 
 //平台总线
 static int my_lcd_probe(struct platform_device *dev) {
@@ -173,10 +213,10 @@ static int my_lcd_probe(struct platform_device *dev) {
 
 	lcd->config(lcd);
 	lcd->enable(lcd);
-	lcd_test(lcd);
+	//lcd_test(lcd);
 
-	//if ((ret = misc_register(&lcd_misc)))
-	//	goto misc_reg_err;
+	if ((ret = misc_register(&lcd_misc)))
+		goto misc_reg_err;
 
 	return 0;
 
@@ -193,6 +233,7 @@ static int my_lcd_remove(struct platform_device *dev) {
 	iounmap((unsigned int *)(lcd->reg_virt));
 	iounmap((unsigned int *)(lcd->gpio_virt));
 	restore_struct_value(lcd);
+	misc_deregister(&lcd_misc);
 	kfree(lcd);
 	return 0;
 }
