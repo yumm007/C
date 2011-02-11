@@ -12,7 +12,7 @@
 #include "common.h"
 
 #define LCD_WIDTH		480
-#define LCD_HEIGHT		272
+#define LCD_HEIGHT	272
 
 struct __lcd_st {
 	unsigned long reg_virt, gpio_virt;
@@ -168,13 +168,14 @@ static ssize_t lcd_read(struct file *filp, char __user *user_buf, size_t buf_siz
 }
 
 static ssize_t lcd_write(struct file *filp, const char __user *userbuf, size_t buf_size, loff_t *off) {
-
+	
 	return 0;
 }
 
 static int lcd_mmap(struct file *filp, struct vm_area_struct *vm) {
-
-	return 0;
+	vm->vm_page_prot = pgprot_noncached(vm->vm_page_port);
+	return remap_pfn_range(vm, vm->start, lcd->fb_buf_phys, \
+				vm->end - vm->start, vm->vm_page_prot);
 }
 
 static int lcd_fasync(int fd, struct file *filp, int mode) {
