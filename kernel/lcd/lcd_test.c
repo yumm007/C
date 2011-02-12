@@ -4,6 +4,7 @@
 #include <linux/errno.h>
 #include <linux/fs.h>
 #include <asm/io.h>
+#include <linux/mm.h>
 #include <asm/sizes.h>
 #include <linux/dma-mapping.h>
 #include <linux/platform_device.h>
@@ -173,9 +174,9 @@ static ssize_t lcd_write(struct file *filp, const char __user *userbuf, size_t b
 }
 
 static int lcd_mmap(struct file *filp, struct vm_area_struct *vm) {
-	vm->vm_page_prot = pgprot_noncached(vm->vm_page_port);
-	return remap_pfn_range(vm, vm->start, lcd->fb_buf_phys, \
-				vm->end - vm->start, vm->vm_page_prot);
+	vm->vm_page_prot = pgprot_noncached(vm->vm_page_prot);
+	return remap_pfn_range(vm, vm->vm_start, lcd->fb_buf_phys >> 12, \
+				vm->vm_end - vm->vm_start, vm->vm_page_prot);
 }
 
 static int lcd_fasync(int fd, struct file *filp, int mode) {
@@ -236,6 +237,7 @@ static int my_lcd_remove(struct platform_device *dev) {
 	restore_struct_value(lcd);
 	misc_deregister(&lcd_misc);
 	kfree(lcd);
+	printk("%s\n", __func__);
 	return 0;
 }
 
