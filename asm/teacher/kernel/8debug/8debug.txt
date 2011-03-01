@@ -1,2 +1,0 @@
-. printk/printf (#ifdef#else#endif 开关)
-. 电灯大法

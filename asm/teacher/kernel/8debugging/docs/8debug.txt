@@ -1,8 +1,0 @@
-. printk/printf (#ifdef#else#endif 开关)
-. 电灯大法
-. 远程gdb调试
-. oops
-
-
-
-

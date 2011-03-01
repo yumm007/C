@@ -1,7 +1,0 @@
-TARGET ?= app
-CROSS_COMPILE = arm-linux-
-CC = $(CROSS_COMPILE)gcc
-
-all:
-	$(CC) -o $(TARGET) $(TARGET:=.c)
-

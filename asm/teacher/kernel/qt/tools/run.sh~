@@ -1,5 +1,0 @@
-#!/bin/sh
-make distclean
-source /opt/setenv-qt-arm.sh
-qmake
-make
