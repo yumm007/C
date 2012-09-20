@@ -5,8 +5,6 @@
 #include <netinet/in.h>
 
 #include <osip2/osip.h>
-//#include <osipparser2/osip_port.h>
-//#include <osipparser2/osip_parser.h>
 
 #define MESSAGE_MAX_LENGTH 4000
 #define MAX_ADDR_STR 128
@@ -34,7 +32,7 @@ int networkInit()
 	address.sin_family = PF_INET;
 	address.sin_addr.s_addr = htonl(INADDR_ANY);
 	address.sin_port = htons(SIP_PORT);
-	printf("sipSock = %d/n",sipSock);
+	printf("sipSock = %d\n",sipSock);
 	if(bind(sipSock,(struct sockaddr *)&address,sizeof(address)) < 0){
 		perror("networkInit: error binding socket");
 		return -1;
@@ -77,14 +75,14 @@ int SendMsg(osip_transaction_t *tr,osip_message_t *sip, char *host,int port, int
 	int i;
 	int status;
 
-	printf("SendMsg/n");
+	printf("SendMsg\n");
 
 	if((i = osip_message_to_str(sip, &msgP, &msgLen)) != 0){
-		OSIP_TRACE(osip_trace(__FILE__,__LINE__,OSIP_BUG,NULL,"failed to convert message/n"));
+		OSIP_TRACE(osip_trace(__FILE__,__LINE__,OSIP_BUG,NULL,"failed to convert message\n"));
 		return -1;
 	}
 	if(!networkMsgSend(sipSock,msgP,strlen(msgP),host,port))
-		OSIP_TRACE(osip_trace(__FILE__,__LINE__,OSIP_INFO1,NULL,"Time: Udp message sent: /n%s/n",msgP));
+		OSIP_TRACE(osip_trace(__FILE__,__LINE__,OSIP_INFO1,NULL,"Time: Udp message sent: \n%s\n",msgP));
 
 	return 0;
 }
@@ -92,17 +90,17 @@ int SendMsg(osip_transaction_t *tr,osip_message_t *sip, char *host,int port, int
 
 void cb_rcvICTRes(int type, osip_transaction_t *pott,osip_message_t *pomt)
 {
-	printf("cb_rcvICTRes/n");
+	printf("\n~~~~~~~cb_rcvICTRes~~~~~~~~~~~\n");
 }
 
 void cb_rcvNICTRes(int type, osip_transaction_t *pott,osip_message_t *pomt)
 {
-	printf("cb_rcvNICTRes/n");
+	printf("\n~~~~~~~~~~~~~~~cb_rcvNICTRes~~~~~~~~~~~~~~~`\n");
 }
 
 void cb_rcvreq(int type, osip_transaction_t *pott,osip_message_t *pomt)
 {
-	printf("cb_rcvreq/n");
+	printf("\n~~~~~~~~~~~~~~~cb_rcvreq~~~~~~~~~~~~\n");
 }
 
 
@@ -178,7 +176,7 @@ int bSipRegisterBuild(osip_message_t **regMsgPtrPtr)
 	char expires[10]; 
 
 	if((status = osip_message_init(&regMsgPtr)) != 0){
-		OSIP_TRACE(osip_trace(__FILE__,__LINE__,OSIP_BUG,NULL,"Can't init message!/n"));
+		OSIP_TRACE(osip_trace(__FILE__,__LINE__,OSIP_BUG,NULL,"Can't init message!\n"));
 		return -1;
 	}
 	osip_message_set_method(regMsgPtr, osip_strdup("REGISTER"));
@@ -186,7 +184,7 @@ int bSipRegisterBuild(osip_message_t **regMsgPtrPtr)
 	osip_uri_init(&(regMsgPtr->req_uri));
 	if ( ( status = osip_uri_parse(regMsgPtr->req_uri, SIP_PROXY) ) != 0)
 	{
-		OSIP_TRACE(osip_trace(__FILE__,__LINE__,OSIP_BUG,NULL,"uri parse failed!/n"));
+		OSIP_TRACE(osip_trace(__FILE__,__LINE__,OSIP_BUG,NULL,"uri parse failed!\n"));
 		osip_message_free(regMsgPtr);
 		return -1;
 	}
@@ -198,7 +196,7 @@ int bSipRegisterBuild(osip_message_t **regMsgPtrPtr)
 	osip_message_set_from(regMsgPtr, SIP_FROM);
 
 	if((status = osip_call_id_init(&callidPtr)) != 0 ){
-		OSIP_TRACE(osip_trace(__FILE__,__LINE__,OSIP_BUG,NULL,"call id failed!/n"));
+		OSIP_TRACE(osip_trace(__FILE__,__LINE__,OSIP_BUG,NULL,"call id failed!\n"));
 		osip_message_free(regMsgPtr);
 		return -1;
 	}
@@ -212,7 +210,7 @@ int bSipRegisterBuild(osip_message_t **regMsgPtrPtr)
 	regMsgPtr->call_id = callidPtr;
 
 	if((status = osip_cseq_init(&cseqPtr)) != 0 ){
-		OSIP_TRACE(osip_trace(__FILE__,__LINE__,OSIP_BUG,NULL,"seq init failed!/n"));
+		OSIP_TRACE(osip_trace(__FILE__,__LINE__,OSIP_BUG,NULL,"seq init failed!\n"));
 		osip_message_free(regMsgPtr);
 		return -1;
 	}
@@ -270,28 +268,29 @@ void processSipMsg()
 	int status;
 
 	if((msgLen = networkMsgRecv(sipSock,msg,MESSAGE_MAX_LENGTH,&sa)) > 0){
-		printf("processSipMsg: RECEIVED MSG/n");
-		printf("%s/n",msg);
+		printf("processSipMsg: RECEIVED MSG\n");
+		printf("%s\n",msg);
 		sipevent = osip_parse(msg,msgLen);
 		if((sipevent==NULL)||(sipevent->sip==NULL)){
-			printf("Could not parse SIP message/n");
+			printf("Could not parse SIP message\n");
 			osip_event_free(sipevent);
 			return;
 		}
 	}
 	osip_message_fix_last_via_header(sipevent->sip,(char *)inet_ntoa(sa.sin_addr),ntohs(sa.sin_port));
 	if((status = osip_find_transaction_and_add_event(osip,sipevent)) != 0){
-		printf("New transaction!/n");
+		printf("New transaction!\n");
 		if(MSG_IS_REQUEST(sipevent->sip)){
-			printf("Got New Request/n");;
+			printf("Got New Request\n");;
 		}else if(MSG_IS_RESPONSE(sipevent->sip)){
-			printf("Bad Message:%s/n",msg);
+			printf("Bad Message:%s\n",msg);
 			osip_event_free(sipevent);
 		}else{
-			printf("Unsupported message:%s/n",msg);
+			printf("Unsupported message:%s\n",msg);
 			osip_event_free(sipevent);
 		}
 	}
+	printf("---exit processSipMsg()\n");
 }
 
 int main()
@@ -299,19 +298,19 @@ int main()
 	int i,result;
 	fd_set readfds;
 	struct timeval tv;
-	printf("Initializing OSIP/n");
+	printf("Initializing OSIP\n");
 	TRACE_INITIALIZE(END_TRACE_LEVEL,NULL);
 	if(networkInit() < 0){
-		printf("ERROR Initializing NETWORK/n");
+		printf("ERROR Initializing NETWORK\n");
 		return -1;
 	}
 	i=osip_init(&osip);
 	if (i!=0)
 		return -1;
-	printf("Setting Callbacks/n");
+	printf("Setting Callbacks\n");
 	setCallbacks(osip);
-	printf("Entering Main loop 1/n");
-	OSIP_TRACE(osip_trace(__FILE__,__LINE__,OSIP_BUG,NULL,"Check OSIP_TRACE init/n"));
+	printf("Entering Main loop 1\n");
+	OSIP_TRACE(osip_trace(__FILE__,__LINE__,OSIP_BUG,NULL,"Check OSIP_TRACE init\n"));
 	bSipRegister("This is Test Cookie");
 	while(1){
 		FD_ZERO(&readfds);
@@ -324,7 +323,7 @@ int main()
 			exit(1);
 		}
 		if(FD_ISSET(sipSock,&readfds)){
-			printf("main: Received SIP message/n");
+			printf("main: Received SIP message\n");
 			processSipMsg();
 		}
 		osip_ict_execute(osip);
