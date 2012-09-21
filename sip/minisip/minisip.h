@@ -29,7 +29,7 @@ typedef struct SIP_MSG_T {
 	char *to;
 	char *to_tag;
 
-	int cseq_num;
+	char *cseq_num;
 	char *cseq_method;
 	char *allow;
 	
@@ -47,7 +47,10 @@ typedef struct SIP_MSG_T {
 	char *expires;
 	char *max_forwards;
 
-	char *www_ahth_nonce;
+	char *www_auth_realm;
+	char *www_auth_nonce;
+
+	char *date;
 
 } SIP_MSG_T;
 
