@@ -43,27 +43,28 @@ static int process_key(const char *line, const char *key, char delim, char *spac
 	return len;
 }
 
-static int process_line(const char *line, char *space, struct SIP_MSG_T *msg) {
+static int process_line(const char *line, char *space, SIP_MSG_T *msg) {
 	int len = 0, n = 0;
 
 	//printf("process_line: %s\n", line);
 	//head
-	if (strstr(line, "Trying")) {
-		msg->status = SIP_TRYING;
-		return 0;
-	} else if (strstr(line, "Unauthorized")) {
-		msg->status = SIP_UNAUTH;
-		return 0;
-	} else if (strstr(line, "OPTIONS")) {
-		msg->status = SIP_OPTIONS;
-		return 0;
-	} else if (strstr(line, "200 OK")) {
-		msg->status = SIP_OK;
-		return 0;
-	}
+	#define ifhead(key, s) \
+		if (strstr(line, key)) {\
+			msg->status = s;\
+			len = strlen(line);\
+			memcpy(space, line, len -1);\
+			msg->status_char = space;\
+			return len;\
+		}
+	
+	ifhead("REGISTER ", SIP_REGISTER);
+	ifhead("100 Trying", SIP_100_TRYING);
+	ifhead("401 Unauthorized", SIP_401_UNAUTH);
+	ifhead("OPTIONS ", SIP_OPTIONS);
+	ifhead("200 OK", SIP_200_OK);
 
 	#define find_key(key, delim, point) \
-		if ((n = process_key(line, key, delim, space)) > 1) {\
+		if ((n = process_key(line, key, delim, space)) > 0) {\
 			point = space;\
 			space = space + n +1;\
 			len += n + 1;\
@@ -120,8 +121,8 @@ static int process_line(const char *line, char *space, struct SIP_MSG_T *msg) {
 		return len;
 	}
 
-	if (strstr(line, "MaX-Forwards: ")) {
-		find_key("MaX-Forwards: ", ';', msg->max_forwards);
+	if (strstr(line, "Max-Forwards: ")) {
+		find_key("Max-Forwards: ", ';', msg->max_forwards);
 		return len;
 	}
 
@@ -135,7 +136,8 @@ static int process_line(const char *line, char *space, struct SIP_MSG_T *msg) {
 		return len;
 	}
 
-	if (strstr(line, "WWW-Authenticate")) {
+	if (strstr(line, "WWW-Authenticate: ")) {
+		find_key("WWW-Authenticate: ", ';', msg->www_auth);
 		find_key("realm=", ',', msg->www_auth_realm);
 		find_key("nonce=", ';', msg->www_auth_nonce);
 		return len;

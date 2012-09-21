@@ -1,7 +1,9 @@
 #include <stdio.h>
+#include <string.h>
 #include "minisip.h"
 
 static void sip_msg_dump(SIP_MSG_T *msg) {
+	printf("Head: %s\n", msg->status_char);
 	printf("Via: %s\n", msg->via);
 	printf("rport: %s\n", msg->via_rport);
 	printf("received: %s\n", msg->via_rcvd);
@@ -27,22 +29,32 @@ static void sip_msg_dump(SIP_MSG_T *msg) {
 	printf("Realm: %s\n", msg->www_auth_realm);
 	printf("nonce: %s\n", msg->www_auth_nonce);
 	printf("Date: %s\n", msg->date);
-	printf("Content-Lenght: %s\n", msg->content_length);
+	printf("Content-Length: %s\n", msg->content_length);
 }
 
 static SIP_T sip;
+static char tmp[2048];
 int main(int argc, char **argv) {
-
 	//for test
-	FILE *fp = fopen("log", "r");
-	char tmp[2048];
-
-	fread(tmp, 1, 2048, fp);
-	fclose(fp);
-
+	int i;
+	FILE *fp;
 	sip_init(&sip);
-	sip_str_to_msg(&sip.msg, tmp);
-	sip_msg_dump(&sip.msg);
+
+	for (i = 1; i < argc; i++) {
+		if ( (fp = fopen(argv[i], "r")) == NULL) {
+			perror(argv[i]);
+			continue;
+		}
+		memset(tmp, 0, sizeof(tmp));
+		fread(tmp, 1, 2048, fp);
+		fclose(fp);
+
+		sip_str_to_msg(&sip.msg, tmp);
+		//sip_msg_dump(&sip.msg);
+		memset(tmp, 0, sizeof(tmp));
+		sip_msg_to_str(&sip, tmp);
+		printf("%s", tmp);
+	}
 
 	return 0;
 }

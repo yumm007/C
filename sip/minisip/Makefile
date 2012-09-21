@@ -1,4 +1,4 @@
-COBJECT=	main.o minisip.o
+COBJECT=	main.o minisip.o msg_to_str.o
 CFLAGS=		-Wall -g
 BIN=		sip-client
 

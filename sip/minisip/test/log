@@ -1,0 +1,209 @@
+REGISTER sip:210.51.10.237 SIP/2.0
+Via: SIP/2.0/UDP 192.168.0.106:5060;rport;branch=z9hG4bKPjhGEbNFC.QfOOcMtDE6K9XIkbb08EQDVs
+Max-Forwards: 70
+From: <sip:8204@210.51.10.237>;tag=gB5Dz9-2L-Lw1-JCMEbKYuRw55.lAvRx
+To: <sip:8204@210.51.10.237>
+Call-ID: -s-31XmSU21rWFt4wEZUA5lkh1LqyPCM
+CSeq: 88 REGISTER
+Contact: <sip:8204@192.168.0.106:5060;ob>
+Expires: 300
+Allow: PRACK, INVITE, ACK, BYE, CANCEL, UPDATE, SUBSCRIBE, NOTIFY, REFER, MESSAGE, OPTIONS
+Content-Length:  0
+
+
+--end msg--
+16:34:03.545    pjsua_acc.c  ..Acc 0: Registration sent
+Press 'h' to hangup all calls, 'q' to quit
+16:34:03.554   pjsua_core.c  .RX 471 bytes Response msg 100/REGISTER/cseq=88 (rdata0xdb0b18) from UDP 210.51.10.237:5060:
+SIP/2.0 100 Trying
+Via: SIP/2.0/UDP 192.168.0.106:5060;branch=z9hG4bKPjhGEbNFC.QfOOcMtDE6K9XIkbb08EQDVs;received=111.193.108.24;rport=15058
+From: <sip:8204@210.51.10.237>;tag=gB5Dz9-2L-Lw1-JCMEbKYuRw55.lAvRx
+To: <sip:8204@210.51.10.237>
+Call-ID: -s-31XmSU21rWFt4wEZUA5lkh1LqyPCM
+CSeq: 88 REGISTER
+User-Agent: Freeiris2 Opensource Telephony Project
+Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, SUBSCRIBE, NOTIFY, INFO
+Supported: replaces
+Content-Length: 0
+
+
+--end msg--
+16:34:03.554   pjsua_core.c  .RX 569 bytes Response msg 401/REGISTER/cseq=88 (rdata0x7ffa24002908) from UDP 210.51.10.237:5060:
+SIP/2.0 401 Unauthorized
+Via: SIP/2.0/UDP 192.168.0.106:5060;branch=z9hG4bKPjhGEbNFC.QfOOcMtDE6K9XIkbb08EQDVs;received=111.193.108.24;rport=15058
+From: <sip:8204@210.51.10.237>;tag=gB5Dz9-2L-Lw1-JCMEbKYuRw55.lAvRx
+To: <sip:8204@210.51.10.237>;tag=as3c78053b
+Call-ID: -s-31XmSU21rWFt4wEZUA5lkh1LqyPCM
+CSeq: 88 REGISTER
+User-Agent: Freeiris2 Opensource Telephony Project
+Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, SUBSCRIBE, NOTIFY, INFO
+Supported: replaces
+WWW-Authenticate: Digest algorithm=MD5, realm="freeiris2", nonce="6c335515"
+Content-Length: 0
+
+
+--end msg--
+16:34:03.555   pjsua_core.c  ....TX 639 bytes Request msg REGISTER/cseq=89 (tdta0xdb44d0) to UDP 210.51.10.237:5060:
+REGISTER sip:210.51.10.237 SIP/2.0
+Via: SIP/2.0/UDP 192.168.0.106:5060;rport;branch=z9hG4bKPjgA8BvErj1UnfchgJ0xtOWdlMb7FL1uEg
+Max-Forwards: 70
+From: <sip:8204@210.51.10.237>;tag=gB5Dz9-2L-Lw1-JCMEbKYuRw55.lAvRx
+To: <sip:8204@210.51.10.237>
+Call-ID: -s-31XmSU21rWFt4wEZUA5lkh1LqyPCM
+CSeq: 89 REGISTER
+Contact: <sip:8204@192.168.0.106:5060;ob>
+Expires: 300
+Allow: PRACK, INVITE, ACK, BYE, CANCEL, UPDATE, SUBSCRIBE, NOTIFY, REFER, MESSAGE, OPTIONS
+Authorization: Digest username="8204", realm="freeiris2", nonce="6c335515", uri="sip:210.51.10.237", response="0e819ffc1016f0479c60503d9ba132e5", algorithm=MD5
+Content-Length:  0
+
+
+--end msg--
+16:34:03.558   pjsua_core.c  .RX 471 bytes Response msg 100/REGISTER/cseq=89 (rdata0x7ffa24002908) from UDP 210.51.10.237:5060:
+SIP/2.0 100 Trying
+Via: SIP/2.0/UDP 192.168.0.106:5060;branch=z9hG4bKPjgA8BvErj1UnfchgJ0xtOWdlMb7FL1uEg;received=111.193.108.24;rport=15058
+From: <sip:8204@210.51.10.237>;tag=gB5Dz9-2L-Lw1-JCMEbKYuRw55.lAvRx
+To: <sip:8204@210.51.10.237>
+Call-ID: -s-31XmSU21rWFt4wEZUA5lkh1LqyPCM
+CSeq: 89 REGISTER
+User-Agent: Freeiris2 Opensource Telephony Project
+Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, SUBSCRIBE, NOTIFY, INFO
+Supported: replaces
+Content-Length: 0
+
+
+--end msg--
+16:34:03.564   pjsua_core.c  .RX 549 bytes Request msg OPTIONS/cseq=102 (rdata0x7ffa24002908) from UDP 210.51.10.237:5060:
+OPTIONS sip:8204@192.168.0.106:5060;ob SIP/2.0
+Via: SIP/2.0/UDP 210.51.10.237:5060;branch=z9hG4bK55fade33;rport
+From: "Unknown" <sip:Unknown@210.51.10.237>;tag=as306d6371
+To: <sip:8204@192.168.0.106:5060;ob>
+Contact: <sip:Unknown@210.51.10.237>
+Call-ID: 73802c885bce364b726b7fec4b2bb9d0@210.51.10.237
+CSeq: 102 OPTIONS
+User-Agent: Freeiris2 Opensource Telephony Project
+Max-Forwards: 70
+Date: Fri, 21 Sep 2012 16:20:35 GMT
+Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, SUBSCRIBE, NOTIFY, INFO
+Supported: replaces
+Content-Length: 0
+
+
+--end msg--
+16:34:03.564   pjsua_core.c  .TX 688 bytes Response msg 200/OPTIONS/cseq=102 (tdta0x7ffa24004830) to UDP 210.51.10.237:5060:
+SIP/2.0 200 OK
+Via: SIP/2.0/UDP 210.51.10.237:5060;rport=5060;received=210.51.10.237;branch=z9hG4bK55fade33
+Call-ID: 73802c885bce364b726b7fec4b2bb9d0@210.51.10.237
+From: "Unknown" <sip:Unknown@210.51.10.237>;tag=as306d6371
+To: <sip:8204@192.168.0.106;ob>;tag=z9hG4bK55fade33
+CSeq: 102 OPTIONS
+Allow: PRACK, INVITE, ACK, BYE, CANCEL, UPDATE, SUBSCRIBE, NOTIFY, REFER, MESSAGE, OPTIONS
+Accept: application/sdp, application/pidf+xml, application/xpidf+xml, application/simple-message-summary, message/sipfrag;version=2.0, application/im-iscomposing+xml, text/plain
+Supported: replaces, 100rel, timer, norefersub
+Allow-Events: presence, message-summary, refer
+Content-Length:  0
+
+
+--end msg--
+16:34:03.564   pjsua_core.c  .RX 588 bytes Response msg 200/REGISTER/cseq=89 (rdata0x7ffa24002908) from UDP 210.51.10.237:5060:
+SIP/2.0 200 OK
+Via: SIP/2.0/UDP 192.168.0.106:5060;branch=z9hG4bKPjgA8BvErj1UnfchgJ0xtOWdlMb7FL1uEg;received=111.193.108.24;rport=15058
+From: <sip:8204@210.51.10.237>;tag=gB5Dz9-2L-Lw1-JCMEbKYuRw55.lAvRx
+To: <sip:8204@210.51.10.237>;tag=as3c78053b
+Call-ID: -s-31XmSU21rWFt4wEZUA5lkh1LqyPCM
+CSeq: 89 REGISTER
+User-Agent: Freeiris2 Opensource Telephony Project
+Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, SUBSCRIBE, NOTIFY, INFO
+Supported: replaces
+Expires: 300
+Contact: <sip:8204@192.168.0.106:5060;ob>;expires=300
+Date: Fri, 21 Sep 2012 16:20:35 GMT
+Content-Length: 0
+
+
+--end msg--
+16:34:03.564    pjsua_acc.c  ....SIP outbound status for acc 0 is not active
+16:34:03.564    pjsua_acc.c  ....IP address change detected for account 0 (192.168.0.106:5060 --> 111.193.108.24:15058). Updating registration (using method 2)
+16:34:03.564    pjsua_acc.c  ....Acc 0: setting registration..
+16:34:03.564   pjsua_core.c  ......TX 549 bytes Request msg REGISTER/cseq=90 (tdta0x7ffa24004830) to UDP 210.51.10.237:5060:
+REGISTER sip:210.51.10.237 SIP/2.0
+Via: SIP/2.0/UDP 111.193.108.24:15058;rport;branch=z9hG4bKPjsxJSCQ3DUqAtDbPCaJT8XtADj1G8mV4F
+Max-Forwards: 70
+From: <sip:8204@210.51.10.237>;tag=qeLC3J6ox5d9wG1sjKOduSKRRrLiurRL
+To: <sip:8204@210.51.10.237>
+Call-ID: -s-31XmSU21rWFt4wEZUA5lkh1LqyPCM
+CSeq: 90 REGISTER
+Contact: <sip:8204@111.193.108.24:15058;transport=UDP;ob>
+Contact: <sip:8204@192.168.0.106:5060;ob>;expires=0
+Expires: 300
+Allow: PRACK, INVITE, ACK, BYE, CANCEL, UPDATE, SUBSCRIBE, NOTIFY, REFER, MESSAGE, OPTIONS
+Content-Length:  0
+
+
+--end msg--
+16:34:03.564    pjsua_acc.c  .....Acc 0: Registration sent
+16:34:03.570   pjsua_core.c  .RX 473 bytes Response msg 100/REGISTER/cseq=90 (rdata0x7ffa24002908) from UDP 210.51.10.237:5060:
+SIP/2.0 100 Trying
+Via: SIP/2.0/UDP 111.193.108.24:15058;branch=z9hG4bKPjsxJSCQ3DUqAtDbPCaJT8XtADj1G8mV4F;received=111.193.108.24;rport=15058
+From: <sip:8204@210.51.10.237>;tag=qeLC3J6ox5d9wG1sjKOduSKRRrLiurRL
+To: <sip:8204@210.51.10.237>
+Call-ID: -s-31XmSU21rWFt4wEZUA5lkh1LqyPCM
+CSeq: 90 REGISTER
+User-Agent: Freeiris2 Opensource Telephony Project
+Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, SUBSCRIBE, NOTIFY, INFO
+Supported: replaces
+Content-Length: 0
+
+
+--end msg--
+16:34:03.570   pjsua_core.c  .RX 571 bytes Response msg 401/REGISTER/cseq=90 (rdata0x7ffa24002908) from UDP 210.51.10.237:5060:
+SIP/2.0 401 Unauthorized
+Via: SIP/2.0/UDP 111.193.108.24:15058;branch=z9hG4bKPjsxJSCQ3DUqAtDbPCaJT8XtADj1G8mV4F;received=111.193.108.24;rport=15058
+From: <sip:8204@210.51.10.237>;tag=qeLC3J6ox5d9wG1sjKOduSKRRrLiurRL
+To: <sip:8204@210.51.10.237>;tag=as3c78053b
+Call-ID: -s-31XmSU21rWFt4wEZUA5lkh1LqyPCM
+CSeq: 90 REGISTER
+User-Agent: Freeiris2 Opensource Telephony Project
+Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, SUBSCRIBE, NOTIFY, INFO
+Supported: replaces
+WWW-Authenticate: Digest algorithm=MD5, realm="freeiris2", nonce="69ad630f"
+Content-Length: 0
+
+
+--end msg--
+16:34:03.570   pjsua_core.c  ....TX 710 bytes Request msg REGISTER/cseq=91 (tdta0x7ffa24004830) to UDP 210.51.10.237:5060:
+REGISTER sip:210.51.10.237 SIP/2.0
+Via: SIP/2.0/UDP 111.193.108.24:15058;rport;branch=z9hG4bKPjk6ID7F-SthVoTByi0tJzzhZXjkS8gzN9
+Max-Forwards: 70
+From: <sip:8204@210.51.10.237>;tag=qeLC3J6ox5d9wG1sjKOduSKRRrLiurRL
+To: <sip:8204@210.51.10.237>
+Call-ID: -s-31XmSU21rWFt4wEZUA5lkh1LqyPCM
+CSeq: 91 REGISTER
+Contact: <sip:8204@111.193.108.24:15058;transport=UDP;ob>
+Contact: <sip:8204@192.168.0.106:5060;ob>;expires=0
+Expires: 300
+Allow: PRACK, INVITE, ACK, BYE, CANCEL, UPDATE, SUBSCRIBE, NOTIFY, REFER, MESSAGE, OPTIONS
+Authorization: Digest username="8204", realm="freeiris2", nonce="69ad630f", uri="sip:210.51.10.237", response="e01f992bfabe62f4d3ec488694736bb4", algorithm=MD5
+Content-Length:  0
+
+
+--end msg--
+16:34:03.574   pjsua_core.c  .RX 473 bytes Response msg 100/REGISTER/cseq=91 (rdata0x7ffa24002908) from UDP 210.51.10.237:5060:
+SIP/2.0 100 Trying
+Via: SIP/2.0/UDP 111.193.108.24:15058;branch=z9hG4bKPjk6ID7F-SthVoTByi0tJzzhZXjkS8gzN9;received=111.193.108.24;rport=15058
+From: <sip:8204@210.51.10.237>;tag=qeLC3J6ox5d9wG1sjKOduSKRRrLiurRL
+To: <sip:8204@210.51.10.237>
+Call-ID: -s-31XmSU21rWFt4wEZUA5lkh1LqyPCM
+CSeq: 91 REGISTER
+User-Agent: Freeiris2 Opensource Telephony Project
+Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, SUBSCRIBE, NOTIFY, INFO
+Supported: replaces
+Content-Length: 0
+
+
+--end msg--
+16:34:03.576   pjsua_core.c  .RX 581 bytes Request msg OPTIONS/cseq=102 (rdata0x7ffa24002908) from UDP 210.51.10.237:5060:
+OPTIONS sip:8204@111.193.108.24:15058;transport=UDP;ob SIP/2.0
+Via: SIP/2.0/UDP 210.51.10.237:5060;branch=z9hG4bK2b767b48;rport
+From: "Unknown" <sip:Unknown@210.51.10.237>;tag=as4452c1eb
+To: <sip:8204@111.193.108.24:15058;transport=UDP;o

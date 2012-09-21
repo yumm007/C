@@ -5,9 +5,9 @@ typedef enum SIP_STATUS_T {
 
 	SIP_INIT,
 	SIP_REGISTER,
-	SIP_TRYING,
-	SIP_UNAUTH,
-	SIP_OK,
+	SIP_100_TRYING,
+	SIP_401_UNAUTH,
+	SIP_200_OK,
 	SIP_OPTIONS,
 	SIP_INCOMMING_CALL,
 	SIP_OUTING_CALL,
@@ -15,9 +15,10 @@ typedef enum SIP_STATUS_T {
 
 } SIP_STATUS_T;
 
-typedef struct SIP_MSG_T {
+typedef struct {
 
 	SIP_STATUS_T status;
+	char *status_char;
 
 	char *via;
 	char *via_rport;
@@ -46,7 +47,8 @@ typedef struct SIP_MSG_T {
 
 	char *expires;
 	char *max_forwards;
-
+	
+	char *www_auth;
 	char *www_auth_realm;
 	char *www_auth_nonce;
 
@@ -67,11 +69,12 @@ typedef struct {
 	//struct sockaddr_in sevr_addr;
 
 	//session information
-	struct SIP_MSG_T msg;
+	SIP_MSG_T msg;
 
 } SIP_T;
 
 int sip_init(SIP_T *sip);
 int sip_str_to_msg(SIP_MSG_T *msg, const char *data);
+void sip_msg_to_str(SIP_T *sip, char *buf);
 
 #endif

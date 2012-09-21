@@ -1,0 +1,11 @@
+SIP/2.0 100 Trying
+Via: SIP/2.0/UDP 192.168.0.106:5060;branch=z9hG4bKPjgA8BvErj1UnfchgJ0xtOWdlMb7FL1uEg;received=111.193.108.24;rport=15058
+From: <sip:8204@210.51.10.237>;tag=gB5Dz9-2L-Lw1-JCMEbKYuRw55.lAvRx
+To: <sip:8204@210.51.10.237>
+Call-ID: -s-31XmSU21rWFt4wEZUA5lkh1LqyPCM
+CSeq: 89 REGISTER
+User-Agent: Freeiris2 Opensource Telephony Project
+Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, SUBSCRIBE, NOTIFY, INFO
+Supported: replaces
+Content-Length: 0
+
