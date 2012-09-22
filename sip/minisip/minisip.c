@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "minisip.h"
 #include "sip_conf.h"
@@ -7,16 +8,29 @@
 #define BUF_SIZE 1024
 
 int sip_init(SIP_T *sip) {
-	static int init_flag = 0;
+	int sd;
 
-	if (init_flag == 0) {
-		//init socker, server addr
-		memset(sip, 0, sizeof(SIP_T));
-		init_flag = 1;
-	}
+	memset(sip, 0, sizeof(SIP_T));
 
-	//init other
+	if ((sd = socket(AF_INET, SOCK_DGRAM, 0)) ==-1) {
+        perror("socket:");
+        return -1;
+    }   
 
+    bzero(&sip->ser_addr, sizeof(sip->ser_addr));
+    sip->ser_addr.sin_family = AF_INET;
+    sip->ser_addr.sin_port = htons(5060);
+    sip->ser_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+
+    if (bind(sd, (void *)&sip->ser_addr, sizeof(sip->ser_addr)) == -1) {
+        close(sd);
+        perror("bind:");
+        return -1;
+    }   
+
+    sip->ser_addr.sin_addr.s_addr = inet_addr("210.51.10.237");
+
+    sip->sd = sd; 
 	return 0;
 }
 
@@ -48,12 +62,12 @@ static int process_line(const char *line, char *space, SIP_MSG_T *msg) {
 
 	//printf("process_line: %s\n", line);
 	//head
-	#define ifhead(key, s) \
+	#define ifhead(key, t) \
 		if (strstr(line, key)) {\
-			msg->status = s;\
+			msg->msg_type = t;\
 			len = strlen(line);\
 			memcpy(space, line, len -1);\
-			msg->status_char = space;\
+			msg->type_str = space;\
 			return len;\
 		}
 	

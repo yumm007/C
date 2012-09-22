@@ -31,9 +31,9 @@ void sip_msg_to_str(SIP_T *sip, char *buf) {
 #else
 	#define app(prefix, point, delim) _append(prefix, delim, point, buf)
 #endif
-	switch(msg->status) {
+	switch(msg->msg_type) {
 		case SIP_REGISTER:
-			app(NULL, msg->status_char, "\r\n");
+			app(NULL, msg->type_str, "\r\n");
 			app("Via: ", msg->via, ";");
 			app("branch=", msg->via_branch, ";");
 			app("rport=", msg->via_rport, ";");
@@ -54,7 +54,7 @@ void sip_msg_to_str(SIP_T *sip, char *buf) {
 		case SIP_100_TRYING:
 			break;
 		case SIP_401_UNAUTH:
-			app(NULL, msg->status_char, "\r\n");
+			app(NULL, msg->type_str, "\r\n");
 			app("Via: ", msg->via, ";");
 			app("branch=", msg->via_branch, ";");
 			app("received=", msg->via_rcvd, ";");
@@ -78,7 +78,7 @@ void sip_msg_to_str(SIP_T *sip, char *buf) {
 		case SIP_OPTIONS:
 			break;
 		default:
-			fprintf(stderr, "unknown msg: %d\n", msg->status);
+			fprintf(stderr, "unknown msg: %d\n", msg->msg_type);
 			break;
 	}
 

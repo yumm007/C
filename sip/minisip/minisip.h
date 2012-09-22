@@ -1,9 +1,16 @@
 #ifndef __MINISIP_
 #define __MINISIP_
 
-typedef enum SIP_STATUS_T {
+#include <unistd.h>
 
-	SIP_INIT,
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <strings.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+typedef enum MSG_TYPE_T {
 	SIP_REGISTER,
 	SIP_100_TRYING,
 	SIP_401_UNAUTH,
@@ -13,12 +20,12 @@ typedef enum SIP_STATUS_T {
 	SIP_OUTING_CALL,
 	SIP_HUNGING,
 
-} SIP_STATUS_T;
+} MSG_TYPE_T;
 
 typedef struct {
 
-	SIP_STATUS_T status;
-	char *status_char;
+	MSG_TYPE_T msg_type;
+	char *type_str;
 
 	char *via;
 	char *via_rport;
@@ -56,6 +63,15 @@ typedef struct {
 
 } SIP_MSG_T;
 
+typedef enum {
+	SIP_INIT,
+	SIP_SEND_REGISTER,
+	SIP_SEND_REG_RSP,
+	SIP_OPTIONS_RSP,
+	SIP_MAKE_CALL,
+	SIP_BYE,
+} SIP_CMD_T;
+
 typedef struct {
 	int sd;
 
@@ -66,15 +82,18 @@ typedef struct {
 
 	// server information
 	char server_ip[32];
-	//struct sockaddr_in sevr_addr;
+	struct sockaddr_in ser_addr;
 
+	char temp[2048];	//for once use
 	//session information
 	SIP_MSG_T msg;
+	int	cseq;
 
 } SIP_T;
 
 int sip_init(SIP_T *sip);
 int sip_str_to_msg(SIP_MSG_T *msg, const char *data);
 void sip_msg_to_str(SIP_T *sip, char *buf);
+int sip_send(SIP_CMD_T cmd, SIP_T *sip);
 
 #endif

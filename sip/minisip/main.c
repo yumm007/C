@@ -2,8 +2,9 @@
 #include <string.h>
 #include "minisip.h"
 
+#if 0
 static void sip_msg_dump(SIP_MSG_T *msg) {
-	printf("Head: %s\n", msg->status_char);
+	printf("Head: %s\n", msg->type_str);
 	printf("Via: %s\n", msg->via);
 	printf("rport: %s\n", msg->via_rport);
 	printf("received: %s\n", msg->via_rcvd);
@@ -31,15 +32,22 @@ static void sip_msg_dump(SIP_MSG_T *msg) {
 	printf("Date: %s\n", msg->date);
 	printf("Content-Length: %s\n", msg->content_length);
 }
+#endif
+
 
 static SIP_T sip;
-static char tmp[2048];
+//static char tmp[2048];
 int main(int argc, char **argv) {
 	//for test
-	int i;
-	FILE *fp;
-	sip_init(&sip);
+	//int i;
+	//FILE *fp;
 
+	if (sip_init(&sip) != 0) {
+		fprintf(stderr, "sip init failed.\n");
+		return -1;
+	}
+
+#if 0
 	for (i = 1; i < argc; i++) {
 		if ( (fp = fopen(argv[i], "r")) == NULL) {
 			perror(argv[i]);
@@ -55,7 +63,32 @@ int main(int argc, char **argv) {
 		sip_msg_to_str(&sip, tmp);
 		printf("%s", tmp);
 	}
+#else
+	sip_send(SIP_SEND_REGISTER, &sip);
+	
+	while(1) {
+		memset(&sip.temp, 0, sizeof(sip.temp));
+		recvfrom(sip.sd, sip.temp, sizeof(sip.temp), 0, NULL, NULL);
+		sip_str_to_msg(&sip.msg, sip.temp);
+		switch (sip.msg.msg_type) {
+			case SIP_100_TRYING:
+				printf("----recv SIP_100_TRYING----\n%s", sip.temp);
+				break;
+			case SIP_401_UNAUTH:
+				printf("----recv SIP_401_UNAUTJ----\n%s", sip.temp);
+				sip_send(SIP_SEND_REG_RSP, &sip);
+				break;
+			case SIP_OPTIONS:
+				printf("----recv SIP_OPTIONS----\n%s", sip.temp);
+				break;
+			default:
+				break;
+		}
+	}
+	
+#endif
 
+	close(sip.sd);
 	return 0;
 }
 
