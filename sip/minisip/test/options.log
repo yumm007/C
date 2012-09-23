@@ -1,0 +1,29 @@
+Server send
+OPTIONS sip:8206@101.38.44.50:5060 SIP/2.0
+Via: SIP/2.0/UDP 210.51.10.237:5060;branch=z9hG4bK69a7085d;rport
+From: "Unknown" <sip:Unknown@210.51.10.237>;tag=as6c4342bd
+To: <sip:8206@101.38.44.50:5060>
+Contact: <sip:Unknown@210.51.10.237>
+Call-ID: 54ae74b62cfd9bf77afc23755e1e0f4d@210.51.10.237
+CSeq: 102 OPTIONS
+User-Agent: Freeiris2 Opensource Telephony Project
+Max-Forwards: 70
+Date: Sun, 23 Sep 2012 22:33:01 GMT
+Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, SUBSCRIBE, NOTIFY, INFO
+Supported: replaces
+Content-Length: 0
+
+
+
+SIP/2.0 200 OK
+Via: SIP/2.0/UDP 210.51.10.237:5060;branch=z9hG4bK69a7085d;rport=5060
+From: "Unknown" <sip:Unknown@210.51.10.237>;tag=as6c4342bd
+To: <sip:8206@101.38.44.50:5060>;tag=137773465
+Call-ID: 54ae74b62cfd9bf77afc23755e1e0f4d@210.51.10.237
+CSeq: 102 OPTIONS
+Allow: INVITE, ACK, BYE, CANCEL, OPTIONS, MESSAGE, SUBSCRIBE, NOTIFY, INFO
+Accept: application/sdp
+User-Agent: Linphone/3.3.2 (eXosip2/3.3.0)
+Content-Length: 0
+
+

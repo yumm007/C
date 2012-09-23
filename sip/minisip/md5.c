@@ -116,7 +116,7 @@ void md5_update( md5_context *ctx,
  * Final wrapup - pad to 64-byte boundary with the bit pattern 
  * 1 0* (64-bit count of bits processed, MSB-first)
  */
-void md5_final(md5_context *ctx, unsigned char *digest)
+void md5_final(md5_context *ctx, char *digest)
 {
     unsigned count;
     unsigned char *p;
@@ -155,7 +155,7 @@ void md5_final(md5_context *ctx, unsigned char *digest)
     byteReverse((unsigned char *) ctx->buf, 4);
     //memcpy(digest, ctx->buf, 16);
 	for (count = 0; count < 16; count++)
-		sprintf((char *)digest+count*2, "%02x", ctx->buf[count]);
+		sprintf(digest + count * 2, "%02x", ((unsigned char *)(ctx->buf))[count]);
     bzero(ctx, sizeof(ctx));	/* In case it's sensitive */
 }
 
@@ -262,10 +262,29 @@ static void MD5Transform(uint32_t buf[4], uint32_t const in[16])
 char * md5(const char *data, int len, char *out) {
 	md5_context pms;
 
-	memset(out, 0, 16);
+	memset(out, 0, 32);
 	md5_init(&pms);
 	md5_update(&pms, (uint8_t *)data, len);
-	md5_final(&pms, (uint8_t*)out);
+	md5_final(&pms, out);
 
 	return out;
 }
+
+#if 0
+
+int main(int argc, char **argv) {
+	unsigned char str[]={"8204:freeiris2:8204"};
+	unsigned char out[36]= {0};
+	int i;
+
+	md5(str, 19, out);
+	//for (i = 0; i < 16; i++)
+		//printf("%02x", out[i]);
+
+	printf("\nmd5 = %s \n", out);
+
+	return 0;
+}
+
+#endif
+

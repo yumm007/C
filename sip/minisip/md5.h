@@ -46,14 +46,13 @@ void md5_init(md5_context *pms);
  *  @param data		Data.
  *  @param nbytes	Length of data.
  */
-void md5_update( md5_context *pms, 
-			     const uint8_t *data, unsigned nbytes);
+void md5_update( md5_context *pms, const uint8_t *data, unsigned nbytes);
 
 /** Finish the message and return the digest. 
  *  @param pms		MD5 context.
  *  @param digest	16 byte digest.
  */
-void md5_final(md5_context *pms, uint8_t digest[16]);
+void md5_final(md5_context *pms, char *digest);
 
 
 char * md5(const char *data, int len, char *out);

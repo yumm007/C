@@ -152,8 +152,8 @@ static int process_line(const char *line, char *space, SIP_MSG_T *msg) {
 
 	if (strstr(line, "WWW-Authenticate: ")) {
 		find_key("WWW-Authenticate: ", ';', msg->www_auth);
-		find_key("realm=", ',', msg->www_auth_realm);
-		find_key("nonce=", ';', msg->www_auth_nonce);
+		find_key("realm=\"", '"', msg->www_auth_realm);
+		find_key("nonce=\"", '"', msg->www_auth_nonce);
 		return len;
 	}
 
@@ -190,6 +190,7 @@ int sip_str_to_msg(SIP_MSG_T *msg, const char *data) {
 	int n = 0, len = 0, space_n = 0, n1;
 
 	//read line
+	memset(space_buf, 0 , sizeof(space_buf));
 	while ( (n = read_line(line, data + len)) > 0 ) {
 		line[n] = ';';
 		if ((n1 = process_line(line, space_buf + space_n, msg)) > 0) {
