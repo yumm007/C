@@ -5,7 +5,6 @@
  */
 #include <stdio.h>
 #include <string.h>
-#include "md5.h"
 /*
  * This code implements the MD5 message-digest algorithm.
  * The algorithm is due to Ron Rivest.  This code was
@@ -22,6 +21,35 @@
  * needed on buffers full of bytes, and then call MD5Final, which
  * will fill a supplied 16-byte array with the digest.
  */
+
+typedef unsigned int uint32_t;
+typedef unsigned char uint8_t;
+
+/** MD5 context. */
+typedef struct md5_context
+{
+	uint32_t buf[4];	/**< buf    */
+	uint32_t bits[2];	/**< bits   */
+	uint8_t  in[64];	/**< in	    */
+} md5_context;
+
+/** Initialize the algorithm. 
+ *  @param pms		MD5 context.
+ */
+static void md5_init(md5_context *pms);
+
+/** Append a string to the message. 
+ *  @param pms		MD5 context.
+ *  @param data		Data.
+ *  @param nbytes	Length of data.
+ */
+static void md5_update( md5_context *pms, const uint8_t *data, unsigned nbytes);
+
+/** Finish the message and return the digest. 
+ *  @param pms		MD5 context.
+ *  @param digest	16 byte digest.
+ */
+static void md5_final(md5_context *pms, char *digest);
 
 #if defined(PJ_IS_BIG_ENDIAN) && PJ_IS_BIG_ENDIAN != 0
 #define HIGHFIRST 1

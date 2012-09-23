@@ -91,6 +91,7 @@ typedef struct {
 
 } SIP_T;
 
+char * md5(const char *data, int len, char *out);
 int sip_init(SIP_T *sip);
 int sip_str_to_msg(SIP_MSG_T *msg, const char *data);
 void sip_msg_to_str(SIP_T *sip, char *buf);

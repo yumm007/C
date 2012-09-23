@@ -2,7 +2,6 @@
 #include <string.h>
 #include "minisip.h"
 #include "sip_conf.h"
-#include "md5.h"
 
 #if 1
 int sip_send(SIP_CMD_T cmd, SIP_T *sip) {
