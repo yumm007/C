@@ -1,8 +1,6 @@
 #include <stdio.h>
 #include <string.h>
 #include "minisip.h"
-#include "sip_conf.h"
-
 
 static void _append(const char *prefix, 
 							const char *delim, 

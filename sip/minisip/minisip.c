@@ -3,7 +3,6 @@
 #include <unistd.h>
 
 #include "minisip.h"
-#include "sip_conf.h"
 
 #define BUF_SIZE 1024
 
@@ -28,7 +27,7 @@ int sip_init(SIP_T *sip) {
         return -1;
     }   
 
-    sip->ser_addr.sin_addr.s_addr = inet_addr("210.51.10.237");
+    sip->ser_addr.sin_addr.s_addr = inet_addr(SERVER_IP);
 
     sip->sd = sd; 
 	return 0;

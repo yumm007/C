@@ -28,6 +28,20 @@ int main(int argc, char **argv) {
 				printf("<<<<<<SIP_OPTIONS<<<<<<\n%s", sip.temp);
 				sip_send(SIP_OPTIONS_RSP, &sip);
 				break;
+			case SIP_200_OK:
+				printf("<<<<<<SIP_200_OK<<<<<<\n%s", sip.temp); {
+				if (strcmp(sip.msg.via_rcvd, LOCAL_IP) != 0 \
+					&& strcmp(sip.nat_addr, sip.msg.via_rcvd) != 0) 
+				{
+					sip.nat_enable = 1;
+					strcpy(sip.nat_addr, sip.msg.via_rcvd);
+					strcpy(sip.nat_port, sip.msg.via_rport);
+					sip_send(SIP_SEND_REGISTER, &sip);
+				} else {
+					sip.nat_enable = 0;
+				}
+				}
+			
 			default:
 				break;
 		}

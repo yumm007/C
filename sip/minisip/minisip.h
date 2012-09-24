@@ -10,6 +10,12 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+
+#define USER_NAME	"8204"
+#define USER_PASS	"8204"
+#define SERVER_IP	"210.51.10.237"
+#define LOCAL_IP	"192.168.1.120"
+
 typedef enum MSG_TYPE_T {
 	SIP_REGISTER,
 	SIP_100_TRYING,
@@ -76,12 +82,16 @@ typedef struct {
 	int sd;
 
 	// account information
-	char user_name[32];
-	char user_pawd[32];
-	char local_ip[32];
+	//char user_name[32];
+	//char user_pawd[32];
+	//char local_ip[32];
+
+	int nat_enable;
+	char nat_addr[32];
+	char nat_port[12];
 
 	// server information
-	char server_ip[32];
+	//char server_ip[32];
 	struct sockaddr_in ser_addr;
 
 	char temp[2048];	//for once use
