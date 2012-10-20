@@ -11,7 +11,7 @@ int main(int argc, char *argv[]) {
 	SIP_T sip_1, *sip;
 	sip = &sip_1;
 #endif
-	int len;
+	int len = 0;
 	switch (cmd) {
 		case SIP_SEND_REGISTER: 
 			{
@@ -73,6 +73,33 @@ int main(int argc, char *argv[]) {
 			memset(sip->temp, 0, sizeof(sip->temp));
 			len = sprintf(sip->temp, "SIP/2.0 200 OK\r\nVia: SIP/2.0/UDP %s:%d;branch=%s;rport=%d\r\nFrom: %s;tag=%s\r\nTo: %s;tag=%s\r\nCall-ID: %s\r\nCseq: %s\r\nAllow: INVITE, ACK, BYE, CANCEL, OPTIONS, MESSAGE, SUBSCRIBE, NOTIFY, INFO\r\nAccept: application/sdb\r\nContent-Length: 0\r\n\r\n", \
 				SERVER_IP, SERVER_PORT, sip->msg.via_branch, LOCAL_PORT, sip->msg.from, sip->msg.from_tag, sip->msg.to, tag, sip->msg.call_id, sip->msg.cseq_num);
+			}
+			break;
+		case SIP_INVITE_TRYING:
+			memset(sip->temp, 0, sizeof(sip->temp));
+			len = sprintf(sip->temp, "SIP/2.0 100 Tring\r\nVia: SIP/2.0/UDP %s:%d;branch=%s;rport=%d\r\nFrom: %s;tag=%s\r\nTo: %s;\r\nCall-ID: %s\r\nCseq: %s\r\nUser-Agent: minisip\r\nContent-Length: 0\r\n\r\n", \
+			    SERVER_IP, SERVER_PORT, sip->msg.via_branch, LOCAL_PORT, sip->msg.from, sip->msg.from_tag, sip->msg.to, sip->msg.call_id, sip->msg.cseq_num);
+			break;
+		case SIP_INVITE_RINGING:
+			{
+			char tag[36] = {0};
+			char tmp[200] = {0};
+			int tmp_len = 0;
+
+			len = sprintf(sip->temp, "%s%s", LOCAL_IP, sip->msg.via_branch);
+			md5(sip->temp, len, tag);
+			memset(sip->temp, 0, sizeof(sip->temp));
+			
+			len = sprintf(sip->temp, "SIP/2.0 180 Ringing\r\nVia: SIP/2.0/UDP %s:%d;branch=%s;rport=%d\r\nFrom: %s;tag=%s\r\nTo: %s;tag=%s\r\nCall-ID: %s\r\nCseq: %s\r\nContact: <sip:%s@%s:%d>\r\nUser-Agent: minisip\r\nContent-Length: 0\r\n\r\n", \
+			    SERVER_IP, SERVER_PORT, sip->msg.via_branch, LOCAL_PORT, sip->msg.from, sip->msg.from_tag, sip->msg.to, tag, sip->msg.call_id, sip->msg.cseq_num, USER_NAME, LOCAL_IP, LOCAL_PORT);
+			//break;
+		//case SIP_INVITE_OK:
+			printf(">>>>>send msg>>>>>\n%s", sip->temp);
+			sendto(sip->sd, sip->temp, len, 0, (void *)&sip->ser_addr, sizeof(sip->ser_addr));
+
+			tmp_len = sprintf(tmp, "v=o\r\no=yu 123456 654321 IN IP4 %s\r\ns=A conversation\r\nc=IN IP4 %s\r\nt=0 0\r\nm=audio %d RTP/AVP 0 8 101\r\na=rtpmap:0 PCMU/8000/1\r\n", LOCAL_IP, LOCAL_IP, LOCAL_RTP_PORT);
+			len = sprintf(sip->temp, "SIP/2.0 200 OK\r\nVia: SIP/2.0/UDP %s:%d;branch=%s;rport=%d\r\nFrom: %s;tag=%s\r\nTo: %s;tag=%s\r\nCall-ID: %s\r\nCseq: %s\r\nContact: <sip:%s@%s:%d>\r\nUser-Agent: minisip\r\nContent-Type: Application/sdp\r\nContent-Length: %d\r\n\r\n%s", \
+			    SERVER_IP, SERVER_PORT, sip->msg.via_branch, LOCAL_PORT, sip->msg.from, sip->msg.from_tag, sip->msg.to, tag, sip->msg.call_id, sip->msg.cseq_num, USER_NAME, LOCAL_IP, LOCAL_PORT, tmp_len, tmp);
 			}
 			break;
 		default:

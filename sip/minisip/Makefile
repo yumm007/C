@@ -1,5 +1,5 @@
 COBJECT=	main.o minisip.o msg_to_str.o md5.o sip_cmd.o
-CFLAGS=		-Wall -g
+CFLAGS=		-Wall -Werror -Os
 BIN=		sip-client
 
 sip-client:	$(COBJECT)

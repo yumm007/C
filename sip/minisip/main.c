@@ -15,6 +15,7 @@ int main(int argc, char **argv) {
 	
 	while(1) {
 		memset(&sip.temp, 0, sizeof(sip.temp));
+		sip.msg.msg_type = SIP_UNKNOWN_TYPE;
 		recvfrom(sip.sd, sip.temp, sizeof(sip.temp), 0, NULL, NULL);
 		sip_str_to_msg(&sip.msg, sip.temp);
 		printf("RECV PACK [%4d]:", packet_number++);
@@ -31,7 +32,7 @@ int main(int argc, char **argv) {
 				sip_send(SIP_OPTIONS_RSP, &sip);
 				break;
 			case SIP_200_OK:
-				printf("<<<<<<SIP_200_OK<<<<<<\n%s", sip.temp); {
+				printf("<<<<<<SIP_200_OK<<<<<<\n%s", sip.temp);
 				if (strcmp(sip.msg.via_rcvd, LOCAL_IP) != 0 \
 					&& strcmp(sip.nat_addr, sip.msg.via_rcvd) != 0) 
 				{
@@ -42,8 +43,13 @@ int main(int argc, char **argv) {
 				} else {
 					sip.nat_enable = 0;
 				}
-				}
 				break;		
+			case SIP_INVITE:
+				printf("<<<<<<SIP_INVITE<<<<<<\n%s", sip.temp);
+				sip_send(SIP_INVITE_TRYING, &sip);
+				sip_send(SIP_INVITE_RINGING, &sip);
+				//sip_send(SIP_INVITE_OK, &sip);
+				break;
 			default:
 				printf("<<<<<<UNKNOWN_PACKET<<<<<<\n%s", sip.temp);
 				break;
