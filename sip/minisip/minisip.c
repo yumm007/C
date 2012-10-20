@@ -77,6 +77,7 @@ static int process_line(const char *line, char *space, SIP_MSG_T *msg) {
 	ifhead("OPTIONS ", SIP_OPTIONS);
 	ifhead("200 OK", SIP_200_OK);
 	ifhead("INVITE ", SIP_INVITE);
+	ifhead("BYE ", SIP_BYE);
 
 	#define find_key(key, delim, point) \
 		if ((n = process_key(line, key, delim, space)) > 0) {\

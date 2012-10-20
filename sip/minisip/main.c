@@ -50,6 +50,10 @@ int main(int argc, char **argv) {
 				sip_send(SIP_INVITE_RINGING, &sip);
 				//sip_send(SIP_INVITE_OK, &sip);
 				break;
+			case SIP_BYE:
+				printf("<<<<<<SIP_BYE<<<<<<\n%s", sip.temp);
+				sip_send(SIP_BYE_RSP, &sip);
+				break;
 			default:
 				printf("<<<<<<UNKNOWN_PACKET<<<<<<\n%s", sip.temp);
 				break;

@@ -102,6 +102,11 @@ int main(int argc, char *argv[]) {
 			    SERVER_IP, SERVER_PORT, sip->msg.via_branch, LOCAL_PORT, sip->msg.from, sip->msg.from_tag, sip->msg.to, tag, sip->msg.call_id, sip->msg.cseq_num, USER_NAME, LOCAL_IP, LOCAL_PORT, tmp_len, tmp);
 			}
 			break;
+		case SIP_BYE_RSP:
+			memset(sip->temp, 0, sizeof(sip->temp));
+			len = sprintf(sip->temp, "SIP/2.0 200 OK\r\nVia: SIP/2.0/UDP %s:%d;branch=%s;received=%s\r\nFrom: %s;tag=%s\r\nTo: %s;tag=%s\r\nCall-ID: %s\r\nCseq: %s\r\nContent-Length: 0\r\n\r\n",\
+				SERVER_IP, SERVER_PORT, sip->msg.via_branch, SERVER_IP, sip->msg.from, sip->msg.from_tag, sip->msg.to, sip->msg.to_tag, sip->msg.call_id, sip->msg.cseq_num);
+			break;
 		default:
 			break;
 	

@@ -32,6 +32,7 @@ typedef enum MSG_TYPE_T {
 	SIP_200_OK,
 	SIP_OPTIONS,
 	SIP_INVITE,
+	SIP_BYE,
 	SIP_OUTING_CALL,
 	SIP_HUNGING,
 } MSG_TYPE_T;
@@ -85,7 +86,7 @@ typedef enum {
 	SIP_INVITE_TRYING,
 	SIP_INVITE_RINGING,
 	SIP_INVITE_OK,
-	SIP_BYE,
+	SIP_BYE_RSP,
 } SIP_CMD_T;
 
 typedef struct {
