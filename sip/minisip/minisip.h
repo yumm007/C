@@ -11,21 +11,28 @@
 #include <arpa/inet.h>
 
 
-#define USER_NAME	"8204"
-#define USER_PASS	"8204"
-#define SERVER_IP	"210.51.10.237"
-#define LOCAL_IP	"192.168.1.120"
+//#define USER_NAME	"8204"
+#define USER_NAME	"212"
+//#define USER_PASS	"8204"
+#define USER_PASS	"welcome"
+//#define SERVER_IP	"210.51.10.237"
+#define SERVER_IP	"127.0.0.1"
+#define SERVER_PORT 5060
+//#define LOCAL_IP	"192.168.1.104"
+#define LOCAL_IP	"127.0.0.1"
+#define LOCAL_PORT  5062
 
 typedef enum MSG_TYPE_T {
+	SIP_UNKNOWN_TYPE,
+
 	SIP_REGISTER,
 	SIP_100_TRYING,
 	SIP_401_UNAUTH,
 	SIP_200_OK,
 	SIP_OPTIONS,
-	SIP_INCOMMING_CALL,
+	SIP_INVITE,
 	SIP_OUTING_CALL,
 	SIP_HUNGING,
-
 } MSG_TYPE_T;
 
 typedef struct {

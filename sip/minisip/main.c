@@ -4,6 +4,7 @@
 
 static SIP_T sip;
 int main(int argc, char **argv) {
+	int packet_number = 0;
 
 	if (sip_init(&sip) != 0) {
 		fprintf(stderr, "sip init failed.\n");
@@ -16,6 +17,7 @@ int main(int argc, char **argv) {
 		memset(&sip.temp, 0, sizeof(sip.temp));
 		recvfrom(sip.sd, sip.temp, sizeof(sip.temp), 0, NULL, NULL);
 		sip_str_to_msg(&sip.msg, sip.temp);
+		printf("RECV PACK [%4d]:", packet_number++);
 		switch (sip.msg.msg_type) {
 			case SIP_100_TRYING:
 				printf("<<<<<<<SIP_100_TRYING<<<<<\n%s", sip.temp);
@@ -41,8 +43,9 @@ int main(int argc, char **argv) {
 					sip.nat_enable = 0;
 				}
 				}
-			
+				break;		
 			default:
+				printf("<<<<<<UNKNOWN_PACKET<<<<<<\n%s", sip.temp);
 				break;
 		}
 	}
