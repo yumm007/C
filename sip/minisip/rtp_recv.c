@@ -7,6 +7,7 @@ int main(int argc, char **argv) {
 	struct sockaddr_in addr;
 	char tmp[1024];
 	ssize_t recv_number;
+	socklen_t addrlen = sizeof(addr);
 
 	if ((sd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
 		perror("socket:");
@@ -26,10 +27,11 @@ int main(int argc, char **argv) {
 
 	while (1) {
 		memset(tmp, 0, sizeof(tmp));
-		recv_number = recvfrom(sd, tmp, 1024, 0, NULL, NULL);
+		recv_number = recvfrom(sd, tmp, 1024, 0, (void *)&addr, (void *)&addrlen);
 		//输出RTP数据部分
 		if (recv_number > 12)
 			fwrite(tmp + 12, 1, recv_number, stdout);
+			sendto(sd, tmp, 1024, 0, (void *)&addr, addrlen);
 	}
 
 	close(sd);
