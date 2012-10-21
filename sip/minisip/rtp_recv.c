@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
 		//输出RTP数据部分
 		if (recv_number > 12)
 			fwrite(tmp + 12, 1, recv_number, stdout);
-			sendto(sd, tmp, 1024, 0, (void *)&addr, addrlen);
+			sendto(sd, tmp, recv_number, 0, (void *)&addr, addrlen);
 	}
 
 	close(sd);
