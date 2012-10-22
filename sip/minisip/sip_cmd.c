@@ -10,7 +10,7 @@ int main(int argc, char *argv[]) {
 	SIP_T sip_1, *sip;
 	sip = &sip_1;
 #endif
-	int len;
+	int len = 0;
 	switch (cmd) {
 		case SIP_SEND_REGISTER: 
 			{
