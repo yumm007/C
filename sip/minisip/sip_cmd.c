@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
 			md5(sip->temp, len, tag);
 			len = sprintf(sip->temp, "%s%d", LOCAL_IP, sip->cseq);
 			md5(sip->temp, len, call_id);
-			snprintf(branch, 42, "%s%s", tag, call_id);
+			snprintf(branch, 42, "z9hG4bK%s%s", tag, call_id);
 
 			if (sip->nat_enable) {
 				sprintf(contact, "Contact: <sip:%s@%s:%s;ob>\r\nContact: <sip:%s@%s:%d;ob>;expires=0", USER_NAME, sip->nat_addr, sip->nat_port, USER_NAME, LOCAL_IP, LOCAL_PORT);
