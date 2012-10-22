@@ -18,7 +18,7 @@ int sip_init(SIP_T *sip) {
 
     bzero(&sip->ser_addr, sizeof(sip->ser_addr));
     sip->ser_addr.sin_family = AF_INET;
-    sip->ser_addr.sin_port = htons(5060);
+    sip->ser_addr.sin_port = htons(LOCAL_PORT);
     sip->ser_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
     if (bind(sd, (void *)&sip->ser_addr, sizeof(sip->ser_addr)) == -1) {
@@ -27,6 +27,7 @@ int sip_init(SIP_T *sip) {
         return -1;
     }   
 
+    sip->ser_addr.sin_port = htons(SERVER_PORT);
     sip->ser_addr.sin_addr.s_addr = inet_addr(SERVER_IP);
 
     sip->sd = sd; 
@@ -75,6 +76,8 @@ static int process_line(const char *line, char *space, SIP_MSG_T *msg) {
 	ifhead("401 Unauthorized", SIP_401_UNAUTH);
 	ifhead("OPTIONS ", SIP_OPTIONS);
 	ifhead("200 OK", SIP_200_OK);
+	ifhead("INVITE ", SIP_INVITE);
+	ifhead("BYE ", SIP_BYE);
 
 	#define find_key(key, delim, point) \
 		if ((n = process_key(line, key, delim, space)) > 0) {\
