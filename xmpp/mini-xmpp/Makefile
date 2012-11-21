@@ -1,5 +1,5 @@
-COBJECT:=main.o xmpp-str.o
-CFLAGS:=-Wall
+COBJECT:=main.o
+CFLAGS:=-Wall -Os
 
 xmpp-client: ${COBJECT}
 	cc -o $@ $^ ${CFLAGS}
