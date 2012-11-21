@@ -9,10 +9,11 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#include "xmpp-str.c"
+#include "xmpp-str.h"
+#include "mini-xmpp.h"
 
-static char buf[1024];
-static int open_tcp_sd(const char *server_ip, unsigned short port) {
+static char buf[BUFSIZE];
+static int open_tcp_sd(void) {
 	int sd = -1;
 	struct sockaddr_in addr;
 
@@ -23,8 +24,8 @@ static int open_tcp_sd(const char *server_ip, unsigned short port) {
 
 	bzero(&addr, sizeof(addr));
 	addr.sin_family = AF_INET;
-	addr.sin_port = htons(port);
-	addr.sin_addr.s_addr = inet_addr(server_ip);
+	addr.sin_port = htons(SERVER_PORT);
+	addr.sin_addr.s_addr = inet_addr(SERVER_IP);
 
 	if (connect(sd, (void *)&addr, sizeof(addr)) == -1) {
 		close(sd);
@@ -38,7 +39,7 @@ static int open_tcp_sd(const char *server_ip, unsigned short port) {
 static void send_recv(int sd, const char *str) {
 	int n;
 	n = write(sd, str, strlen(str));
-	n = read(sd, buf, 1024);
+	n = read(sd, buf, BUFSIZE);
 	buf[n] = '\0';
 	printf("%s\n", buf);
 }
@@ -46,37 +47,32 @@ static void send_recv(int sd, const char *str) {
 static void open_stream(int sd, const char *str) {
 	int n;
 	send_recv(sd, str);
-	n=read(sd, buf, 1024);
+	n=read(sd, buf, BUFSIZE);
 	buf[n] = '\0';
 	printf("%s\n",buf);
 }
 
-static int xmpp_login(int sd, const char *user_name, const char *passwd) {
-
-	send_recv(sd, register_str);
-	send_recv(sd, register_ack);
-	send_recv(sd, online);
-	//write(sd, online, strlen(online));
-
-	return 0;
+static void xmpp_login(int sd, const char *user_name, const char *passwd) {
+	send_recv(sd, get_register_str(buf));
+	send_recv(sd, get_register_ack(buf));
+	send_recv(sd, get_online_str(buf));
 }
 
 static void send_msg(int sd, const char *to, const char *msg) {
-	sprintf(buf, "<message to \"%s@192.168.1.127\"><body>%s</body></message>",\
-				to, msg);
-	(void)write(sd, buf, strlen(buf));
+	get_send_msg(buf, to, msg);
+	write(sd, buf, strlen(buf));
 }
 
 int main(int argc, char **argv){
 	int sd;
 
-	sd = open_tcp_sd("192.168.1.127", 5222);
+	sd = open_tcp_sd();
 
-	open_stream(sd, open_str);
+	open_stream(sd, get_open_str(buf));
 
 	xmpp_login(sd, NULL, NULL);
 
-	//send_msg(sd, "201", "message from 211");
+	send_msg(sd, "201", "message from 211");
 
 	while (1) {
 		sleep(1);
