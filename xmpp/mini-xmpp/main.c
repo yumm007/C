@@ -12,6 +12,9 @@
 #include "xmpp-str.h"
 #include "mini-xmpp.h"
 
+#include <sys/types.h>
+#include <unistd.h>
+
 static char buf[BUFSIZE];
 static int open_tcp_sd(void) {
 	int sd = -1;
@@ -64,32 +67,47 @@ static void send_msg(int sd, const char *to, const char *msg) {
 	write(sd, buf, strlen(buf));
 }
 
+static char *new_id(void) {
+	static unsigned int id = 0x8864;
+	static char str[16];
+
+	if (id == 0x8864)
+		id = (unsigned int)getpid();
+
+	sprintf(str, "x%X", id);
+	id++;
+	return str;
+}
+
+static char *new_sid(void) {
+	static unsigned int sid = 0xAA64;
+	static char str[16];
+	if (sid == 0xAA64)
+		sid = (unsigned int)getpid() + 0xAA00;
+
+	sprintf(str, "x%X", sid);
+	sid++;
+	return str;
+}
+
 static char sock_buf[1460];
 static void send_data(int sd, const char *to, const char *data, int len) {
 	int i, n, seq;
-	char *id = "u1s71452", *sid = "1i781hfa";
-	
-	sprintf(buf, "<iq id=\"%s\" from=\"211@192.168.1.127/mini-xmpp\" to=\"%s@%s/Spark 2.6.3\" type=\"set\"><si xmlns=\"http://jabber.org/protocol/si\" id=\"jsi_6118542773288697547\" mime-type=\"application/xml\" profile=\"http://jabber.org/protocol/si/profile/file-transfer\"><file xmlns=\"http://jabber.org/protocol/si/profile/file-transfer\" name=\"log.xml\" size=\"619\" ><desc>Sending file</desc></file><feature xmlns=\"http://jabber.org/protocol/feature-neg\"><x xmlns=\"jabber:x:data\" type=\"form\"><field var=\"stream-method\" type=\"list-single\"><option><value>http://jabber.org/protocol/bytestreams</value></option><option><value>http://jabber.org/protocol/ibb</value></option></field></x></feature></si></iq>" , id, to, SERVER_IP);
-	send_recv(sd, buf);
-	sprintf(buf, "<iq id=\"xXCfF-1472\" to=\"%s@%s/Spark 2.6.3\" type=\"get\"><query xmlns=\"http://jabber.org/protocol/disco#info\"></query></iq>", to, SERVER_IP);
-	send_recv(sd, buf);
-	sprintf(buf, "<iq id=\"xXCfF-1473\" to=\"%s@%s/Spark 2.6.3\" type=\"set\"><open xmlns=\"http://jabber.org/protocol/ibb\" block-size=\"4096\" sid=\"jsi_6118542773288697547\" stanza=\"iq\"/></iq>", to, SERVER_IP);
+	char *sid = new_sid();
+
+	send_recv(sd, get_send_init(buf, to, new_id(), sid, "log.xml", 619));
+	send_recv(sd, get_send_disco(buf, to, new_id()));
+	send_recv(sd, get_send_block_size(buf, to, new_id(), sid));
+
+	sprintf(buf, "<iq id=\"%s\" to=\"%s@%s/Spark 2.6.3\" type=\"set\"><data xmlns=\"http://jabber.org/protocol/ibb\" seq=\"0\" sid=\"%s\">PD94bWwgdmVyc2lvbj0nMS4wJyBlbmNvZGluZz0nVVRGLTgnPz48c3RyZWFtOnN0cmVhbSB4bWxuczpzdHJlYW09Imh0dHA6Ly9ldGhlcnguamFiYmVyLm9yZy9zdHJlYW1zIiB4bWxucz0iamFiYmVyOmNsaWVudCIgZnJvbT0iMTkyLjE2OC4xLjEyNyIgaWQ9IjE1ZDc0NTAzIiB4bWw6bGFuZz0iZW4iIHZlcnNpb249IjEuMCI+PHN0cmVhbTpmZWF0dXJlcz48bWVjaGFuaXNtcyB4bWxucz0idXJuOmlldGY6cGFyYW1zOnhtbDpuczp4bXBwLXNhc2wiPjxtZWNoYW5pc20+RElHRVNULU1ENTwvbWVjaGFuaXNtPjxtZWNoYW5pc20+SklWRS1TSEFSRURTRUNSRVQ8L21lY2hhbmlzbT48bWVjaGFuaXNtPlBMQUlOPC9tZWNoYW5pc20+PG1lY2hhbmlzbT5DUkFNLU1ENTwvbWVjaGFuaXNtPjwvbWVjaGFuaXNtcz48Y29tcHJlc3Npb24geG1sbnM9Imh0dHA6Ly9qYWJiZXIub3JnL2ZlYXR1cmVzL2NvbXByZXNzIj48bWV0aG9kPnpsaWI8L21ldGhvZD48L2NvbXByZXNzaW9uPjxhdXRoIHhtbG5zPSJodHRwOi8vamFiYmVyLm9yZy9mZWF0dXJlcy9pcS1hdXRoIi8+PHJlZ2lzdGVyIHhtbG5zPSJodHRwOi8vamFiYmVyLm9yZy9mZWF0dXJlcy9pcS1yZWdpc3RlciIvPjwvc3RyZWFtOmZlYXR1cmVzPg==</data></iq>", new_id(), to, SERVER_IP, sid);
 	send_recv(sd, buf);
 
-	sprintf(buf, "<iq id=\"xXCfF-1474\" to=\"%s@%s/Spark 2.6.3\" type=\"set\"><data xmlns=\"http://jabber.org/protocol/ibb\" seq=\"0\" sid=\"jsi_6118542773288697547\">PD94bWwgdmVyc2lvbj0nMS4wJyBlbmNvZGluZz0nVVRGLTgnPz48c3RyZWFtOnN0cmVhbSB4bWxuczpzdHJlYW09Imh0dHA6Ly9ldGhlcnguamFiYmVyLm9yZy9zdHJlYW1zIiB4bWxucz0iamFiYmVyOmNsaWVudCIgZnJvbT0iMTkyLjE2OC4xLjEyNyIgaWQ9IjE1ZDc0NTAzIiB4bWw6bGFuZz0iZW4iIHZlcnNpb249IjEuMCI+PHN0cmVhbTpmZWF0dXJlcz48bWVjaGFuaXNtcyB4bWxucz0idXJuOmlldGY6cGFyYW1zOnhtbDpuczp4bXBwLXNhc2wiPjxtZWNoYW5pc20+RElHRVNULU1ENTwvbWVjaGFuaXNtPjxtZWNoYW5pc20+SklWRS1TSEFSRURTRUNSRVQ8L21lY2hhbmlzbT48bWVjaGFuaXNtPlBMQUlOPC9tZWNoYW5pc20+PG1lY2hhbmlzbT5DUkFNLU1ENTwvbWVjaGFuaXNtPjwvbWVjaGFuaXNtcz48Y29tcHJlc3Npb24geG1sbnM9Imh0dHA6Ly9qYWJiZXIub3JnL2ZlYXR1cmVzL2NvbXByZXNzIj48bWV0aG9kPnpsaWI8L21ldGhvZD48L2NvbXByZXNzaW9uPjxhdXRoIHhtbG5zPSJodHRwOi8vamFiYmVyLm9yZy9mZWF0dXJlcy9pcS1hdXRoIi8+PHJlZ2lzdGVyIHhtbG5zPSJodHRwOi8vamFiYmVyLm9yZy9mZWF0dXJlcy9pcS1yZWdpc3RlciIvPjwvc3RyZWFtOmZlYXR1cmVzPg==</data></iq>", to, SERVER_IP);
-	send_recv(sd, buf);
+	send_recv(sd, get_send_close(buf, new_id(), to, sid));
 
-	sprintf(buf, "<iq id=\"xXCfF-1475\" to=\"%s@%s/Spark 2.6.3\" type=\"set\"><close xmlns=\"http://jabber.org/protocol/ibb\" sid=\"jsi_6118542773288697547\"/></iq>", to, SERVER_IP);
-	send_recv(sd, buf);
-
-
-	//send_recv(sd, get_send_disco(buf, to, id));
 	return;
-
-	send_recv(sd, get_send_init(buf, to, id, sid));
-	
+#if 0
 	for (i = 0, seq = 0; i < len; i += 400, seq++) {
-		n = sprintf(sock_buf, "<iq from=\"%s@%s\" id=\"%s\" to=\"%s@%s\" type=\"set\"> <data xmlns=\"http://jabber.org/protocol/ibb\" seq=\"%d\" sid=\"%s\">", JID_NAME, SERVER_IP, id, to, SERVER_IP, seq, sid);
+		n = sprintf(sock_buf, "<iq id=\"%s\" to=\"%s@%s/Spark 2.6.3\" type=\"set\"><data xmlns=\"http://jabber.org/protocol/ibb\" seq=\"%d\" sid=\"%s\">", new_id(), to, SERVER_IP, seq, sid);
 		base64_encode(sock_buf + n, data+i, (len - i) > 400 ? 400 : (len -i));
 		strcat(sock_buf, "</data></iq>");
 		
@@ -97,6 +115,7 @@ static void send_data(int sd, const char *to, const char *data, int len) {
 	}
 
 	send_recv(sd, get_send_close(buf, to, id, sid));
+#endif
 }
 
 
@@ -110,10 +129,10 @@ int main(int argc, char **argv){
 	xmpp_login(sd, NULL, NULL);
 
 	//send_msg(sd, "201", "message from 211");
-	send_data(sd, "201", "text from 211", strlen("text from 211"));
 
 	while (1) {
-		sleep(1);
+		sleep(10);
+		send_data(sd, "201", "text from 211", strlen("text from 211"));
 	}
 
 	close(sd);

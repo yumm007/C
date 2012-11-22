@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include "mini-xmpp.h"
 
 char *get_open_str(char *buf) {
@@ -24,22 +25,39 @@ char *get_send_msg(char *buf, const char *to, const char *msg) {
 	return buf;
 }
 
+#if 0
 char *get_send_init(char *buf, const char *to, const char *id, const char *sid) {
 	sprintf(buf, "<iq from=\"%s@%s\" id=\"%s\" to=\"%s@%s\" type=\"set\"> <open xmlns=\"http://jabber.org/protocol/ibb\" block-size=\"4096\" sid=\"%s\" stanza=\"iq\"/></iq>", JID_NAME, SERVER_IP, id, to, SERVER_IP, sid);
 	return buf;
 }
+#endif
 
-char *get_send_close(char *buf, const char *to, const char *id, const char *sid) {
-	sprintf(buf, "<iq from=\"%s@%s\" id=\"%s\" to=\"%s@%s\" type=\"set\"> <close xmlns=\"http://jabber.org/protocol/ibb\" sid=\"%s\"/></iq>", JID_NAME, SERVER_IP, id, to, SERVER_IP, sid);
+char *get_send_init(char *buf, const char *to, const char *id, const char *sec_id, \
+							const char *file_name, int file_size) {
+	char *file_type;
+	if (strstr(file_name , ".xml"))
+		file_type="application/xml";
+	else
+		file_type="application/xml";
+
+	sprintf(buf, "<iq id=\"%s\" from=\"%s@%s/%s\" to=\"%s@%s/Spark 2.6.3\" type=\"set\"><si xmlns=\"http://jabber.org/protocol/si\" id=\"%s\" mime-type=\"%s\" profile=\"http://jabber.org/protocol/si/profile/file-transfer\"><file xmlns=\"http://jabber.org/protocol/si/profile/file-transfer\" name=\"%s\" size=\"%d\" ><desc>Sending file</desc></file><feature xmlns=\"http://jabber.org/protocol/feature-neg\"><x xmlns=\"jabber:x:data\" type=\"form\"><field var=\"stream-method\" type=\"list-single\"><option><value>http://jabber.org/protocol/bytestreams</value></option><option><value>http://jabber.org/protocol/ibb</value></option></field></x></feature></si></iq>" , id, JID_NAME, SERVER_IP, RESOURCE, to, SERVER_IP, sec_id, file_type, file_name, file_size);
 	return buf;
 }
 
 
 char *get_send_disco(char *buf, const char *to, const char *id) {
-	sprintf(buf, "<iq to=\"%s@%s\" id=\"%s\" type=\"get\"> <query xmlns=\"http://jabber.org/protocol/disco#info\"/></iq>", to, SERVER_IP, id);
+	sprintf(buf, "<iq id=\"%s\" to=\"%s@%s/Spark 2.6.3\" type=\"get\"><query xmlns=\"http://jabber.org/protocol/disco#info\"></query></iq>", id, to, SERVER_IP);
 	return buf;
 }
 
+char *get_send_block_size(char *buf, const char *to, const char *id, const char *sid) {
+	sprintf(buf, "<iq id=\"%s\" to=\"%s@%s/Spark 2.6.3\" type=\"set\"><open xmlns=\"http://jabber.org/protocol/ibb\" block-size=\"4096\" sid=\"%s\" stanza=\"iq\"/></iq>", id, to, SERVER_IP, sid);
+	return buf;
+}
 
+char *get_send_close(char *buf, const char *id, const char *to, const char *sid) {
+	sprintf(buf, "<iq id=\"%s\" to=\"%s@%s/Spark 2.6.3\" type=\"set\"><close xmlns=\"http://jabber.org/protocol/ibb\" sid=\"%s\"/></iq>", id, to, SERVER_IP, sid);
+	return buf;
+}
 
 
