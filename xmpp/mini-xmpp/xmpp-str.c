@@ -24,3 +24,22 @@ char *get_send_msg(char *buf, const char *to, const char *msg) {
 	return buf;
 }
 
+char *get_send_init(char *buf, const char *to, const char *id, const char *sid) {
+	sprintf(buf, "<iq from=\"%s@%s\" id=\"%s\" to=\"%s@%s\" type=\"set\"> <open xmlns=\"http://jabber.org/protocol/ibb\" block-size=\"4096\" sid=\"%s\" stanza=\"iq\"/></iq>", JID_NAME, SERVER_IP, id, to, SERVER_IP, sid);
+	return buf;
+}
+
+char *get_send_close(char *buf, const char *to, const char *id, const char *sid) {
+	sprintf(buf, "<iq from=\"%s@%s\" id=\"%s\" to=\"%s@%s\" type=\"set\"> <close xmlns=\"http://jabber.org/protocol/ibb\" sid=\"%s\"/></iq>", JID_NAME, SERVER_IP, id, to, SERVER_IP, sid);
+	return buf;
+}
+
+
+char *get_send_disco(char *buf, const char *to, const char *id) {
+	sprintf(buf, "<iq to=\"%s@%s\" id=\"%s\" type=\"get\"> <query xmlns=\"http://jabber.org/protocol/disco#info\"/></iq>", to, SERVER_IP, id);
+	return buf;
+}
+
+
+
+

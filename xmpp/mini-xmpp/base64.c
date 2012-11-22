@@ -35,14 +35,6 @@ static const char _base64_charmap[65] = {
     '='
 };
 
-#if 0
-int base64_encoded_len(xmpp_ctx_t *ctx, const unsigned len)
-{
-    /* encoded steam is 4 bytes for every three, rounded up */
-    return ((len + 2)/3) << 2;
-}
-#endif
-
 char *base64_encode(char *cbuf, const char *buffer, int len)
 {
     int clen;
