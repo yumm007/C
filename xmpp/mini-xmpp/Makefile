@@ -1,4 +1,4 @@
-COBJECT:= 	main.o xmpp-str.o
+COBJECT:= 	main.o xmpp-str.o base64.o
 CFLAGS:= 	-Wall -Os
 
 xmpp-client: ${COBJECT}

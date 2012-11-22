@@ -10,4 +10,6 @@
 
 #define BUFSIZE		1024
 
+
+char *base64_encode(char *dst, const char *src, int len);
 #endif
