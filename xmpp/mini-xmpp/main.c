@@ -145,7 +145,7 @@ static void recv_msg(char *data) {
 	char *from, *text, *next;
 
 	printf("RECV MSG: ");
-	if ((from = text_cut(data, "from=\"", "\" ", &next)) == NULL)
+	if ((from = text_cut(data, "from=\"", "\"", &next)) == NULL)
 		goto err;
 	printf("FROM %s", from);
 	snprintf(xmpp.msg_from_jid, sizeof(xmpp.msg_from_jid),"%s", from);
