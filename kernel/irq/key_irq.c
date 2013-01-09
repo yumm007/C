@@ -5,7 +5,7 @@
 #define IRQ_NUM	IRQ_EINT1
 
 static irqreturn_t key_handler(int unused, void *p) {
-	printk("received sig.\n");
+	printk(KERN_INFO "received sig.\n");
 	return IRQ_HANDLED;
 }
 

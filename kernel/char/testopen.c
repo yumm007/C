@@ -13,13 +13,13 @@ static void sig_han(int inused) {
 }
 
 int main(void) {
-	char buf[1024];
+	char buf[1024] = {0};
 	char *tmp = "send message from user space";
 	int fd;
 
 	signal(SIGIO, sig_han);
 
-	if ((fd = open("/dev/testchar", O_RDWR)) < 0) {
+	if ((fd = open("/dev/led_dev", O_RDWR)) < 0) {
 		perror("open:");
 		return -1;
 	}
