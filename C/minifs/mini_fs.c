@@ -9,8 +9,9 @@ typedef enum {
 
 	FILE1	= FILE_ID_BEGIN,
 	FILE2,
+	FILE3,
 
-	FILE_ID_END = FILE2,
+	FILE_ID_END = FILE3,
 } file_id_t;
 
 struct file_info_t {
@@ -20,8 +21,9 @@ struct file_info_t {
 };
 
 static const struct file_info_t file_info[] = {
-	{FILE1, 0, 	10},
+	{FILE1, 0, 10},
 	{FILE2, 10, 23},
+	{FILE3, 33, 150},
 };
 
 
@@ -56,16 +58,17 @@ void f_write(file_id_t id, 	UINT16 offset,	const UINT8 *data, UINT16 len) {
 ***	read£¬ºÍwrite º¯Êý
 *******************************************************/
 
-#define SEGMENT_SIZE	512
-#define DISK_SPACE	512*9
-#define SWAP_ADDR	512*8
+#define SEGMENT_SIZE	16
+#define DISK_SPACE	SEGMENT_SIZE*50
+#define SWAP_ADDR	SEGMENT_SIZE*49
+
 static UINT8 DISK[DISK_SPACE];
 
 static void f_dump(void) {
 	int i, j, n;
 	n = sizeof(file_info) / sizeof(file_info[0]);
 	for (i = 0; i < n; i++) {
-		printf("FILE %d: len = %d\n", i, file_info[i].file_len);
+		printf("FILE %d: addr = %d, len = %d\n", i, file_info[i].start_addr, file_info[i].file_len);
 		for (j = 0; j < file_info[i].file_len; j++)
 			putchar(DISK[file_info[i].start_addr + j]);
 		putchar('\n');
@@ -127,6 +130,7 @@ static void disk_write(UINT16 offset, const UINT8 *data, UINT16 len) {
 	len -= temp_len;
 	
 	n = len / SEGMENT_SIZE;
+	//printf("block:%d / %d")
 	for (i = 0; i < n; i++) {
 		fprintf(stderr, "STEP2: segment_only_write(%d, %p)\n", offset + i * SEGMENT_SIZE, data + i * SEGMENT_SIZE);
 		segment_only_write(offset + i * SEGMENT_SIZE, data + i * SEGMENT_SIZE);
@@ -147,9 +151,18 @@ static void disk_write(UINT16 offset, const UINT8 *data, UINT16 len) {
 
 
 int main(void) {
+	UINT8 i, tmp[17] = "this is a test";
+
 	memset(DISK, '0', sizeof(DISK));
-	UINT8 tmp[17] = "this is a test";
-	f_write(FILE2, 1, tmp, sizeof(tmp));
+	for (i = 0; i < 7; i++) {
+		f_write(FILE2, 1, tmp, sizeof(tmp));
+		f_write(FILE3, 20, "abcdefg", 7);
+		f_write(FILE3, 35, "1234567", 7);
+		f_write(FILE3, 2, "ABCDEFGABCDEFGABCDEFGABCDEFGABCDEFGABCDEFGABCDEFGABCDEFGABCDEFG", 63);
+		f_write(FILE3, 0, "ZZZ", 3);
+		f_write(FILE1, 2, "ABCDEFGABC", 8);
+		f_write(FILE3, 7 * i + i * 2, "ABCDEFG", 7);
+	}
 	f_dump();
 
 	return 0;
