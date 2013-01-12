@@ -33,7 +33,7 @@ static struct file_info_t file_info[] = {
 static UINT8 DISK[DISK_SPACE];
 
 
-UINT8 *	f_read(file_id_t id, 	UINT16 offset,	UINT16 len);
+UINT8*	f_read(file_id_t id, 	UINT16 offset,	UINT16 len);
 void 		f_write(file_id_t id, 	UINT16 offset,	const UINT8 *data, UINT16 len);
 void		f_erase(file_id_t id);
 static void disk_edit(UINT16 offset, const UINT8 *data, UINT16 len);
@@ -46,12 +46,12 @@ static void disk_clean(UINT16 offset, UINT16 len);
 *** 	write函数需要进行FLASH擦写函数配合
 ***	erase函数擦除指定的文件
 *******************************************************/
-UINT8 * f_read(file_id_t id, UINT16 offset, UINT16 len) {
+UINT8* f_read(file_id_t id, UINT16 offset, UINT16 len) {
 	if (id < FILE_ID_BEGIN || id > FILE_ID_END)
 		return NULL;
 	if (offset + len > file_info[id].file_size)
-		return NULL;
-	return (UINT8 *)(file_info[id].start_addr + offset);
+		len = file_info[id].file_size - offset;
+	return &DISK[file_info[id].start_addr + offset];
 }
 
 void f_write(file_id_t id,	UINT16 offset,	const UINT8 *data, UINT16 len) {
@@ -60,7 +60,7 @@ void f_write(file_id_t id,	UINT16 offset,	const UINT8 *data, UINT16 len) {
 	if (id < FILE_ID_BEGIN || id > FILE_ID_END)
 		return;
 	if (offset + len > file_info[id].file_size)
-		return;
+		len = file_info[id].file_size - offset;
 	
 	//每次写文件时，计算出需要修改的部分和需要追加的部分
 	//需要修改的部分设计到擦除FLASH，而追加的部分则在文件创建时已经擦写过了
@@ -108,20 +108,27 @@ static void f_dump(void) {
 
 //需要移植的函数, 调用者确保地址已经按segment对齐
 static void segment_erase(UINT16 addr) {
-	if (addr % SEGMENT_SIZE) {
-		fprintf(stderr, "非对齐擦除！\n");
-		return;
-	}
+	//fprintf(stderr, "%s(%d)", __FUNCTION__, addr);
+	if (addr % SEGMENT_SIZE != 0)
+		fprintf(stderr, "%s:segment\n", __FUNCTION__);
 	memset(&DISK[addr], '0', SEGMENT_SIZE);
 }
 
-//需要移植的函数，将数据从内存写到FLASH，调用者保证所在的FLASH已经被擦过了.
+//需要移植的函数，将数据从内存写到FLASH，调用者保证所在的FLASH已经被擦过且操作不跨段
 static void segment_copy_mem(UINT16 addr, UINT16 offset,  const UINT8 *data, UINT16 len) {
+	//fprintf(stderr, "%s(%d, %d, %p, %d)", __FUNCTION__, addr, offset, data, len);
+	if (offset + len > SEGMENT_SIZE || addr % SEGMENT_SIZE != 0)
+		fprintf(stderr, "%s:segment\n", __FUNCTION__);
 	memcpy(&DISK[addr + offset], data, len);
 }
 
-//需要移植的函数，将数据从FLASH拷贝到FLASH，调用者保证目标所在FLASH已经被擦除了.
+//需要移植的函数，将数据从FLASH拷贝到FLASH，调用者保证目标所在FLASH已经被擦除且操作不夸段
 static void segment_copy_segment(UINT16 des, UINT16 src, UINT16 len) {
+	//fprintf(stderr, "%s(%d, %d, %d)\n", __FUNCTION__, des, src, len);
+	if (des % SEGMENT_SIZE + len > SEGMENT_SIZE)
+		fprintf(stderr, "%s:segment\n", __FUNCTION__);
+	if (src % SEGMENT_SIZE + len > SEGMENT_SIZE)
+		fprintf(stderr, "%s:segment\n", __FUNCTION__);
 	memcpy(&DISK[des], &DISK[src], len);
 }
 
@@ -196,24 +203,53 @@ static void disk_clean(UINT16 offset, UINT16 len) {
 ***	用户层测试函数
 *******************************************************/
 
+void f_test(void) {
+	UINT8 tmp_data[20] = "this is a test line";
+	//UINT8 tmp_read[20];
+
+	//erase 测试
+	f_write(FILE1, 2, tmp_data, 5);
+	f_erase(FILE1);
+	if (memcmp(f_read(FILE1, 2, 5), tmp_data, 5) == 0)
+		fprintf(stderr, "%s:%d erase failed.\n", __FUNCTION__, __LINE__);
+		
+	//读写测试
+	f_write(FILE1, 2, tmp_data, 6);
+	if (memcmp(f_read(FILE1, 2, 6), tmp_data, 6) != 0)
+		fprintf(stderr, "%s:%d f_write failed.\n", __FUNCTION__, __LINE__);
+
+	//连续写测试
+	f_write(FILE2, 0, tmp_data, 15);
+	f_write(FILE1, 9, tmp_data, 1);
+	f_write(FILE2, 10, tmp_data, 10);
+	if (memcmp(f_read(FILE2, 10, 10), tmp_data, 10) != 0) 
+		fprintf(stderr, "%s:%d more write failed.\n", __FUNCTION__, __LINE__);
+
+	//跨区写测试
+
+	//
+}
+
+
 int main(void) {
 	UINT8 i;
-	//UINT8 tmp[17] = "this is a test";
+	UINT8 tmp[17] = "this is a test";
 
 	memset(DISK, '0', sizeof(DISK));
-	for (i = 0; i < 1; i++) {
-		//f_write(FILE2, 1, tmp, sizeof(tmp));
-		//f_write(FILE3, 20, (UINT8 *)"abcdefg", 7);
-		//f_write(FILE3, 35, (UINT8 *)"1234567", 7);
-		//f_write(FILE3, 2, (UINT8 *)"ABCDEFGABCDEFGABCDEFGABCDEFGABCDEFGABCDEFGABCDEFGABCDEFGABCDEFG", 63);
-		//f_write(FILE3, 14, (UINT8 *)"ZZZ", 3);
-		//f_dump();
+	for (i = 0; i < 10; i++) {
+		f_write(FILE2, 1, tmp, sizeof(tmp));
+		f_write(FILE3, 20, (UINT8 *)"abcdefg", 7);
+		f_write(FILE3, 35, (UINT8 *)"1234567", 7);
+		f_write(FILE3, 2, (UINT8 *)"ABCDEFGABCDEFGABCDEFGABCDEFGABCDEFGABCDEFGABCDEFGABCDEFGABCDEFG", 63);
+		f_write(FILE3, 14, (UINT8 *)"ZZZ", 3);
 		f_write(FILE3, 14, (UINT8 *)"DDDDDDDDDDDDDDDDDDD", 19);
-		f_dump();
-		//f_write(FILE1, 2, (UINT8 *)"ABCDEFGABC", 8);
-		//f_write(FILE3, 7 * i + i * 2, (UINT8 *)"ABCDEFG", 7);
+		f_write(FILE1, 2, (UINT8 *)"ABCDEFGABC", 8);
+		f_write(FILE3, 7 * i + i * 2, (UINT8 *)"ABCDEFG", 7);
 	}
+	
+	f_test();
 
+	f_dump();
 	return 0;
 }
 
