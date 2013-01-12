@@ -116,7 +116,7 @@ static void segment_erase(UINT16 addr) {
 }
 
 //需要移植的函数，将数据从内存写到FLASH，调用者保证所在的FLASH已经被擦过了.
-static void segment_copy(UINT16 addr, UINT16 offset,  const UINT8 *data, UINT16 len) {
+static void segment_copy_mem(UINT16 addr, UINT16 offset,  const UINT8 *data, UINT16 len) {
 	memcpy(&DISK[addr + offset], data, len);
 }
 
@@ -141,7 +141,7 @@ static void segment_clean(UINT16 addr, UINT16 offset, const UINT8 *noused, UINT1
 
 static void segment_write(UINT16 addr, UINT16 offset, const UINT8 *data, UINT16 len) {
 	segment_clean(addr, offset, data, len);	
-	segment_copy(addr, offset, data, len); 	//写入用户数据
+	segment_copy_mem(addr, offset, data, len); 	//写入用户数据
 }
 
 //块对齐操作集
@@ -177,17 +177,17 @@ static void __addr_split_opera(UINT16 offset, const UINT8 *data, UINT16 len, op_
 }
 
 static void disk_edit(UINT16 offset, const UINT8 *data, UINT16 len) {
-	//segment_write 先擦除再写
+	//segment_write 先擦除再写，数据源一部分是FLASH，一部分是内存
 	__addr_split_opera(offset, data, len, segment_write);
 }
 
 static void disk_append(UINT16 offset, const UINT8 *data, UINT16 len) {
-	//segment_copy 只需要写，已经被擦除好了
-	__addr_split_opera(offset, data, len, segment_copy);
+	//segment_copy 只需要写，数据源只会是内存，已经被擦除好了
+	__addr_split_opera(offset, data, len, segment_copy_mem);
 }
 
 static void disk_clean(UINT16 offset, UINT16 len) {
-	//segment_clean 只负责擦
+	//segment_clean 只负责擦, 不需要数据源
 	__addr_split_opera(offset, NULL, len, segment_clean);
 }
 
