@@ -109,7 +109,7 @@ static void f_dump(void) {
 
 //需要移植的函数, 调用者确保地址已经按segment对齐
 static void segment_erase(UINT16 addr) {
-	fprintf(stderr, "%s(%d)\n", __FUNCTION__, addr);
+	//fprintf(stderr, "%s(%d)\n", __FUNCTION__, addr);
 	if (addr % SEGMENT_SIZE != 0)
 		fprintf(stderr, "%s:segment\n", __FUNCTION__);
 	memset(&DISK[addr], '0', SEGMENT_SIZE);
@@ -120,12 +120,13 @@ static int erase_byte_count(UINT16 addr, UINT16 len) {
 	int i, ret = 0;
 	for (i = 0; i < len; i++)
 		ret += DISK_MAP[addr + i];
+	//fprintf(stderr, "%s(%d,%d) = %d\n", __FUNCTION__, addr, len, ret);
 	return ret;
 }
 
 //需要移植的函数，将数据从内存写到FLASH，调用者保证所在的FLASH已经被擦过且操作不跨段
 static void segment_copy_mem(UINT16 addr, UINT16 offset,  const UINT8 *data, UINT16 len) {
-	fprintf(stderr, "%s(%d, %d, %p, %d)\n", __FUNCTION__, addr, offset, data, len);
+	//fprintf(stderr, "%s(%d, %d, %p, %d)\n", __FUNCTION__, addr, offset, data, len);
 	if (offset + len > SEGMENT_SIZE || addr % SEGMENT_SIZE != 0)
 		fprintf(stderr, "%s:segment not split\n", __FUNCTION__);
 	if (erase_byte_count(addr + offset, len) != len)
@@ -137,7 +138,7 @@ static void segment_copy_mem(UINT16 addr, UINT16 offset,  const UINT8 *data, UIN
 
 //需要移植的函数，将数据从FLASH拷贝到FLASH，调用者保证目标所在FLASH已经被擦除且操作不夸段
 static void segment_copy_segment(UINT16 des, UINT16 src, UINT16 len) {
-	fprintf(stderr, "%s(%d, %d, %d)\n", __FUNCTION__, des, src, len);
+	//fprintf(stderr, "%s(%d, %d, %d)\n", __FUNCTION__, des, src, len);
 	if (des % SEGMENT_SIZE + len > SEGMENT_SIZE)
 		fprintf(stderr, "%s:segment not split\n", __FUNCTION__);
 	if (src % SEGMENT_SIZE + len > SEGMENT_SIZE)
@@ -172,36 +173,42 @@ static void segment_clean(UINT16 addr, UINT16 offset, const UINT8 *noused, UINT1
 	int id;
 	UINT16 s1, len1, s, l;
 	
-	fprintf(stderr, "%s(%d,%d,,%d)\n", __FUNCTION__, addr, offset, len);
+	//fprintf(stderr, "%s(%d,%d,,%d)\n", __FUNCTION__, addr, offset, len);
 
 	segment_erase(SWAP_ADDR);
 	for (id = FILE1; id < FILE_ID_END; id++) {
 		s1 = file_info[id].start_addr;
 		len1 = file_info[id].file_len;
-		fprintf(stderr, "cmp FILE(%d): start %d, len %d\n", id, s1, len1);
+		//fprintf(stderr, "cmp FILE(%d): start %d, len %d\n", id, s1, len1);
 		//计算出文件和段的交集部分
 		if (s1 < addr && (s1 + len1) > addr && (s1 + len1) < (addr + SEGMENT_SIZE)) {
 			//文件尾部在此段中
 			s = addr; l = s1 + len - addr;
-			fprintf(stderr, "include tail s %d l %d\n", s, l);
+			//fprintf(stderr, "include tail s %d l %d\n", s, l);
 		} else if (s1 >= addr && s1 + len1 > addr + SEGMENT_SIZE) {
 			//文件头部在此段中
 			s = s1; l = addr + SEGMENT_SIZE - s1;
-			fprintf(stderr, "include head s %d l %d\n", s, l);
+			//fprintf(stderr, "include head s %d l %d\n", s, l);
 		} else if ( s1 >= addr && s1 + len1 <= addr + SEGMENT_SIZE) {
 			//文件全部在此段中
 			s = s1, l = len1;
-			fprintf(stderr, "include body s %d l %d\n", s, l);
+			//fprintf(stderr, "include body s %d l %d\n", s, l);
 		} else
 			continue;
-		//计算此交集和擦写区域的交集
+		//计算此交集和擦写区域的交集, 跳过交集部分
 		if (s + l < offset || offset + len < s)
 			continue;
-		if (addr + offset > s)
-			s = addr + offset;
-		if (addr + len < l)
-			l = addr + len;
-		segment_copy_segment(SWAP_ADDR + s - addr, s, l);
+		//if (addr + offset > s)
+		//	s = addr + offset;
+		//if (addr + len < l)
+		//	l = addr + len;
+		//segment_copy_segment(SWAP_ADDR + s - addr, s, l);
+		if (s < addr + offset)
+			segment_copy_segment(SWAP_ADDR + s - addr, s, addr + offset - s);
+		if (addr + offset + len < s + l)
+			segment_copy_segment(SWAP_ADDR + addr + offset + len, \
+						addr + offset + len , s + l - (addr + offset + len));
+			
 	}
 
 	segment_erase(addr);
@@ -222,11 +229,16 @@ static void segment_clean(UINT16 addr, UINT16 offset, const UINT8 *noused, UINT1
 		//计算此交集和擦写区域的交集
 		if (s + l < offset || offset + len < s)
 			continue;
-		if (addr + offset > s)
-			s = addr + offset;
-		if (addr + len < l)
-			l = addr + len;
-		segment_copy_segment(s, SWAP_ADDR + s - addr, l);
+		//if (addr + offset > s)
+		//	s = addr + offset;
+		//if (addr + len < l)
+		//	l = addr + len;
+		//segment_copy_segment(s, SWAP_ADDR + s - addr, l);
+		if (s < addr + offset)
+			segment_copy_segment(s, SWAP_ADDR + s - addr, addr + offset - s);
+		if (addr + offset + len < s + l)
+			segment_copy_segment(addr + offset + len, \
+						SWAP_ADDR + addr + offset + len, s + l - (addr + offset + len));
 	}
 }
 
@@ -249,7 +261,7 @@ static void __addr_split_opera(UINT16 offset, const UINT8 *data, UINT16 len, op_
 	temp_off = offset - temp_addr;
 	temp_len = SEGMENT_SIZE - temp_off > len ? len : SEGMENT_SIZE - temp_off;
 	if (temp_len != 0) {
-		fprintf(stderr, "step 1:\n");
+		//fprintf(stderr, "step 1:\n");
 		op(temp_addr, temp_off, data, temp_len);
 	}
 	
@@ -261,7 +273,7 @@ static void __addr_split_opera(UINT16 offset, const UINT8 *data, UINT16 len, op_
 	n = len / SEGMENT_SIZE;
 	//printf("block:%d / %d")
 	for (i = 0; i < n; i++) {
-		fprintf(stderr, "step 2:\n");
+		//fprintf(stderr, "step 2:\n");
 		op(offset + i * SEGMENT_SIZE, 0, data + i * SEGMENT_SIZE, SEGMENT_SIZE);
 	}
 
@@ -270,7 +282,7 @@ static void __addr_split_opera(UINT16 offset, const UINT8 *data, UINT16 len, op_
 	data += n * SEGMENT_SIZE;
 	len -= n * SEGMENT_SIZE;
 	if (len != 0) {
-		fprintf(stderr, "step 3:\n");
+		//fprintf(stderr, "step 3:\n");
 		op(offset, 0, data, len);
 	}
 }
@@ -309,21 +321,22 @@ void f_test(void) {
 
 
 	f_write(FILE1, 2, tmp_data, 5);
+	fprintf(stderr, "f_write(FILE1) Finished.\n");
 	if (memcmp(f_read(FILE1, 2, 5), tmp_data, 5) != 0)
 		fprintf(stderr, "%s:%d erase failed.\n", __FUNCTION__, __LINE__);
 	//读写测试
+	fprintf(stderr, "f_write(FILE1) Begin.\n");
 	f_write(FILE1, 2, tmp_data, 6);
+	fprintf(stderr, "f_write(FILE1) Finished.\n");
 	if (memcmp(f_read(FILE1, 2, 6), tmp_data, 6) != 0)
 		fprintf(stderr, "%s:%d f_write failed.\n", __FUNCTION__, __LINE__);
 
-#if 0
 	//连续写测试
 	f_write(FILE2, 0, tmp_data, 15);
 	f_write(FILE1, 9, tmp_data, 1);
 	f_write(FILE2, 10, tmp_data, 10);
 	if (memcmp(f_read(FILE2, 10, 10), tmp_data, 10) != 0) 
 		fprintf(stderr, "%s:%d more write failed.\n", __FUNCTION__, __LINE__);
-#endif
 	//跨区写测试
 
 	//
@@ -335,8 +348,9 @@ int main(void) {
 	UINT8 tmp[17] = "this is a test";
 
 	//memset(DISK_MAP, 1, sizeof(DISK_MAP));
+	f_test();
 	memset(DISK, '0', sizeof(DISK));
-	for (i = 0; i < 0; i++) {
+	for (i = 0; i < 10; i++) {
 		f_write(FILE2, 1, tmp, sizeof(tmp));
 		f_write(FILE3, 20, (UINT8 *)"abcdefg", 7);
 		f_write(FILE3, 35, (UINT8 *)"1234567", 7);
@@ -347,7 +361,6 @@ int main(void) {
 		f_write(FILE3, 7 * i + i * 2, (UINT8 *)"ABCDEFG", 7);
 	}
 	
-	f_test();
 
 	f_dump();
 	return 0;
