@@ -33,21 +33,26 @@ static fs_t fs = {
 };
 
 #define SEGMENT_SIZE	512
-#define DISK_SPACE	SEGMENT_SIZE*50
-#define SWAP_ADDR	SEGMENT_SIZE*49
-
-//#define fprintf(...) 
+#define DISK_SPACE	SEGMENT_SIZE*51
+#define SUPER_BLOCK	SEGMENT_SIZE*50
+#define SWAP_ADDR		SEGMENT_SIZE*49
 
 static UINT8 DISK[DISK_SPACE];
 static UINT8 DISK_MAP[DISK_SPACE];	//用于跟踪DISK某个字节所在的区域是否被擦除过
 
 void 		f_init(void);
+void 		f_sync(void);
 UINT8*	f_read(file_id_t id, 	UINT16 offset,	UINT16 len);
 void 		f_write(file_id_t id, 	UINT16 offset,	const UINT8 *data, UINT16 len);
 void		f_erase(file_id_t id);
 static void disk_edit(UINT16 offset, const UINT8 *data, UINT16 len);
 static void disk_append(UINT16 offset, const UINT8 *data, UINT16 len);
 static void disk_clean(UINT16 offset, UINT16 len);
+
+//以下三个函数需要移植，传入的地址为相对于DISK的偏移地址
+static void segment_erase(UINT16 addr);
+static void segment_copy_mem(UINT16 addr, UINT16 offset,  const UINT8 *data, UINT16 len);
+static void segment_copy_segment(UINT16 des, UINT16 src, UINT16 len);
 
 /*******************************************************
 ***	用户接口层代码
@@ -97,12 +102,15 @@ void f_erase(file_id_t id) {
 	fs.file[id].file_len = 0;
 }
 
-static void f_sync(void) {
+void f_sync(void) {
+	segment_erase(SUPER_BLOCK);
+	segment_copy_mem(SUPER_BLOCK, 0, (UINT8 *) &fs, sizeof(fs));
 }
 
 void f_init(void) {
 	int id;
-	if (fs.valid != 0x76) {
+	fs_t *p = (void *)&DISK[SUPER_BLOCK];
+	if (p->valid != 0x76) {
 		for (id = 0; id <= FILE_ID_END; id++) {
 			fs.file[id].file_len = fs.file[id].file_size;
 			f_erase(id);
@@ -110,7 +118,7 @@ void f_init(void) {
 		fs.valid = 0x76;
 		f_sync();
 	} else {
-		memcpy(&fs.file, &fs.file, sizeof(fs.file));
+		memcpy(&fs, &DISK[SUPER_BLOCK], sizeof(fs));
 	}
 }
 
@@ -361,9 +369,15 @@ int main(void) {
 	UINT8 i;
 	UINT8 tmp[17] = "this is a test";
 
-	memset(DISK_MAP, 1, sizeof(DISK_MAP));
+	memset(DISK_MAP, 1, sizeof(DISK));
 	memset(DISK, '0', sizeof(DISK));
+	f_init();
+	fprintf(stderr, "f_init comp.\n");
 	f_test();
+	f_sync();
+	fprintf(stderr, "f_sync comp.\n");
+	f_init();
+	fprintf(stderr, "f_init comp.\n");
 	for (i = 0; i < 10; i++) {
 		#if 1
 		fprintf(stderr, "1.\n");
