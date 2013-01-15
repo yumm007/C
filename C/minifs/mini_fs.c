@@ -43,7 +43,7 @@ static UINT8 DISK_MAP[DISK_SPACE];	//用于跟踪DISK某个字节所在的区域是否被擦除过
 void 		f_init(void);
 void 		f_sync(void);
 UINT8*	f_read(file_id_t id, 	UINT16 offset,	UINT16 len);
-void 		f_write(file_id_t id, 	UINT16 offset,	const UINT8 *data, UINT16 len);
+UINT16 	f_write(file_id_t id, 	UINT16 offset,	const UINT8 *data, UINT16 len);
 void		f_erase(file_id_t id);
 static void disk_edit(UINT16 offset, const UINT8 *data, UINT16 len);
 static void disk_append(UINT16 offset, const UINT8 *data, UINT16 len);
@@ -68,11 +68,11 @@ UINT8* f_read(file_id_t id, UINT16 offset, UINT16 len) {
 	return &DISK[fs.file[id].start_addr + offset];
 }
 
-void f_write(file_id_t id,	UINT16 offset,	const UINT8 *data, UINT16 len) {
+UINT16 f_write(file_id_t id,	UINT16 offset,	const UINT8 *data, UINT16 len) {
 	UINT16 n;
 
 	if (id > FILE_ID_END)
-		return;
+		return 0;
 	if (offset + len > fs.file[id].file_size)
 		len = fs.file[id].file_size - offset;
 	
@@ -93,6 +93,8 @@ void f_write(file_id_t id,	UINT16 offset,	const UINT8 *data, UINT16 len) {
 		//需要保存的数据完全位于已有数据内部
 		disk_edit(fs.file[id].start_addr + offset, data, len);
 	}
+
+	return len;
 }
 
 void f_erase(file_id_t id) {
@@ -100,6 +102,12 @@ void f_erase(file_id_t id) {
 		return;
 	disk_clean(fs.file[id].start_addr, fs.file[id].file_len);
 	fs.file[id].file_len = 0;
+}
+
+UINT16 f_len(file_id_t id) {
+	if ( id > FILE_ID_END)
+		return 0;
+	return fs.file[id].file_len;
 }
 
 void f_sync(void) {
@@ -208,7 +216,6 @@ static int is_contain(UINT16 a, UINT16 b, UINT16 c, UINT16 d) {
 }
 
 static void segment_clean(UINT16 addr, UINT16 offset, const UINT8 *noused, UINT16 len) {
-	//
 	int id, ret;
 	UINT16 a, b, c, d;	//a和b为待擦处的区域起始和结束地址，c和d为文件落在此块中的起始和结束地址
 
