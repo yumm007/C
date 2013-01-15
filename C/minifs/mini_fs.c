@@ -5,9 +5,7 @@ typedef unsigned char UINT8;
 typedef unsigned int UINT16;
 
 typedef enum {
-	FILE_ID_BEGIN,
-
-	FILE1	= FILE_ID_BEGIN,
+	FILE1,
 	FILE2,
 	FILE3,
 
@@ -15,19 +13,26 @@ typedef enum {
 } file_id_t;
 
 struct file_info_t {
-	file_id_t 	id;
 	UINT16 		start_addr;
 	UINT16		file_len;
 	UINT16		file_size;
 };
 
-static struct file_info_t file_info[] = {
-	{FILE1, 0, 0, 10},
-	{FILE2, 10, 0, 23},
-	{FILE3, 33, 0, 150},
+typedef struct fs_t {
+	UINT8 valid;
+	UINT8 flag;
+	struct file_info_t file[FILE_ID_END + 1];
+} fs_t;
+static fs_t fs = {
+	.flag = 0,
+	.file = {
+		{0, 	0,	10},
+		{10, 	0,	23},
+		{33,	0,	150},
+	},
 };
 
-#define SEGMENT_SIZE	16
+#define SEGMENT_SIZE	512
 #define DISK_SPACE	SEGMENT_SIZE*50
 #define SWAP_ADDR	SEGMENT_SIZE*49
 
@@ -36,7 +41,7 @@ static struct file_info_t file_info[] = {
 static UINT8 DISK[DISK_SPACE];
 static UINT8 DISK_MAP[DISK_SPACE];	//用于跟踪DISK某个字节所在的区域是否被擦除过
 
-
+void 		f_init(void);
 UINT8*	f_read(file_id_t id, 	UINT16 offset,	UINT16 len);
 void 		f_write(file_id_t id, 	UINT16 offset,	const UINT8 *data, UINT16 len);
 void		f_erase(file_id_t id);
@@ -51,55 +56,72 @@ static void disk_clean(UINT16 offset, UINT16 len);
 ***	erase函数擦除指定的文件
 *******************************************************/
 UINT8* f_read(file_id_t id, UINT16 offset, UINT16 len) {
-	if (id < FILE_ID_BEGIN || id > FILE_ID_END)
+	if (id > FILE_ID_END)
 		return NULL;
-	if (offset + len > file_info[id].file_size)
-		len = file_info[id].file_size - offset;
-	return &DISK[file_info[id].start_addr + offset];
+	if (offset + len > fs.file[id].file_size)
+		len = fs.file[id].file_size - offset;
+	return &DISK[fs.file[id].start_addr + offset];
 }
 
 void f_write(file_id_t id,	UINT16 offset,	const UINT8 *data, UINT16 len) {
 	UINT16 n;
 
-	if (id < FILE_ID_BEGIN || id > FILE_ID_END)
+	if (id > FILE_ID_END)
 		return;
-	if (offset + len > file_info[id].file_size)
-		len = file_info[id].file_size - offset;
+	if (offset + len > fs.file[id].file_size)
+		len = fs.file[id].file_size - offset;
 	
 	//每次写文件时，计算出需要修改的部分和需要追加的部分
 	//需要修改的部分设计到擦除FLASH，而追加的部分则在文件创建时已经擦写过了
 
-	if (offset >= file_info[id].file_len) {
+	if (offset >= fs.file[id].file_len) {
 		//需要保存的数据只需要追加
-		disk_append(file_info[id].start_addr + offset, data, len);
-		file_info[id].file_len = offset + len;
-	} else if (offset < file_info[id].file_len && offset + len > file_info[id].file_len) {
+		disk_append(fs.file[id].start_addr + offset, data, len);
+		fs.file[id].file_len = offset + len;
+	} else if (offset < fs.file[id].file_len && offset + len > fs.file[id].file_len) {
 		//需要保存的数据一部分位于已有数据内部，另外一部分需要追加
-		n = file_info[id].file_len - offset;
-		disk_edit(file_info[id].start_addr + offset, data, n);
-		disk_append(file_info[id].start_addr + file_info[id].file_len, &data[n], len - n);
-		file_info[id].file_len = offset + len;
+		n = fs.file[id].file_len - offset;
+		disk_edit(fs.file[id].start_addr + offset, data, n);
+		disk_append(fs.file[id].start_addr + fs.file[id].file_len, &data[n], len - n);
+		fs.file[id].file_len = offset + len;
 	} else {
 		//需要保存的数据完全位于已有数据内部
-		disk_edit(file_info[id].start_addr + offset, data, len);
+		disk_edit(fs.file[id].start_addr + offset, data, len);
 	}
 }
 
 void f_erase(file_id_t id) {
-	if (id < FILE_ID_BEGIN || id > FILE_ID_END)
+	if ( id > FILE_ID_END)
 		return;
-	disk_clean(file_info[id].start_addr, file_info[id].file_len);
-	file_info[id].file_len = 0;
+	disk_clean(fs.file[id].start_addr, fs.file[id].file_len);
+	fs.file[id].file_len = 0;
+}
+
+static void f_sync(void) {
+}
+
+void f_init(void) {
+	int id;
+	if (fs.valid != 0x76) {
+		for (id = 0; id <= FILE_ID_END; id++) {
+			fs.file[id].file_len = fs.file[id].file_size;
+			f_erase(id);
+		}
+		fs.valid = 0x76;
+		f_sync();
+	} else {
+		memcpy(&fs.file, &fs.file, sizeof(fs.file));
+	}
 }
 
 static void f_dump(void) {
 	int i, j, n;
-	n = sizeof(file_info) / sizeof(file_info[0]);
+	n = sizeof(fs.file) / sizeof(fs.file[0]);
 	for (i = 0; i < n; i++) {
 		printf("FILE %d: addr = %d, len = %d, size = %d\n", i + 1, \
-			file_info[i].start_addr, file_info[i].file_len, file_info[i].file_size);
-		for (j = 0; j < file_info[i].file_size; j++)
-			putchar(DISK[file_info[i].start_addr + j]);
+			fs.file[i].start_addr, fs.file[i].file_len, fs.file[i].file_size);
+		for (j = 0; j < fs.file[i].file_size; j++)
+			putchar(DISK[fs.file[i].start_addr + j]);
 		putchar('\n');
 	}
 }
@@ -188,8 +210,8 @@ static void segment_clean(UINT16 addr, UINT16 offset, const UINT8 *noused, UINT1
 	fprintf(stderr, "%s(%d,%d,,%d)\n", __FUNCTION__, addr, offset, len);
 	segment_erase(SWAP_ADDR);
 	for (id = FILE1; id <= FILE_ID_END; id++) {
-		c = file_info[id].start_addr;
-		d = c + file_info[id].file_len;
+		c = fs.file[id].start_addr;
+		d = c + fs.file[id].file_len;
 		ret = is_contain(a, b, c, d);
 	//返回1表示交集剩余区为bd，2表示ca，bd, 3表示未ca, 4表示不需要，
 	//返回0表示没有交集, 5表示没有交集，但和段有交集
@@ -213,8 +235,8 @@ static void segment_clean(UINT16 addr, UINT16 offset, const UINT8 *noused, UINT1
 
 	segment_erase(addr);
 	for (id = FILE1; id <= FILE_ID_END; id++) {
-		c = file_info[id].start_addr;
-		d = c + file_info[id].file_len;
+		c = fs.file[id].start_addr;
+		d = c + fs.file[id].file_len;
 		ret = is_contain(a, b, c, d);
 		//返回1表示交集剩余区为bd，2表示ca，3表示未ca，bd，4表示ac，db，返回0表示没有交集
 		if (ret == 0 || ret == 4)
@@ -341,9 +363,9 @@ int main(void) {
 
 	memset(DISK_MAP, 1, sizeof(DISK_MAP));
 	memset(DISK, '0', sizeof(DISK));
-	//f_test();
-	for (i = 0; i < 1; i++) {
-		#if 0
+	f_test();
+	for (i = 0; i < 10; i++) {
+		#if 1
 		fprintf(stderr, "1.\n");
 		f_write(FILE2, 2, tmp, sizeof(tmp));
 		fprintf(stderr, "2.\n");
