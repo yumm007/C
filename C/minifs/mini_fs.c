@@ -30,6 +30,9 @@ static struct file_info_t file_info[] = {
 #define SEGMENT_SIZE	16
 #define DISK_SPACE	SEGMENT_SIZE*50
 #define SWAP_ADDR	SEGMENT_SIZE*49
+
+//#define fprintf(...) 
+
 static UINT8 DISK[DISK_SPACE];
 static UINT8 DISK_MAP[DISK_SPACE];	//用于跟踪DISK某个字节所在的区域是否被擦除过
 
@@ -184,7 +187,7 @@ static void segment_clean(UINT16 addr, UINT16 offset, const UINT8 *noused, UINT1
 
 	fprintf(stderr, "%s(%d,%d,,%d)\n", __FUNCTION__, addr, offset, len);
 	segment_erase(SWAP_ADDR);
-	for (id = FILE1; id < FILE_ID_END; id++) {
+	for (id = FILE1; id <= FILE_ID_END; id++) {
 		c = file_info[id].start_addr;
 		d = c + file_info[id].file_len;
 		ret = is_contain(a, b, c, d);
@@ -209,7 +212,7 @@ static void segment_clean(UINT16 addr, UINT16 offset, const UINT8 *noused, UINT1
 	}
 
 	segment_erase(addr);
-	for (id = FILE1; id < FILE_ID_END; id++) {
+	for (id = FILE1; id <= FILE_ID_END; id++) {
 		c = file_info[id].start_addr;
 		d = c + file_info[id].file_len;
 		ret = is_contain(a, b, c, d);
@@ -338,29 +341,28 @@ int main(void) {
 
 	memset(DISK_MAP, 1, sizeof(DISK_MAP));
 	memset(DISK, '0', sizeof(DISK));
-	f_test();
+	//f_test();
 	for (i = 0; i < 1; i++) {
+		#if 0
 		fprintf(stderr, "1.\n");
 		f_write(FILE2, 2, tmp, sizeof(tmp));
 		fprintf(stderr, "2.\n");
 		f_write(FILE1, 2, (UINT8 *)"ABCDEFGABC", 8);
 		fprintf(stderr, "3.\n");
-		#if 0
 		f_write(FILE3, 35, (UINT8 *)"1234567", 7);
 		fprintf(stderr, "4.\n");
 		f_write(FILE3, 2, (UINT8 *)"ABCDEFGABCDEFGABCDEFGABCDEFGABCDEFGABCDEFGABCDEFGABCDEFGABCDEFG", 63);
 		fprintf(stderr, "5.\n");
 		f_write(FILE3, 14, (UINT8 *)"ZZZ", 3);
+		#endif
 		fprintf(stderr, "6.\n");
 		f_write(FILE3, 14, (UINT8 *)"DDDDDDDDDDDDDDDDDDD", 19);
 		fprintf(stderr, "7.\n");
 		f_write(FILE3, 20, (UINT8 *)"abcdefg", 7);
 		fprintf(stderr, "8.\n");
 		f_write(FILE3, 7 * i + i * 2, (UINT8 *)"ABCDEFG", 7);
-		#endif
 	}
 	
-
 	f_dump();
 	return 0;
 }
