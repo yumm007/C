@@ -1,58 +1,33 @@
 #include <stdio.h>
 #include <string.h>
+#include "mini_fs.h"
 
-typedef unsigned char UINT8;
-typedef unsigned int UINT16;
+#define DISK_SPACE   SEGMENT_SIZE*DISK_BLOCK
+#define SWAP_ADDR    SEGMENT_SIZE*(DISK_BLOCK-1)
+#define SUPER_BLOCK  SEGMENT_SIZE* (DISK_BLOCK-2-(sizeof(fs) + SEGMENT_SIZE -1) / SEGMENT_SIZE)
 
-typedef enum {
-	FILE1,
-	FILE2,
-	FILE3,
-
-	FILE_ID_END = FILE3,
-} file_id_t;
-
-struct file_info_t {
-	UINT16 		start_addr;
-	UINT16		file_len;
-	UINT16		file_size;
+fs_t fs = { 
+   .flag = 0,
+   .file = { 
+      {0,   0, 10},
+      {0+10,  0, 23},
+      {10+23,  0, 150},
+      {10+23+150,   0, 9},
+      {10+23+150+9,  0, 43},
+      {10+23+150+9+43,  0, 130},
+      {10+23+150+9+43+130,   0, 300},
+      {10+23+150+9+43+130+300,  0, 203},
+   },  
 };
 
-typedef struct fs_t {
-	UINT8 valid;
-	UINT8 flag;
-	struct file_info_t file[FILE_ID_END + 1];
-} fs_t;
-static fs_t fs = {
-	.flag = 0,
-	.file = {
-		{0, 	0,	10},
-		{10, 	0,	23},
-		{33,	0,	150},
-	},
-};
+#define fprintf(...) 
 
-#define SEGMENT_SIZE	16
-#define DISK_SPACE	SEGMENT_SIZE*51
-#define SWAP_ADDR		SEGMENT_SIZE*50
-#define SUPER_BLOCK	SEGMENT_SIZE* (50 -(sizeof(fs) + SEGMENT_SIZE -1) / SEGMENT_SIZE)
+UINT8 DISK[DISK_SPACE];
+UINT8 DISK_MAP[DISK_SPACE];
 
-static UINT8 DISK[DISK_SPACE];
-static UINT8 DISK_MAP[DISK_SPACE];	//用于跟踪DISK某个字节所在的区域是否被擦除过
-
-void 		f_init(void);
-void 		f_sync(void);
-UINT8*	f_read(file_id_t id, 	UINT16 offset,	UINT16 len);
-UINT16 	f_write(file_id_t id, 	UINT16 offset,	const UINT8 *data, UINT16 len);
-void		f_erase(file_id_t id);
 static void disk_edit(UINT16 offset, const UINT8 *data, UINT16 len);
 static void disk_append(UINT16 offset, const UINT8 *data, UINT16 len);
 static void disk_clean(UINT16 offset, UINT16 len);
-
-//以下三个函数需要移植，传入的地址为相对于DISK的偏移地址
-static void segment_erase(UINT16 addr);
-static void segment_copy_mem(UINT16 addr, UINT16 offset,  const UINT8 *data, UINT16 len);
-static void segment_copy_segment(UINT16 des, UINT16 src, UINT16 len);
 
 /*******************************************************
 ***	用户接口层代码
@@ -145,51 +120,9 @@ static void f_dump(void) {
 }
 
 /*******************************************************
-***	底层IO函数
-***	需要实现Flash擦除函数，内存到Flash的复制，
-***  flash到flash的复制共3个函数
+***	块层代码
+***	主要涉及到块对齐和块擦除时复制已有数据区的操作
 *******************************************************/
-
-//需要移植的函数, 调用者确保地址已经按segment对齐
-static void segment_erase(UINT16 addr) {
-	fprintf(stderr, "%s(%d)\n", __FUNCTION__, addr);
-	if (addr % SEGMENT_SIZE != 0)
-		fprintf(stderr, "%s:segment\n", __FUNCTION__);
-	memset(&DISK[addr], '0', SEGMENT_SIZE);
-	memset(&DISK_MAP[addr], 1, SEGMENT_SIZE);
-}
-
-static int erase_byte_count(UINT16 addr, UINT16 len) {
-	int i, ret = 0;
-	for (i = 0; i < len; i++)
-		ret += DISK_MAP[addr + i];
-	return ret;
-}
-
-//需要移植的函数，将数据从内存写到FLASH，调用者保证所在的FLASH已经被擦过且操作不跨段
-static void segment_copy_mem(UINT16 addr, UINT16 offset,  const UINT8 *data, UINT16 len) {
-	fprintf(stderr, "%s(%d, %d, %p, %d)\n", __FUNCTION__, addr, offset, data, len);
-	if (offset + len > SEGMENT_SIZE || addr % SEGMENT_SIZE != 0)
-		fprintf(stderr, "%s:segment not split\n", __FUNCTION__);
-	if (erase_byte_count(addr + offset, len) != len)
-		fprintf(stderr, "%s:write before erase:%d+%d, %d\n", __FUNCTION__, \
-				addr, offset, len);
-	memcpy(&DISK[addr + offset], data, len);
-	memset(&DISK_MAP[addr + offset], 0, len);
-}
-
-//需要移植的函数，将数据从FLASH拷贝到FLASH，调用者保证目标所在FLASH已经被擦除且操作不夸段
-static void segment_copy_segment(UINT16 des, UINT16 src, UINT16 len) {
-	fprintf(stderr, "%s(%d, %d, %d)\n", __FUNCTION__, des, src, len);
-	if (des % SEGMENT_SIZE + len > SEGMENT_SIZE)
-		fprintf(stderr, "%s:segment not split\n", __FUNCTION__);
-	if (src % SEGMENT_SIZE + len > SEGMENT_SIZE)
-		fprintf(stderr, "%s:segment not split\n", __FUNCTION__);
-	if (erase_byte_count(des, len) != len)
-		fprintf(stderr, "%s:write before erase:%d, %d\n", __FUNCTION__, des, len);
-	memcpy(&DISK[des], &DISK[src], len);
-	memset(&DISK_MAP[des], 0, len);
-}
 
 #define is_contain(a, b, c,d ) ((d) >= (a) && (c) < (b))
 #define MIN(a, b) (a) < (b) ? (a) : (b)
@@ -290,86 +223,4 @@ static void disk_clean(UINT16 offset, UINT16 len) {
 	//segment_clean 只负责擦, 不需要数据源
 	__addr_split_opera(offset, NULL, len, segment_clean);
 }
-
-
-/*******************************************************
-***	用户层测试函数
-*******************************************************/
-
-void f_test(void) {
-	UINT8 tmp_data[20] = "this is a test line";
-	//UINT8 tmp_read[20];
-
-	//erase 测试
-	f_erase(FILE1);
-	fprintf(stderr, "f_erase(FILE1) Finished.\n");
-	f_erase(FILE2);
-	fprintf(stderr, "f_erase(FILE2) Finished.\n");
-	f_erase(FILE3);
-	fprintf(stderr, "f_erase(FILE3) Finished.\n");
-
-#if 1
-	f_write(FILE1, 2, tmp_data, 5);
-	fprintf(stderr, "f_write(FILE1) Finished.\n");
-	if (memcmp(f_read(FILE1, 2, 5), tmp_data, 5) != 0)
-		fprintf(stderr, "%s:%d erase failed.\n", __FUNCTION__, __LINE__);
-	//读写测试
-	fprintf(stderr, "f_write(FILE1) Begin.\n");
-	f_write(FILE1, 2, tmp_data, 6);
-	fprintf(stderr, "f_write(FILE1) Finished.\n");
-	if (memcmp(f_read(FILE1, 2, 6), tmp_data, 6) != 0)
-		fprintf(stderr, "%s:%d f_write failed.\n", __FUNCTION__, __LINE__);
-	//连续写测试
-	fprintf(stderr, "f_write continue mode test.\n");
-	f_write(FILE2, 0, tmp_data, 15);
-	f_write(FILE1, 9, tmp_data, 1);
-	f_write(FILE2, 10, tmp_data, 10);
-	if (memcmp(f_read(FILE2, 10, 10), tmp_data, 10) != 0) 
-		fprintf(stderr, "%s:%d more write failed.\n", __FUNCTION__, __LINE__);
-	fprintf(stderr, "f_write continue mode test comp.\n");
-	//跨区写测试
-#endif
-}
-
-
-int main(void) {
-	UINT8 i;
-	UINT8 tmp[] = "this is a test";
-
-	memset(DISK_MAP, 1, sizeof(DISK_MAP));
-	memset(DISK, '0', sizeof(DISK));
-	f_init();
-	fprintf(stderr, "f_init comp.\n");
-	//f_test();
-	#if 1
-	f_sync();
-	fprintf(stderr, "f_sync comp.\n");
-	//f_init();
-	fprintf(stderr, "f_init comp.\n");
-	for (i = 0; i < 10; i++) {
-		fprintf(stderr, "1.\n");
-		f_write(FILE2, 2, tmp, sizeof(tmp) -1);
-		#if 1
-		fprintf(stderr, "2.\n");
-		f_write(FILE1, 2, (UINT8 *)"ABCDEFGABC", 8);
-		fprintf(stderr, "3.\n");
-		f_write(FILE3, 35, (UINT8 *)"1234567", 7);
-		fprintf(stderr, "4.\n");
-		f_write(FILE3, 2, (UINT8 *)"ABCDEFGABCDEFGABCDEFGABCDEFGABCDEFGABCDEFGABCDEFGABCDEFGABCDEFG", 63);
-		fprintf(stderr, "5.\n");
-		f_write(FILE3, 14, (UINT8 *)"ZZZ", 3);
-		fprintf(stderr, "6.\n");
-		f_write(FILE3, 14, (UINT8 *)"DDDDDDDDDDDDDDDDDDD", 19);
-		#endif
-		fprintf(stderr, "7.\n");
-		f_write(FILE2, 1, (UINT8 *)"abcdefg", 7);
-		fprintf(stderr, "8.\n");
-		f_write(FILE3, 7 * i + i * 2, (UINT8 *)"ABCDEFG", 7);
-	}
-	
-	f_dump();
-	#endif
-	return 0;
-}
-
 
