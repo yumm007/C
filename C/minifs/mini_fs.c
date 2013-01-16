@@ -276,7 +276,7 @@ static void segment_clean(UINT16 addr, UINT16 offset, const UINT8 *noused, UINT1
 	}
 }
 #else
-#define is_contain(a, b, c,d ) ((d) > (a) && (c) < (b))
+#define is_contain(a, b, c,d ) ((d) >= (a) && (c) < (b))
 #define MIN(a, b) (a) < (b) ? (a) : (b)
 #define MAX(a, b) (a) > (b) ? (a) : (b)
 
@@ -288,11 +288,12 @@ static void __segment_op(UINT16 seg_addr, UINT16 a, UINT16 b, UINT8 step) {
 		d = c + fs.file[id].file_len;
 		if (!is_contain(seg_addr, seg_addr + SEGMENT_SIZE, c, d))	//文件不在此块中	
 			continue;
-		d =  d > seg_addr + SEGMENT_SIZE ? seg_addr + SEGMENT_SIZE: d - seg_addr;
+		d =  d > seg_addr + SEGMENT_SIZE ? seg_addr + SEGMENT_SIZE: d;
 		c = c < seg_addr ? seg_addr : c;
 		//fprintf(stderr, "file %d start %d, len = %d, in this segment %d, step %d\n", id + 1, c, d, seg_addr, step);
 		min = MIN(a, d);
 		max = MAX(c, b);
+		//fprintf(stderr, "a=%d,b=%d,c=%d,d=%d\n",a,b,c,d);
 		if (c < min) {
 			//fprintf(stderr, "area 1: %d, %d, %d, %d\n", a, b, c, d);
 			if (step == 0)
@@ -420,23 +421,22 @@ void f_test(void) {
 
 int main(void) {
 	UINT8 i;
-	UINT8 tmp[17] = "this is a test";
+	UINT8 tmp[] = "this is a test";
 
 	memset(DISK_MAP, 1, sizeof(DISK_MAP));
 	memset(DISK, '0', sizeof(DISK));
 	f_init();
-	f_dump();
 	fprintf(stderr, "f_init comp.\n");
-	f_test();
+	//f_test();
 	#if 1
 	f_sync();
 	fprintf(stderr, "f_sync comp.\n");
-	f_init();
+	//f_init();
 	fprintf(stderr, "f_init comp.\n");
 	for (i = 0; i < 10; i++) {
-		#if 1
 		fprintf(stderr, "1.\n");
-		f_write(FILE2, 2, tmp, sizeof(tmp));
+		f_write(FILE2, 2, tmp, sizeof(tmp) -1);
+		#if 1
 		fprintf(stderr, "2.\n");
 		f_write(FILE1, 2, (UINT8 *)"ABCDEFGABC", 8);
 		fprintf(stderr, "3.\n");
@@ -445,11 +445,11 @@ int main(void) {
 		f_write(FILE3, 2, (UINT8 *)"ABCDEFGABCDEFGABCDEFGABCDEFGABCDEFGABCDEFGABCDEFGABCDEFGABCDEFG", 63);
 		fprintf(stderr, "5.\n");
 		f_write(FILE3, 14, (UINT8 *)"ZZZ", 3);
-		#endif
 		fprintf(stderr, "6.\n");
 		f_write(FILE3, 14, (UINT8 *)"DDDDDDDDDDDDDDDDDDD", 19);
+		#endif
 		fprintf(stderr, "7.\n");
-		f_write(FILE3, 20, (UINT8 *)"abcdefg", 7);
+		f_write(FILE2, 1, (UINT8 *)"abcdefg", 7);
 		fprintf(stderr, "8.\n");
 		f_write(FILE3, 7 * i + i * 2, (UINT8 *)"ABCDEFG", 7);
 	}
