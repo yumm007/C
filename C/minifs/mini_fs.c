@@ -191,91 +191,6 @@ static void segment_copy_segment(UINT16 des, UINT16 src, UINT16 len) {
 	memset(&DISK_MAP[des], 0, len);
 }
 
-#if 0
-//返回1表示交集剩余区为bd，2表示ca，bd, 3表示未ca, 4表示不需要，返回0表示没有交集, 5表示没有交集，但和段有交集
-static int is_contain(UINT16 a, UINT16 b, UINT16 c, UINT16 d) {
-	int ret = 0;
-	if (c > a && c < b) {
-		if (d > b)
-			ret = 1;	//c落在ab之间，d在被右边
-		else 
-			ret = 4; //cd落在ab之间
-	} else if (c < a && d > a) {
-		if (d < b )
-			ret = 3;	//此在a左边，d落在ab之间
-		else
-			ret = 2;	//ab在cd之间
-	} else if ( c < a && d == b)
-		ret = 3;
-	else if (a == c && d > b)
-		ret = 2;
-	else if (d <= a && d >= a / SEGMENT_SIZE * SEGMENT_SIZE)
-		ret = 5;
-	else if (c >= b && c <= (a + SEGMENT_SIZE -1) / SEGMENT_SIZE * SEGMENT_SIZE)
-		ret = 5;
-
-	//fprintf(stderr, "ret = %d(%d,%d,%d,%d)\n", ret, a, b, c,d);
-	return ret;
-}
-
-static void segment_clean(UINT16 addr, UINT16 offset, const UINT8 *noused, UINT16 len) {
-	int id, ret;
-	UINT16 a, b, c, d;	//a和b为待擦处的区域起始和结束地址，c和d为文件落在此块中的起始和结束地址
-
-	a = addr + offset;
-	b = addr + offset + len;
-
-	fprintf(stderr, "%s(%d,%d,,%d)\n", __FUNCTION__, addr, offset, len);
-	segment_erase(SWAP_ADDR);
-	for (id = FILE1; id <= FILE_ID_END; id++) {
-		c = fs.file[id].start_addr;
-		d = c + fs.file[id].file_len;
-		ret = is_contain(a, b, c, d);
-	//返回1表示交集剩余区为bd，2表示ca，bd, 3表示未ca, 4表示不需要，
-	//返回0表示没有交集, 5表示没有交集，但和段有交集
-		if (ret == 0 && ret == 4)
-			continue;
-		//对其到本段中
-		if (c < addr) c = addr;
-		if (d > addr + SEGMENT_SIZE) d = addr + SEGMENT_SIZE;
-
-		if (ret == 1) {
-			segment_copy_segment(SWAP_ADDR + d - addr, b, d - b);
-		} else if (ret == 3) {
-			segment_copy_segment(SWAP_ADDR + c - addr, c, a - c);
-		} else if (ret == 2) {
-			segment_copy_segment(SWAP_ADDR + c - addr, c, a - c);
-			segment_copy_segment(SWAP_ADDR + b - addr, b, d - b);
-		} else if (ret == 5) {
-			segment_copy_segment(SWAP_ADDR + c - addr, c, d - c);
-		}
-	}
-
-	segment_erase(addr);
-	for (id = FILE1; id <= FILE_ID_END; id++) {
-		c = fs.file[id].start_addr;
-		d = c + fs.file[id].file_len;
-		ret = is_contain(a, b, c, d);
-		//返回1表示交集剩余区为bd，2表示ca，3表示未ca，bd，4表示ac，db，返回0表示没有交集
-		if (ret == 0 || ret == 4)
-			continue;
-		//对齐到本段中
-		if (c < addr) c = addr;
-		if (d > addr + SEGMENT_SIZE) d = addr + SEGMENT_SIZE;
-
-		if (ret == 1) {
-			segment_copy_segment(b, SWAP_ADDR + d - addr, d - b);
-		} else if (ret == 3) {
-			segment_copy_segment(c, SWAP_ADDR + c - addr, a - c);
-		} else if (ret == 2) {
-			segment_copy_segment(c, SWAP_ADDR + c - addr, a - c);
-			segment_copy_segment(b, SWAP_ADDR + b - addr, d - b);
-		} else if (ret == 5) {
-			segment_copy_segment(c, SWAP_ADDR + c - addr, d - c);
-		}
-	}
-}
-#else
 #define is_contain(a, b, c,d ) ((d) >= (a) && (c) < (b))
 #define MIN(a, b) (a) < (b) ? (a) : (b)
 #define MAX(a, b) (a) > (b) ? (a) : (b)
@@ -318,7 +233,6 @@ static void segment_clean(UINT16 seg_addr, UINT16 offset, const UINT8 *noused, U
 	segment_erase(seg_addr);
 	__segment_op(seg_addr, seg_addr + offset, seg_addr + offset + len, 1);
 }
-#endif
 
 static void segment_write(UINT16 addr, UINT16 offset, const UINT8 *data, UINT16 len) {
 	if (len == 0)
@@ -332,7 +246,6 @@ typedef void (*op_fun_t)(UINT16 addr, UINT16 offset, const UINT8 *data, UINT16 l
 static void __addr_split_opera(UINT16 offset, const UINT8 *data, UINT16 len, op_fun_t op) {
 	UINT16 temp_addr, temp_off, temp_len;
 	int i, n;
-	
 	//第一步，offset向下对齐 - offset, 知道需要改写的上一块地址
 	temp_addr = (offset / SEGMENT_SIZE ) * SEGMENT_SIZE;
 	temp_off = offset - temp_addr;
