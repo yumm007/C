@@ -32,10 +32,10 @@ static fs_t fs = {
 	},
 };
 
-#define SEGMENT_SIZE	512
+#define SEGMENT_SIZE	16
 #define DISK_SPACE	SEGMENT_SIZE*51
-#define SUPER_BLOCK	SEGMENT_SIZE*50
-#define SWAP_ADDR		SEGMENT_SIZE*49
+#define SWAP_ADDR		SEGMENT_SIZE*50
+#define SUPER_BLOCK	SEGMENT_SIZE* (50 -(sizeof(fs) + SEGMENT_SIZE -1) / SEGMENT_SIZE)
 
 static UINT8 DISK[DISK_SPACE];
 static UINT8 DISK_MAP[DISK_SPACE];	//用于跟踪DISK某个字节所在的区域是否被擦除过
@@ -111,8 +111,10 @@ UINT16 f_len(file_id_t id) {
 }
 
 void f_sync(void) {
-	segment_erase(SUPER_BLOCK);
-	segment_copy_mem(SUPER_BLOCK, 0, (UINT8 *) &fs, sizeof(fs));
+	//segment_erase(SUPER_BLOCK);
+	//disk_clean(SUPER_BLOCK, SWAP_ADDR - SUPER_BLOCK);
+	disk_edit(SUPER_BLOCK, (UINT8 *)&fs, sizeof(fs));
+	//segment_copy_mem(SUPER_BLOCK, 0, (UINT8 *) &fs, sizeof(fs));
 }
 
 void f_init(void) {
@@ -189,6 +191,7 @@ static void segment_copy_segment(UINT16 des, UINT16 src, UINT16 len) {
 	memset(&DISK_MAP[des], 0, len);
 }
 
+#if 0
 //返回1表示交集剩余区为bd，2表示ca，bd, 3表示未ca, 4表示不需要，返回0表示没有交集, 5表示没有交集，但和段有交集
 static int is_contain(UINT16 a, UINT16 b, UINT16 c, UINT16 d) {
 	int ret = 0;
@@ -211,7 +214,7 @@ static int is_contain(UINT16 a, UINT16 b, UINT16 c, UINT16 d) {
 	else if (c >= b && c <= (a + SEGMENT_SIZE -1) / SEGMENT_SIZE * SEGMENT_SIZE)
 		ret = 5;
 
-	fprintf(stderr, "ret = %d(%d,%d,%d,%d)\n", ret, a, b, c,d);
+	//fprintf(stderr, "ret = %d(%d,%d,%d,%d)\n", ret, a, b, c,d);
 	return ret;
 }
 
@@ -272,6 +275,49 @@ static void segment_clean(UINT16 addr, UINT16 offset, const UINT8 *noused, UINT1
 		}
 	}
 }
+#else
+#define is_contain(a, b, c,d ) ((d) > (a) && (c) < (b))
+#define MIN(a, b) (a) < (b) ? (a) : (b)
+#define MAX(a, b) (a) > (b) ? (a) : (b)
+
+static void __segment_op(UINT16 seg_addr, UINT16 a, UINT16 b, UINT8 step) {
+	UINT16 id, c, d, min, max;
+
+	for (id = FILE1; id <= FILE_ID_END; id++) {
+		c = fs.file[id].start_addr;
+		d = c + fs.file[id].file_len;
+		if (!is_contain(seg_addr, seg_addr + SEGMENT_SIZE, c, d))	//文件不在此块中	
+			continue;
+		d =  d > seg_addr + SEGMENT_SIZE ? seg_addr + SEGMENT_SIZE: d - seg_addr;
+		c = c < seg_addr ? seg_addr : c;
+		//fprintf(stderr, "file %d start %d, len = %d, in this segment %d, step %d\n", id + 1, c, d, seg_addr, step);
+		min = MIN(a, d);
+		max = MAX(c, b);
+		if (c < min) {
+			//fprintf(stderr, "area 1: %d, %d, %d, %d\n", a, b, c, d);
+			if (step == 0)
+				segment_copy_segment(SWAP_ADDR + c - seg_addr, c, min - c);
+			else
+				segment_copy_segment(c, SWAP_ADDR + c - seg_addr, min - c);
+		}
+		if (d > max) {
+			//fprintf(stderr, "area 2: %d, %d, %d, %d\n", a, b, c, d);
+			if (step == 0)
+				segment_copy_segment(SWAP_ADDR + max - seg_addr, max, d - max);
+			else
+				segment_copy_segment(max, SWAP_ADDR + max - seg_addr, d - max);
+		}
+	}
+}
+
+static void segment_clean(UINT16 seg_addr, UINT16 offset, const UINT8 *noused, UINT16 len) {
+	fprintf(stderr, "%s(%d,%d,,%d)\n", __FUNCTION__, seg_addr, offset, len);
+	segment_erase(SWAP_ADDR);
+	__segment_op(seg_addr, seg_addr + offset, seg_addr + offset + len, 0);
+	segment_erase(seg_addr);
+	__segment_op(seg_addr, seg_addr + offset, seg_addr + offset + len, 1);
+}
+#endif
 
 static void segment_write(UINT16 addr, UINT16 offset, const UINT8 *data, UINT16 len) {
 	if (len == 0)
@@ -376,11 +422,13 @@ int main(void) {
 	UINT8 i;
 	UINT8 tmp[17] = "this is a test";
 
-	memset(DISK_MAP, 1, sizeof(DISK));
+	memset(DISK_MAP, 1, sizeof(DISK_MAP));
 	memset(DISK, '0', sizeof(DISK));
 	f_init();
+	f_dump();
 	fprintf(stderr, "f_init comp.\n");
 	f_test();
+	#if 1
 	f_sync();
 	fprintf(stderr, "f_sync comp.\n");
 	f_init();
@@ -407,6 +455,7 @@ int main(void) {
 	}
 	
 	f_dump();
+	#endif
 	return 0;
 }
 
