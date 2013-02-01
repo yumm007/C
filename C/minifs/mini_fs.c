@@ -154,7 +154,7 @@ static void __addr_split_opera(WORD addr, WORD data, WORD len, WORD split_unit, 
 *****************块间复制函数********************
 ************************************************/
 
-#ifndef FS_USE_MEM_SWAP	//不适用内存交换块间数据
+#ifndef FS_USE_MEM_SWAP	//不使用内存交换块间数据
 
 #define SEGMENT_TO_SWAP	segment_copy_segment
 #define SWAP_TO_SEGMENT	segment_copy_segment

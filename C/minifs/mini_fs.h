@@ -1,12 +1,3 @@
-/**
-Copyright (C) 2012, 北京汉朔科技有限公司
-All Rights Reserved World Wide.
-Project：		ESL
-Description:	FLASH文件系统
-Date			Author			Description
-2013-01-31	于明明			beta版本
-*/
-
 #ifndef __MINI_FS__
 #define __MINI_FS__
 
@@ -16,9 +7,8 @@ Date			Author			Description
 */
 
 /**< 基本数据类型定义头文件 */
-//typedef unsigned char BYTE;
-//typedef unsigned int WORD;
-#include "datatype.h"
+typedef unsigned char BYTE;
+typedef unsigned int WORD;
 
 /**< 文件名，使用ID的方式替代字符串 */
 typedef enum {
