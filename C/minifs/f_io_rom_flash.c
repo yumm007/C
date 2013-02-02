@@ -18,7 +18,7 @@ const BYTE *f_disk_addr(void) {
 }
 
 //需要移植的函数, 调用者确保地址已经按segment对齐
-void segment_erase(WORD seg_addr) {
+bool segment_erase(WORD seg_addr) {
 	_DINT();
 	char *flash_ptr = (char *)&DISK[seg_addr];
 	
@@ -38,13 +38,13 @@ void segment_erase(WORD seg_addr) {
 }
 
 //需要移植的函数，实现将数据从FLASH拷贝到内存中
-void segment_read(WORD seg_addr, WORD offset, WORD buf, WORD len) {
+bool segment_read(WORD seg_addr, WORD offset, WORD buf, WORD len) {
 	memcpy((BYTE *)buf, &DISK[seg_addr+offset], len);
 }
 
 //需要移植的函数，将数据从内存写到FLASH，调用者保证所在的FLASH已经被擦过且操作不跨段
 #if 1
-void segment_write(WORD seg_addr, WORD offset,  WORD data, WORD len) {
+bool segment_write(WORD seg_addr, WORD offset,  WORD data, WORD len) {
 	int i;
 	
 	_DINT();

@@ -1,3 +1,4 @@
+
 #ifndef __MINI_FS__
 #define __MINI_FS__
 
@@ -7,8 +8,39 @@
 */
 
 /**< 基本数据类型定义头文件 */
-typedef unsigned char BYTE;
-typedef unsigned int WORD;
+//typedef unsigned char BYTE;
+//typedef unsigned int WORD;
+#include <stdbool.h>
+#include "datatype.h"
+
+#define FS_DISK_ROM_FLASH					/**< 使用MCU内部的ROM FLASH，主要区别在读方式上 。内部FLASH读时直接返回FLASH地址*/
+//#define FS_DISK_SPI_FLASH				/**< 使用外部的SPI FLASH */
+//#define FS_USE_MEM_SWAP	
+//#define ENABLE_BLOCK_MGMT					/**< 启用坏块管理单元 */
+
+#ifdef FS_DISK_ROM_FLASH					/**< 内部FLASH的读写参数 */
+#define SEGMENT_SIZE		512				/**< FLASH的最小擦除单元大小 */
+#define MAX_WRITE_UNIT	32					/**< FLASH的最大连续写入单元 */
+#endif
+
+#ifdef FS_DISK_SPI_FLASH					/**< 外部FLASH的读写参数 */
+
+#define SEGMENT_SIZE		4096				/**< FLASH的最小擦除单元大小 */
+#define MAX_WRITE_UNIT	256				/**< FLASH的最大连续写入单元 */
+#define FS_DISK_ADDR	0x00					/**< 文件系统在FLASH中的起始位置 */
+#endif
+
+#define DISK_BLOCK	10						/**< 使用10个SEGMENT作为文件系统，其中最后2个SEGMENT分别作为超级块和交换块，不能小于3 */
+
+/**< 使用内存作为块间数据交换空间, 否则在FLASH内开辟一个独立的segment作为交换空间。
+*    RAM空间够的话推荐启用这个宏, 这将大大增加文件系统速度，单需要给文件系统指定一个SEGMENT_SIZE字节的BUF区 
+*/
+					
+#ifndef FS_USE_MEM_SWAP
+#define SEGMENT_TO_SEGMENT_BUF	32		/**< 如果不使用内存作为块交互区，则定义一个32字节的函数内临时数组 */
+#else
+extern BYTE __FS_SWAP_SPACE[SEGMENT_SIZE];	/**< 需要用户在程序中指定这个交换区的存储位置 */
+#endif
 
 /**< 文件名，使用ID的方式替代字符串 */
 typedef enum {
@@ -37,44 +69,6 @@ typedef struct FILE_LEN_TABLE {
 	BYTE FILE8_SIZE[300];
 	BYTE FILE9_SIZE[600];
 } FILE_LEN_TABLE;
-
-/**< 文件系统结构体 */
-typedef struct fs_t {
-	BYTE valid;
-	BYTE flag;
-	struct file_info_t {
-		WORD start_addr;
-		WORD file_len;
-		WORD file_size;		
-	} file[FILE_ID_END];
-} fs_t;
-extern fs_t fs;
-
-#define FS_DISK_ROM_FLASH					/**< 使用MCU内部的ROM FLASH，主要区别在读方式上 。内部FLASH读时直接返回FLASH地址*/
-//#define FS_DISK_SPI_FLASH				/**< 使用外部的SPI FLASH */
-
-#ifdef FS_DISK_ROM_FLASH					/**< 内部FLASH的读写参数 */
-#define SEGMENT_SIZE		512				/**< FLASH的最小擦除单元大小 */
-#define MAX_WRITE_UNIT	32					/**< FLASH的最大连续写入单元 */
-#endif
-
-#ifdef FS_DISK_SPI_FLASH					/**< 外部FLASH的读写参数 */
-#define SEGMENT_SIZE		4096				/**< FLASH的最小擦除单元大小 */
-#define MAX_WRITE_UNIT	256				/**< FLASH的最大连续写入单元 */
-#define FS_DISK_ADDR	0x00					/**< 文件系统在FLASH中的起始位置 */
-#endif
-
-/**< 使用内存作为块间数据交换空间, 否则在FLASH内开辟一个独立的segment作为交换空间。
-*    RAM空间够的话推荐启用这个宏, 这将大大增加文件系统速度，单需要给文件系统指定一个SEGMENT_SIZE字节的BUF区 
-*/
-//#define FS_USE_MEM_SWAP						
-#ifndef FS_USE_MEM_SWAP
-#define SEGMENT_TO_SEGMENT_BUF	32		/**< 如果不使用内存作为块交互区，则定义一个32字节的函数内临时数组 */
-#else
-extern BYTE __FS_SWAP_SPACE[SEGMENT_SIZE];	/**< 需要用户在程序中指定这个交换区的存储位置 */
-#endif
-
-#define DISK_BLOCK	10						/**< 使用10个SEGMENT作为文件系统，其中最后2个SEGMENT分别作为超级块和交换块，不能小于3 */
 
 /**< 系统启动时加载文件系统 */
 void 	f_init(void);
@@ -108,11 +102,14 @@ WORD 	f_write(file_id_t id, WORD offset,	const BYTE *data, WORD len);
 /**< 返回文件长度 */
 WORD	f_len(file_id_t id);
 
+/**< 返回文件大小 */
+WORD	f_size(file_id_t id);
+
 /**< 清空文件 */
 void	f_erase(file_id_t id);
 
 /**< 擦除一个最小的块，调用则保证地址addr按 SEGMENT_SIZE 对齐 */
-extern void segment_erase(WORD addr);
+extern bool segment_erase(WORD addr);
 
 /**
 * IO块读函数
@@ -122,7 +119,7 @@ extern void segment_erase(WORD addr);
 * @param[in] len 需要读取的字节数, 调用者保证不会超出buf空间
 * @return 无
 */
-extern void segment_read(WORD seg_addr, WORD seg_off, WORD buf, WORD len);
+extern bool segment_read(WORD seg_addr, WORD seg_off, WORD buf, WORD len);
 
 /**
 * IO块写函数
@@ -130,9 +127,9 @@ extern void segment_read(WORD seg_addr, WORD seg_off, WORD buf, WORD len);
 * @param[in] seg_off 块内偏移量
 * @param[in] buf 为数据源，参数应该为指针，但传参时需要强转为WORD类型
 * @param[in] len 需要写入的字节数，调用者保证不会跨MAX_WRITE_UNIT写入
-* @return 无
+* @return 返回写成功或者失败
 */
-extern void segment_write(WORD seg_addr, WORD seg_off,  WORD buf, WORD len);
+extern bool segment_write(WORD seg_addr, WORD seg_off,  WORD buf, WORD len);
 
 /**@}*/ // mini_fs
 

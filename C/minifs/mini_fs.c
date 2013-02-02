@@ -12,7 +12,24 @@
 #define SUPER_BLOCK  ((WORD)SEGMENT_SIZE)*(DISK_BLOCK-2-(sizeof(fs) + SEGMENT_SIZE -1) / SEGMENT_SIZE)
 
 #define SIZEOF(s,m) ((size_t) sizeof(((s *)0)->m)) 
-fs_t fs = { 
+
+enum {BLOCK_UNUSED, BLOCK_USED, BLOCK_FAIL};
+
+/**< 文件系统结构体 */
+typedef struct fs_t {
+	BYTE valid;
+	BYTE flag;							/**< 文件系统标志位 */
+#ifdef ENABLE_BLOCK_MGMT
+	BYTE block_status[DISK_BLOCK];/**< 每个物理块的状态 */
+	WORD block_map[DISK_BLOCK];	/**< 文件系统使用的物理块序号 */
+#endif
+	struct file_info_t {
+		WORD start_addr;				/**< 文件起始地址 */
+		WORD file_len;					/**< 文件当前长度 */
+		WORD file_size;				/**< 文件最大长度 */
+	} file[FILE_ID_END];
+} fs_t;
+static fs_t fs = { 
    .flag = 0,
    .file = { 
       {offsetof(FILE_LEN_TABLE, FILE1_SIZE),   0, SIZEOF(FILE_LEN_TABLE, FILE1_SIZE)},
@@ -104,16 +121,35 @@ WORD f_len(file_id_t id) {
 	return fs.file[id].file_len;
 }
 
+WORD	f_size(file_id_t id) {
+	if ( id >= FILE_ID_END)
+		return 0;
+	return fs.file[id].file_size;
+}
+
+WORD	f_addr(file_id_t id) {
+	if ( id >= FILE_ID_END)
+		return 0;
+	return fs.file[id].start_addr;
+}
+
 void f_sync(void) {
 	disk_edit(SUPER_BLOCK, (BYTE *)&fs, sizeof(fs));
 }
 
 void f_init(void) {
 	file_id_t id;
-	fs_t p;
-	segment_read(SUPER_BLOCK, 0, (WORD)&p, sizeof(p));
+	BYTE p;
+	int n;
+	segment_read(SUPER_BLOCK, 0, (WORD)&p, sizeof(fs.valid));
 	
-	if (p.valid != 0x76) {
+	if (p != 0x76) {
+#ifdef ENABLE_BLOCK_MGMT
+		for (id = FILE1, n = 0; id < FILE_ID_END; id++, n++) {\
+			fs.block_map[id] = n;
+			fs.block_status[id] = BLOCK_UNUSED;
+		}
+#endif
 		for (id = FILE1; id < FILE_ID_END; id++) {
 			fs.file[id].file_len = fs.file[id].file_size;
 			f_erase(id);
@@ -122,7 +158,7 @@ void f_init(void) {
 		f_sync();
 		printf("FS init again.\n");
 	} else {
-		memcpy(&fs, &p, sizeof(fs));
+		segment_read(SUPER_BLOCK, 0, (WORD)&fs, sizeof(fs));
 		printf("FS Load.\n");
 	}
 }
@@ -150,18 +186,23 @@ static void __addr_split_opera(WORD addr, WORD data, WORD len, WORD split_unit, 
 		op(addr, 0, data, len);
 }
 
+//块操作函数虚拟映射
+static void __segment_erase(WORD addr);
+static void __segment_read(WORD seg_addr, WORD seg_off, WORD buf, WORD len);
+static void __segment_write(WORD seg_addr, WORD seg_off,  WORD buf, WORD len);
+
 /************************************************
 *****************块间复制函数********************
 ************************************************/
 
-#ifndef FS_USE_MEM_SWAP	//不使用内存交换块间数据
+#ifndef FS_USE_MEM_SWAP	//不适用内存交换块间数据
 
 #define SEGMENT_TO_SWAP	segment_copy_segment
 #define SWAP_TO_SEGMENT	segment_copy_segment
 
 #ifdef FS_DISK_ROM_FLASH
 void segment_copy_segment(WORD seg_dst, WORD dst_off, WORD seg_src, WORD len) {\
-	segment_write(seg_dst, dst_off, seg_src, len);
+	__segment_write(seg_dst, dst_off, seg_src, len);
 }
 #endif
 
@@ -175,13 +216,13 @@ void segment_copy_segment(WORD seg_dst, WORD dst_off, WORD seg_src, WORD len) {
 	for (i = len / SEGMENT_TO_SEGMENT_BUF; i > 0; i--, dst_addr += SEGMENT_TO_SEGMENT_BUF, \
 			src_addr += SEGMENT_TO_SEGMENT_BUF, len -= SEGMENT_TO_SEGMENT_BUF) 
 	{
-		segment_read(src_addr, 0, (WORD)buf, SEGMENT_TO_SEGMENT_BUF);
-		segment_write(dst_addr, 0, (WORD)buf, SEGMENT_TO_SEGMENT_BUF);
+		__segment_read(src_addr, 0, (WORD)buf, SEGMENT_TO_SEGMENT_BUF);
+		__segment_write(dst_addr, 0, (WORD)buf, SEGMENT_TO_SEGMENT_BUF);
 	}
 	
 	if (len != 0) {
-		segment_read(src_addr, 0, (WORD)buf, len);
-		segment_write(dst_addr, 0, (WORD)buf, len);
+		__segment_read(src_addr, 0, (WORD)buf, len);
+		__segment_write(dst_addr, 0, (WORD)buf, len);
 	}
 }
 #endif
@@ -189,10 +230,10 @@ void segment_copy_segment(WORD seg_dst, WORD dst_off, WORD seg_src, WORD len) {
 #else	//使用内存作为块间数据交换时
 
 #define SEGMENT_TO_SWAP	segment_to_mem 
-#define SWAP_TO_SEGMENT	segment_write
+#define SWAP_TO_SEGMENT	__segment_write
 static void segment_to_mem(WORD mem_addr, WORD mem_offset, WORD flash_addr, WORD len){
 	WORD seg_addr = flash_addr / SEGMENT_SIZE * SEGMENT_SIZE;
-	segment_read(seg_addr , flash_addr - seg_addr, mem_addr + mem_offset, len);
+	__segment_read(seg_addr , flash_addr - seg_addr, mem_addr + mem_offset, len);
 }
 #endif
 
@@ -232,13 +273,14 @@ static void __segment_op(WORD seg_addr, WORD a, WORD b, BYTE step) {
 	}
 }
 
+//擦除指定地址的指定长度
 static void segment_clean(WORD seg_addr, WORD offset, WORD noused, WORD len) {
 	fprintf(stderr, "%s(%d,%d,,%d)\n", __FUNCTION__, seg_addr, offset, len);
 #ifndef FS_USE_MEM_SWAP
-	segment_erase(SWAP_ADDR);
+	__segment_erase(SWAP_ADDR);
 #endif
 	__segment_op(seg_addr, seg_addr + offset, seg_addr + offset + len, 0);
-	segment_erase(seg_addr);
+	__segment_erase(seg_addr);
 	__segment_op(seg_addr, seg_addr + offset, seg_addr + offset + len, 1);
 }
 
@@ -247,7 +289,7 @@ static void segment_edit(WORD seg_addr, WORD offset, WORD data, WORD len) {
 		return;
 	segment_clean(seg_addr, offset, data, len);	
 	//写入用户数据
-	__addr_split_opera(seg_addr + offset, (WORD)data, len, MAX_WRITE_UNIT, segment_write);
+	__addr_split_opera(seg_addr + offset, (WORD)data, len, MAX_WRITE_UNIT, __segment_write);
 }
 
 static void disk_edit(WORD addr, const BYTE *data, WORD len) {
@@ -257,7 +299,7 @@ static void disk_edit(WORD addr, const BYTE *data, WORD len) {
 
 static void disk_append(WORD addr, const BYTE *data, WORD len) {
 	//segment_write 只需要写，数据源只会是内存，已经被擦除好了
-	__addr_split_opera(addr, (WORD)data, len, MAX_WRITE_UNIT, segment_write);
+	__addr_split_opera(addr, (WORD)data, len, MAX_WRITE_UNIT, __segment_write);
 }
 
 static void disk_clean(WORD addr, WORD len) {
@@ -267,5 +309,87 @@ static void disk_clean(WORD addr, WORD len) {
 
 static void disk_read(WORD addr, BYTE *buf, WORD len) {
 	//segment_clean 只负责读, 理论上没有对齐限制
-	__addr_split_opera(addr, (WORD)buf, len, MAX_WRITE_UNIT, (op_fun_t)segment_read);
+	__addr_split_opera(addr, (WORD)buf, len, MAX_WRITE_UNIT, (op_fun_t)__segment_read);
 }
+
+
+/*******************************************************
+***	坏块管理单元
+***	文件系统使用连续的地址，但物理上这些地址可能不是连续的
+*******************************************************/
+#ifdef ENABLE_BLOCK_MGMT
+//逻辑地址到物理地址的转换
+//block_map存储的是文件系统使用的物理块的顺序，
+//文件系统使用的块地址是连续的，但这些块在物理上可能就不是连续的，
+//文件系统使用的块0可能是物理块n。
+//(virt_addr) / SEGMENT_SIZE 得到文件系统块编号n，而这个编号的实际物理块是block_map[n]
+static int get_phy_block(WORD virt_addr) {
+	return fs.block_map[(virt_addr) / SEGMENT_SIZE];
+}
+static WORD get_phy_addr(WORD virt_addr) { 
+	return get_phy_block(virt_addr) * SEGMENT_SIZE + (virt_addr) % SEGMENT_SIZE;
+}
+//查找空闲块，返回-1则说明没有空闲块
+static int get_free_block(void) {
+	int i;
+	for (i = 0; i < DISK_BLOCK; i++)
+		if (fs.block_status[i] == BLOCK_UNUSED) {
+			fs.block_status[i] = BLOCK_USED;
+			return i;
+		}
+	return -1;
+}
+
+static void __segment_erase(WORD addr) {
+	int phy_block = get_phy_block(addr);
+	while (segment_erase(get_phy_addr(addr)) != true) {
+		fs.block_status[phy_block] = BLOCK_FAIL;	//将此物理块标为坏块
+		if ((phy_block = get_free_block()) == -1)
+			return;	//todo 得不到新块如何处理
+		fs.block_map[addr / SEGMENT_SIZE] = phy_block;	//更新块映射
+	}
+	fs.block_status[phy_block] = BLOCK_USED;		//成功时也强制更新下，主要是为了init时更新每个块的状态
+}
+static void __segment_read(WORD seg_addr, WORD seg_off, WORD buf, WORD len) {
+	while (segment_read(get_phy_addr(seg_addr), seg_off, buf, len) != true) {
+		;
+	}
+}
+static void __segment_write(WORD seg_addr, WORD seg_off,  WORD buf, WORD len) {
+	int phy_block =  get_phy_block(seg_addr);
+	while (segment_write(get_phy_addr(seg_addr), seg_off, buf, len) != true) {
+		
+		//先将已有数据copy到交换分区, BUG：交换分区此时可能已经在使用
+		#ifndef FS_USE_MEM_SWAP
+		__segment_erase(SWAP_ADDR);
+		#endif
+		__segment_op(seg_addr, seg_addr + seg_off, seg_addr + seg_off + len, 0);
+		
+		//获得新的存储块
+		fs.block_status[phy_block] = BLOCK_FAIL;	//将此物理块标为坏块
+		__segment_op(seg_addr, seg_addr + seg_off, seg_addr + seg_off + len, 0);
+		if ((phy_block = get_free_block()) == -1)
+			return;	//todo 得不到新块如何处理
+		fs.block_map[seg_addr / SEGMENT_SIZE] = phy_block;	//更新块映射
+		
+		//擦除新块, 并将原块中的其他数据copy到新块中。BUG: 擦除失败时可能会引发递归循环
+		__segment_erase(seg_addr);
+		__segment_op(seg_addr, seg_addr + seg_off, seg_addr + seg_off + len, 1);
+			
+	}
+	fs.block_status[phy_block] = BLOCK_USED;		//成功时也强制更新下，主要是为了init时更新每个块的状态 
+}
+#else
+static void __segment_erase(WORD addr) {
+	segment_erase(addr);
+}
+static void __segment_read(WORD seg_addr, WORD seg_off, WORD buf, WORD len) {
+	segment_read(seg_addr, seg_off, buf, len);
+}
+static void __segment_write(WORD seg_addr, WORD seg_off,  WORD buf, WORD len) {
+	segment_write(seg_addr, seg_off, buf, len);
+}
+#endif
+
+
+

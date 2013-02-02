@@ -48,15 +48,18 @@ struct  f_test_arr_t {
 
 #ifdef FS_DISK_ROM_FLASH
 #define DISK_SPACE   SEGMENT_SIZE*DISK_BLOCK
+
+extern WORD	f_addr(file_id_t id);
+
 extern const BYTE DISK[DISK_SPACE];
 void f_dump(void) {
-	int i, j, n;
-	n = sizeof(fs.file) / sizeof(fs.file[0]);
-	for (i = 0; i < n; i++) {
+	file_id_t i;
+	int j;
+	for (i = FILE1; i < FILE_ID_END; i++) {
 		printf("FILE %d: addr = %d, len = %d, size = %d\n", i + 1, \
-			fs.file[i].start_addr, fs.file[i].file_len, fs.file[i].file_size);
-		for (j = 0; j < fs.file[i].file_size; j++)
-			putchar(DISK[fs.file[i].start_addr + j]);
+			f_addr(i), f_len(i), f_size(i));
+		for (j = 0; j < f_size(i); j++)
+			putchar(DISK[f_addr(i) + j]);
 		putchar('\n');
 	}
 }
@@ -68,9 +71,9 @@ void f_dump(void) {
 	n = sizeof(fs.file) / sizeof(fs.file[0]);
 	for (i = 0; i < n; i++) {
 		printf("FILE %d: addr = %d, len = %d, size = %d\n", i + 1, \
-			fs.file[i].start_addr, fs.file[i].file_len, fs.file[i].file_size);
-		f_read((file_id_t)(FILE1 + i), 0, BUF, fs.file[i].file_len);
-		for (j = 0 ; j < fs.file[i].file_len; j++)
+			f_addr(i), f_len(i), f_size(i));
+		f_read((file_id_t)(FILE1 + i), 0, BUF, f_len(i));
+		for (j = 0 ; j < f_len(i); j++)
 			putchar(BUF[j]);
 		printf("\n");
 	}
@@ -87,18 +90,19 @@ static void rand_800(BYTE *buf, int len) {
 }
 
 static void rand_arr(struct  f_test_arr_t *arr, int len) {
-	int id, r;
+	file_id_t id;
+	int r;
 	for (id = FILE1; id < FILE_ID_END; id++) {
 		r = rand();
-		arr[id].offset = r % fs.file[id].file_size;
+		arr[id].offset = r % f_size(id);
 		srand(r);
 		r = rand();
-		arr[id].len = r % fs.file[id].file_size;
+		arr[id].len = r % f_size(id);
 		srand(r);
 		if (arr[id].offset > arr[id].len)
-			arr[id].len = fs.file[id].file_size - arr[id].offset;
-		if (arr[id].offset + arr[id].len > fs.file[id].file_size)
-			arr[id].len = fs.file[id].file_size - arr[id].offset;
+			arr[id].len = f_size(id) - arr[id].offset;
+		if (arr[id].offset + arr[id].len > f_size(id))
+			arr[id].len = f_size(id) - arr[id].offset;
 	}		
 }
 
@@ -183,19 +187,19 @@ void f_test(void) {
 	timer_start();
 	f_erase(FILE9);
 	tim += timer_end();
-	printf("\nerase %u byte use %u clock\n", fs.file[FILE9].file_size, tim);
+	printf("\nerase %u byte use %u clock\n", f_size(FILE9), tim);
 	tim = 0; 
-	for (i = fs.file[FILE9].file_size / 32 ; i >= 0; i--) {
+	for (i = f_size(FILE9) / 32 ; i >= 0; i--) {
 		//memset(BUF, 0, sizeof(BUF));
 	   //printf("file 9 len = %d\n",  fs.file[FILE9].file_len);
 		timer_start();
-	   f_write(FILE9, fs.file[FILE9].file_len, "12345678901234567890123456789012", 32);
+	   f_write(FILE9, f_len(FILE9), "12345678901234567890123456789012", 32);
 		tim += timer_end();
 		//f_read(FILE9, fs.file[FILE9].file_len - 32, BUF, 32);
 		//printf("read value is %s\n", BUF);
 	}
-	ave = (tim / TIMER_CLOCK) / fs.file[FILE9].file_len * 1000 * 1000;
-	printf("append %d byte use %u clock, average %.2fus/B \n", fs.file[FILE9].file_len, tim, ave);
+	ave = (tim / TIMER_CLOCK) / f_len(FILE9) * 1000 * 1000;
+	printf("append %d byte use %u clock, average %.2fus/B \n", f_len(FILE9), tim, ave);
 #endif
 	printf("\n=====Test %d, pass %d, failed %d.=====\n\n", TEST_COUNT, count, TEST_COUNT - count);
 	f_sync();
