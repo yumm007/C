@@ -8,13 +8,14 @@
 */
 
 /**< 基本数据类型定义头文件 */
-//typedef unsigned char BYTE;
-//typedef unsigned int WORD;
+typedef unsigned char BYTE;
+typedef unsigned long WORD;
 #include <stdbool.h>
-#include "datatype.h"
+//#include "datatype.h"
 
-#define FS_DISK_ROM_FLASH					/**< 使用MCU内部的ROM FLASH，主要区别在读方式上 。内部FLASH读时直接返回FLASH地址*/
+//#define FS_DISK_ROM_FLASH					/**< 使用MCU内部的ROM FLASH，主要区别在读方式上 。内部FLASH读时直接返回FLASH地址*/
 //#define FS_DISK_SPI_FLASH				/**< 使用外部的SPI FLASH */
+#define FS_DISK_RAM_FLASH					/**< 使用内存作为文件系统, 主要用于测试 */
 //#define FS_USE_MEM_SWAP	
 //#define ENABLE_BLOCK_MGMT					/**< 启用坏块管理单元 */
 
@@ -28,6 +29,11 @@
 #define SEGMENT_SIZE		4096				/**< FLASH的最小擦除单元大小 */
 #define MAX_WRITE_UNIT	256				/**< FLASH的最大连续写入单元 */
 #define FS_DISK_ADDR	0x00					/**< 文件系统在FLASH中的起始位置 */
+#endif
+
+#ifdef FS_DISK_RAM_FLASH					/**< 内部FLASH的读写参数 */
+#define SEGMENT_SIZE		64				/**< FLASH的最小擦除单元大小 */
+#define MAX_WRITE_UNIT	32					/**< FLASH的最大连续写入单元 */
 #endif
 
 #define DISK_BLOCK	10						/**< 使用10个SEGMENT作为文件系统，其中最后2个SEGMENT分别作为超级块和交换块，不能小于3 */

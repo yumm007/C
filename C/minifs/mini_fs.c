@@ -140,15 +140,15 @@ void f_sync(void) {
 void f_init(void) {
 	file_id_t id;
 	BYTE p;
-	int n;
 	segment_read(SUPER_BLOCK, 0, (WORD)&p, sizeof(fs.valid));
 	
 	if (p != 0x76) {
 #ifdef ENABLE_BLOCK_MGMT
-		for (id = FILE1, n = 0; id < FILE_ID_END; id++, n++) {\
-			fs.block_map[id] = n;
-			fs.block_status[id] = BLOCK_UNUSED;
-		}
+	int n;
+	for (id = FILE1, n = 0; id < FILE_ID_END; id++, n++) {
+		fs.block_map[id] = n;
+		fs.block_status[id] = BLOCK_UNUSED;
+	}
 #endif
 		for (id = FILE1; id < FILE_ID_END; id++) {
 			fs.file[id].file_len = fs.file[id].file_size;
@@ -200,7 +200,7 @@ static void __segment_write(WORD seg_addr, WORD seg_off,  WORD buf, WORD len);
 #define SEGMENT_TO_SWAP	segment_copy_segment
 #define SWAP_TO_SEGMENT	segment_copy_segment
 
-#ifdef FS_DISK_ROM_FLASH
+#if defined(FS_DISK_ROM_FLASH) || defined(FS_DISK_RAM_FLASH)
 void segment_copy_segment(WORD seg_dst, WORD dst_off, WORD seg_src, WORD len) {\
 	__segment_write(seg_dst, dst_off, seg_src, len);
 }

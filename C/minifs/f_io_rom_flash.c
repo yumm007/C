@@ -1,8 +1,9 @@
 #include "mini_fs.h"
-#include <msp430f149.h>
 #include <string.h>
 
 #ifdef FS_DISK_ROM_FLASH
+#include <msp430f149.h>
+
 /*******************************************************
 ***	底层IO函数
 ***	需要实现Flash擦除函数，内存到Flash的复制，

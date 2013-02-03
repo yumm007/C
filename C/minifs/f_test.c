@@ -3,15 +3,19 @@
 *******************************************************/
 #include <stdio.h>
 #include <string.h>
-#include "mini_fs.h"
 #include <stdlib.h>
-#include <msp430f149.h>
+#include "mini_fs.h"
 
 #define TEST_COUNT  	8
 #define BUF_SIZE		800
 
-#define TIMER_CLOCK	32768.0/4
+#define TIMER_CLOCK	32768/4
 
+#ifdef FS_DISK_RAM_FLASH
+void timer_start(void) {return;}
+WORD timer_end(void) {return 1;}
+#else
+#include <msp430f149.h>
 static int tim_over = 0;
 void timer_start(void) {
 	tim_over = 0;
@@ -21,7 +25,7 @@ void timer_start(void) {
 	CCTL0 = CCIE; // CCR0 interrupt enabled
 }
 
-UINT32 timer_end(void) {
+WORD timer_end(void) {
 	UINT32 ret = TAR;
 	TACTL = 0;
 	CCTL0 = 0;
@@ -38,15 +42,16 @@ __interrupt void Timer_A (void)
 	TACTL = TASSEL_1 + MC_2 + ID_2; // ACKK/2
 	tim_over++;
 }
+#endif
 
 static BYTE test_str[BUF_SIZE];
 static BYTE BUF[BUF_SIZE];
 struct  f_test_arr_t {
- 	int offset;
-	int len;
+ 	WORD offset;
+	WORD len;
 };
 
-#ifdef FS_DISK_ROM_FLASH
+#if defined(FS_DISK_ROM_FLASH) || defined(FS_DISK_RAM_FLASH)
 #define DISK_SPACE   SEGMENT_SIZE*DISK_BLOCK
 
 extern WORD	f_addr(file_id_t id);
@@ -56,7 +61,7 @@ void f_dump(void) {
 	file_id_t i;
 	int j;
 	for (i = FILE1; i < FILE_ID_END; i++) {
-		printf("FILE %d: addr = %d, len = %d, size = %d\n", i + 1, \
+		printf("FILE %u: addr = %lu, len = %lu, size = %lu\n", i + 1, \
 			f_addr(i), f_len(i), f_size(i));
 		for (j = 0; j < f_size(i); j++)
 			putchar(DISK[f_addr(i) + j]);
@@ -114,8 +119,8 @@ void f_test(void) {
 	float ave;
 	BYTE *p;
 	
-	f_write(FILE4, 0, "AAAAAAA", 7);
-	f_write(FILE7, 0, "AAAAAAA", 7);
+	f_write(FILE4, 0, (const BYTE *)"AAAAAAA", 7);
+	f_write(FILE7, 0, (const BYTE *)"AAAAAAA", 7);
 	
 	printf("\n\n=================BEGIN TEST %u clock/s ==============\n", TIMER_CLOCK);
 	while (i--) {
@@ -137,7 +142,7 @@ void f_test(void) {
 			//printf("f_write(FILE%d, \toffset %d, \tlen %d)\t\t...\n", id + 1, arr[id].offset, arr[id].len);
 		}
 		ave = (tim / TIMER_CLOCK) / w_c * 1000.0 * 1000; 
-		printf("write %u byte use %u clock, average %.2fus/B\n", w_c, tim, ave);
+		printf("write %lu byte use %lu clock, average %.2fus/B\n", w_c, tim, ave);
 		
 		w_c = 0;
 		tim = 0;
@@ -150,7 +155,7 @@ void f_test(void) {
 			  p = f_read(id, 0, BUF, 7);
 			  tim += timer_end();
 			  if (memcmp(p, "AAAAAAA", 7) != 0) {
-				 printf("memcmy failed. FILE%d, offset %d, len %d\n", id +1, 0, 7);
+				 printf("memcmy failed. FILE%u, offset %d, len %d\n", id +1, 0, 7);
 			  	 failed = 1;
 			  } else {
 			  	 ;//printf("f_read(FILE%d, \toffset %d, \tlen %d)\t\tok\n", id + 1, 0, 7);
@@ -161,7 +166,7 @@ void f_test(void) {
 		  p = f_read(id, arr[id].offset, BUF, arr[id].len);
 		  tim += timer_end();			
 			if (memcmp(p, test_str, arr[id].len) != 0) {
-				printf("memcmy failed. FILE%d, offset %d, len %d\n", id +1, arr[id].offset, arr[id].len);
+				printf("memcmy failed. FILE%u, offset %lu, len %lu\n", id +1, arr[id].offset, arr[id].len);
 				failed = 1;
 				w_c += arr[id].len;
       	} else {
@@ -176,7 +181,7 @@ void f_test(void) {
 #endif
 		}
 		ave = (tim / TIMER_CLOCK) / w_c * 1000.0 * 1000;
-		printf("read %u byte use %u clock, average %.2fus/B\n", w_c, tim, ave);
+		printf("read %lu byte use %lu clock, average %.2fus/B\n", w_c, tim, ave);
 		if (!failed)
 			count++;
 	
@@ -187,21 +192,30 @@ void f_test(void) {
 	timer_start();
 	f_erase(FILE9);
 	tim += timer_end();
-	printf("\nerase %u byte use %u clock\n", f_size(FILE9), tim);
+	printf("\nerase %lu byte use %lu clock\n", f_size(FILE9), tim);
 	tim = 0; 
 	for (i = f_size(FILE9) / 32 ; i >= 0; i--) {
 		//memset(BUF, 0, sizeof(BUF));
 	   //printf("file 9 len = %d\n",  fs.file[FILE9].file_len);
 		timer_start();
-	   f_write(FILE9, f_len(FILE9), "12345678901234567890123456789012", 32);
+	   f_write(FILE9, f_len(FILE9), (const BYTE *)"12345678901234567890123456789012", 32);
 		tim += timer_end();
 		//f_read(FILE9, fs.file[FILE9].file_len - 32, BUF, 32);
 		//printf("read value is %s\n", BUF);
 	}
 	ave = (tim / TIMER_CLOCK) / f_len(FILE9) * 1000 * 1000;
-	printf("append %d byte use %u clock, average %.2fus/B \n", f_len(FILE9), tim, ave);
+	printf("append %lu byte use %lu clock, average %.2fus/B \n", f_len(FILE9), tim, ave);
 #endif
 	printf("\n=====Test %d, pass %d, failed %d.=====\n\n", TEST_COUNT, count, TEST_COUNT - count);
 	f_sync();
 	//f_dump();
 }
+
+#ifdef FS_DISK_RAM_FLASH
+int main(void) {
+	f_init();
+	while (1)
+		f_test();
+	return 0;
+}
+#endif

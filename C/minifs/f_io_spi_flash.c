@@ -1,11 +1,7 @@
-#include "mini_fs.h"
-#include <msp430f149.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
-#include "flash.h"
-
-FLASHID testid[2]={{0x00112233}};
+#include "mini_fs.h"
 
 /*******************************************************
 ***	底层IO函数
@@ -14,6 +10,9 @@ FLASHID testid[2]={{0x00112233}};
 *******************************************************/
 
 #ifdef FS_DISK_SPI_FLASH
+#include <msp430f149.h>
+#include "flash.h"
+FLASHID testid[2]={{0x00112233}};
 
 //需要移植的函数, 调用者确保地址已经按segment对齐
 bool segment_erase(WORD seg_addr) {
