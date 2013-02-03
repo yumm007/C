@@ -36,6 +36,8 @@ typedef unsigned long WORD;
 #define MAX_WRITE_UNIT	32					/**< FLASH的最大连续写入单元 */
 #endif
 
+#define BLOCK_ERASE_MAX	1000ul			/**< FLASH 擦写的最大次数 */
+
 /**< 使用内存作为块间数据交换空间, 否则在FLASH内开辟一个独立的segment作为交换空间。
 *    RAM空间够的话推荐启用这个宏, 这将大大增加文件系统速度，单需要给文件系统指定一个SEGMENT_SIZE字节的BUF区 
 */

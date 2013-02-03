@@ -46,7 +46,7 @@ static fs_t fs = {
 
 #define SUPER_BLOCK    ((WORD)SEGMENT_SIZE)*(DISK_BLOCK -1 - (sizeof(fs_t) + SEGMENT_SIZE -1) / SEGMENT_SIZE)
 
-//#define fprintf(...) 
+#define fprintf(...) 
 #define printf(...) 
 
 static void disk_clean(WORD addr, WORD len);
@@ -75,6 +75,8 @@ const BYTE* f_rom_read(file_id_t id, WORD offset, WORD len) {
 BYTE*	f_read(file_id_t id, WORD offset,	BYTE *buf, WORD len) {
 	if (id >= FILE_ID_END || buf == NULL)
 		return NULL;
+	if (len == 0)
+		return buf;
 	if (offset + len > fs.file[id].file_size)
 		len = fs.file[id].file_size - offset;
 	disk_read(fs.file[id].start_addr + offset, buf, len);
@@ -84,7 +86,7 @@ BYTE*	f_read(file_id_t id, WORD offset,	BYTE *buf, WORD len) {
 WORD f_write(file_id_t id,	WORD offset,	const BYTE *data, WORD len) {
 	WORD n;
 
-	if (id >= FILE_ID_END)
+	if (id >= FILE_ID_END || len == 0)
 		return 0;
 	if (offset + len > fs.file[id].file_size)
 		len = fs.file[id].file_size - offset;
@@ -136,7 +138,12 @@ WORD	f_addr(file_id_t id) {
 }
 
 void f_sync(void) {
+	int i;
 	disk_edit(SUPER_BLOCK, (BYTE *)&fs, sizeof(fs));
+	for (i = 0; i < DISK_BLOCK; i++) {
+		if (fs.block_wc[i] != 0)
+			fprintf(stderr, "block %d erase %lu times\n", i, fs.block_wc[i]);
+	}
 }
 
 void f_init(void) {
@@ -144,6 +151,7 @@ void f_init(void) {
 	BYTE p;
 	segment_read(SUPER_BLOCK, 0, (WORD)&p, sizeof(fs.valid));
 	
+	printf("FS use %d bytes, ", sizeof(fs));
 	if (p != 0x76) {
 #ifdef ENABLE_BLOCK_MGMT
 	int n;
@@ -198,6 +206,12 @@ static void __segment_write(WORD seg_addr, WORD seg_off,  WORD buf, WORD len);
 *****************块间复制函数********************
 ************************************************/
 
+#ifdef ENABLE_BLOCK_MGMT
+static WORD get_phy_addr(WORD virt_addr);
+#else
+#define get_phy_addr(virt_addr) (virt_addr)
+#endif
+
 #ifndef FS_USE_MEM_SWAP	//不使用内存交换块间数据
 
 #define SEGMENT_TO_SWAP	segment_copy_segment
@@ -206,7 +220,8 @@ static void __segment_write(WORD seg_addr, WORD seg_off,  WORD buf, WORD len);
 #if defined(FS_DISK_ROM_FLASH) || defined(FS_DISK_RAM_FLASH)
 void segment_copy_segment(WORD seg_dst, WORD dst_off, WORD seg_src, WORD len) {
 	extern const BYTE *DISK;
-	__segment_write(seg_dst, dst_off, (WORD)&DISK[seg_src], len);
+	//fprintf(stderr, "%s(%lu, %lu, %lu, %lu)\n", __FUNCTION__, get_phy_addr(seg_dst), dst_off, get_phy_addr(seg_src), len);
+	__segment_write(seg_dst, dst_off, (WORD)&DISK[get_phy_addr(seg_src)], len);
 }
 #endif
 
@@ -313,7 +328,7 @@ static void disk_clean(WORD addr, WORD len) {
 
 static void disk_read(WORD addr, BYTE *buf, WORD len) {
 	//segment_clean 只负责读, 理论上没有对齐限制
-	__addr_split_opera(addr, (WORD)buf, len, MAX_WRITE_UNIT, (op_fun_t)__segment_read);
+	__addr_split_opera(addr, (WORD)buf, len, SEGMENT_SIZE, (op_fun_t)__segment_read);
 }
 
 
@@ -350,11 +365,15 @@ static int get_free_block(void) {
 
 static void __segment_erase(WORD addr) {
 	int phy_block = get_phy_block(addr);
-	while (segment_erase(get_phy_addr(addr)) != true) {
-		fprintf(stderr, "disk failed\n");
+	while (fs.block_wc[phy_block] >= BLOCK_ERASE_MAX || segment_erase(get_phy_addr(addr)) != true) {
+		//fprintf(stderr, "block %u failed, ", phy_block);
 		fs.block_status[phy_block] = BLOCK_FAIL;	//将此物理块标为坏块
-		if ((phy_block = get_free_block()) == -1)
-			return;	//todo 得不到新块如何处理
+		if ((phy_block = get_free_block()) == -1) {
+			//return;	//todo 得不到新块如何处理
+			fprintf(stderr, "----no free block----\n");
+			exit(1);
+		}
+		//fprintf(stderr, "request new block %d for it.\n", phy_block);
 		fs.block_map[addr / SEGMENT_SIZE] = phy_block;	//更新块映射
 	}
 	fs.block_wc[phy_block]++;
@@ -362,15 +381,14 @@ static void __segment_erase(WORD addr) {
 }
 static void __segment_read(WORD seg_addr, WORD seg_off, WORD buf, WORD len) {
 	while (segment_read(get_phy_addr(seg_addr), seg_off, buf, len) != true) {
-		fprintf(stderr, "disk failed\n");
+		//fprintf(stderr, "disk failed\n");
 		;
 	}
 }
 static void __segment_write(WORD seg_addr, WORD seg_off,  WORD buf, WORD len) {
 	int phy_block =  get_phy_block(seg_addr);
 	while (segment_write(get_phy_addr(seg_addr), seg_off, buf, len) != true) {
-		
-		fprintf(stderr, "disk failed\n");
+		//fprintf(stderr, "disk failed\n");
 		//先将已有数据copy到交换分区, BUG：交换分区此时可能已经在使用
 		#ifndef FS_USE_MEM_SWAP
 		__segment_erase(SWAP_ADDR);

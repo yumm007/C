@@ -25,6 +25,7 @@ bool segment_erase(WORD seg_addr) {
 
 //需要移植的函数，实现将数据从FLASH拷贝到内存中
 bool segment_read(WORD seg_addr, WORD offset, WORD buf, WORD len) {
+	//fprintf(stderr, "%s(%lu, %lu, data, %lu)\n", __FUNCTION__, seg_addr, offset, len);
 	memcpy((char *)buf, (char *)&DISK[seg_addr+offset], (int)len);
 	return true;
 }
@@ -33,7 +34,8 @@ bool segment_read(WORD seg_addr, WORD offset, WORD buf, WORD len) {
 bool segment_write(WORD seg_addr, WORD offset,  WORD data, WORD len) {
 	int i;
 	char *flash_ptr = (char *)&DISK[seg_addr + offset];
-	
+	//fprintf(stderr, "%s(%lu, %lu, data, %lu)\n", __FUNCTION__, seg_addr, offset, len);
+
 	for (i = 0; i < len; i++) {
 		if (__DISK_MAP[seg_addr + offset + i] == 1) {
 			fprintf(stderr, "write %lu + %lu + %lu before erase\n", seg_addr, offset, len);

@@ -102,7 +102,7 @@ static void rand_arr(struct  f_test_arr_t *arr, int len) {
 		arr[id].offset = r % f_size(id);
 		srand(r);
 		r = rand();
-		arr[id].len = r % f_size(id);
+		arr[id].len = r % f_size(id) + 1;
 		srand(r);
 		if (arr[id].offset > arr[id].len)
 			arr[id].len = f_size(id) - arr[id].offset;
@@ -111,7 +111,7 @@ static void rand_arr(struct  f_test_arr_t *arr, int len) {
 	}		
 }
 
-void f_test(void) {
+bool f_test(void) {
 	int i = TEST_COUNT, count = 0, failed;
 	file_id_t id;
   	struct  f_test_arr_t arr[FILE_ID_END];
@@ -122,7 +122,7 @@ void f_test(void) {
 	f_write(FILE4, 0, (const BYTE *)"AAAAAAA", 7);
 	f_write(FILE7, 0, (const BYTE *)"AAAAAAA", 7);
 	
-	printf("\n\n=================BEGIN TEST %u clock/s ==============\n", TIMER_CLOCK);
+	//printf("\n\n=================BEGIN TEST %u clock/s ==============\n", TIMER_CLOCK);
 	while (i--) {
 		rand_800(test_str, BUF_SIZE);
     	rand_arr(arr, FILE_ID_END);
@@ -133,11 +133,15 @@ void f_test(void) {
 		tim = 0;		
 		
 		//fprintf(stderr, "-----------A-----------\n");
-		for (id = FILE1; id < FILE_ID_END; id++) {
+		for (id = FILE1; id < FILE_ID_END; id++)
+		{
 		  	if (id == FILE4 || id == FILE7)
-			  continue;
+				continue;
 			timer_start();
 			f_write(id, arr[id].offset, test_str, arr[id].len);
+			if (memcmp(f_read(id, arr[id].offset, BUF, arr[id].len), test_str, arr[id].len) != 0) {
+				fprintf(stderr, "memcmp failed after write. FILE%d offset %lu, len %lu\n", id+1, arr[id].offset, arr[id].len);
+			}
 			tim += timer_end();
 			w_c += arr[id].len;
 			//fprintf(stderr, "f_write(FILE%d, addr %lu, \toffset %lu, \tlen %lu)\t\t...\n", id + 1, f_addr(id), arr[id].offset, arr[id].len);
@@ -157,8 +161,9 @@ void f_test(void) {
 			  p = f_read(id, 0, BUF, 7);
 			  tim += timer_end();
 			  if (memcmp(p, "AAAAAAA", 7) != 0) {
-				 printf("memcmy failed. FILE%u, offset %d, len %d\n", id +1, 0, 7);
+				 fprintf(stderr, "memcmy failed. FILE%u, offset %d, len %d\n", id +1, 0, 7);
 			  	 failed = 1;
+				 return false;
 			  } else {
 			  	 ;//printf("f_read(FILE%d, \toffset %d, \tlen %d)\t\tok\n", id + 1, 0, 7);
 			  }
@@ -168,12 +173,13 @@ void f_test(void) {
 		  p = f_read(id, arr[id].offset, BUF, arr[id].len);
 		  tim += timer_end();			
 			if (memcmp(p, test_str, arr[id].len) != 0) {
-				printf("memcmy failed. FILE%u, offset %lu, len %lu\n", id +1, arr[id].offset, arr[id].len);
+				fprintf(stderr, "memcmy failed. FILE%u, offset %lu, len %lu\n", id +1, arr[id].offset, arr[id].len);
 				failed = 1;
 				w_c += arr[id].len;
+				return false;
       	} else {
 			   w_c += arr[id].len;
-      		//printf("f_read(FILE%d, \toffset %d, \tlen %d)\t\tok\n", id + 1, arr[id].offset, arr[id].len);
+      		//fprintf(stderr, "f_read(FILE%d, \toffset %d, \tlen %d)\t\tok\n", id + 1, arr[id].offset, arr[id].len);
       	}
 #else
 			timer_start();
@@ -186,8 +192,10 @@ void f_test(void) {
 		//printf("read %lu byte use %lu clock, average %.2fus/B\n", w_c, tim, ave);
 		if (!failed)
 			count++;
+		if (failed)
+			break;
 	
-		f_sync();
+		//f_sync();
 	}
 #if 0
 	tim = 0;
@@ -208,9 +216,14 @@ void f_test(void) {
 	ave = (tim / TIMER_CLOCK) / f_len(FILE9) * 1000 * 1000;
 	printf("append %lu byte use %lu clock, average %.2fus/B \n", f_len(FILE9), tim, ave);
 #endif
-	printf("\n=====Test %d, pass %d, failed %d.=====\n\n", TEST_COUNT, count, TEST_COUNT - count);
+	printf("=====Test %d, pass %d, failed %d.=====\n", TEST_COUNT, count, TEST_COUNT - count);
 	f_sync();
 	//f_dump();
+
+	if (count != TEST_COUNT)
+		return false;
+	else
+		return true;
 }
 
 #ifdef FS_USE_MEM_SWAP
@@ -222,8 +235,7 @@ BYTE __FS_SWAP_SPACE[SEGMENT_SIZE];
 
 int main(void) {
 	f_init();
-	while (1) {
-		f_test();
+	while (f_test()) {
 		sleep(1);
 	}
 	return 0;
