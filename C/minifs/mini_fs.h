@@ -17,7 +17,7 @@ typedef unsigned long WORD;
 //#define FS_DISK_SPI_FLASH				/**< 使用外部的SPI FLASH */
 #define FS_DISK_RAM_FLASH					/**< 使用内存作为文件系统, 主要用于测试 */
 //#define FS_USE_MEM_SWAP	
-//#define ENABLE_BLOCK_MGMT					/**< 启用坏块管理单元 */
+#define ENABLE_BLOCK_MGMT					/**< 启用坏块管理单元 */
 
 #ifdef FS_DISK_ROM_FLASH					/**< 内部FLASH的读写参数 */
 #define SEGMENT_SIZE		512				/**< FLASH的最小擦除单元大小 */
@@ -75,7 +75,8 @@ typedef struct FILE_LEN_TABLE {
 } FILE_LEN_TABLE;
 
 /**< 使用足够的SEGMENT作为文件系统，其中最后2个SEGMENT分别作为超级块和交换块，不能小于3 */
-#define DISK_BLOCK   ((sizeof(FILE_LEN_TABLE) + SEGMENT_SIZE -1) / SEGMENT_SIZE + 2)
+//#define DISK_BLOCK   ((sizeof(FILE_LEN_TABLE) + SEGMENT_SIZE -1) / SEGMENT_SIZE + 2)
+#define DISK_BLOCK 100
 
 /**< 系统启动时加载文件系统 */
 void 	f_init(void);

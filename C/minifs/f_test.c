@@ -119,10 +119,8 @@ void f_test(void) {
 	float ave;
 	BYTE *p;
 	
-	//fprintf(stderr, "-----------A1-----------\n");
 	f_write(FILE4, 0, (const BYTE *)"AAAAAAA", 7);
 	f_write(FILE7, 0, (const BYTE *)"AAAAAAA", 7);
-	//fprintf(stderr, "-----------A2-----------\n");
 	
 	printf("\n\n=================BEGIN TEST %u clock/s ==============\n", TIMER_CLOCK);
 	while (i--) {
@@ -211,12 +209,17 @@ void f_test(void) {
 	printf("append %lu byte use %lu clock, average %.2fus/B \n", f_len(FILE9), tim, ave);
 #endif
 	printf("\n=====Test %d, pass %d, failed %d.=====\n\n", TEST_COUNT, count, TEST_COUNT - count);
-	//f_sync();
+	f_sync();
 	//f_dump();
 }
 
+#ifdef FS_USE_MEM_SWAP
+BYTE __FS_SWAP_SPACE[SEGMENT_SIZE];
+#endif
+
 #ifdef FS_DISK_RAM_FLASH
 #include <unistd.h>
+
 int main(void) {
 	f_init();
 	while (1) {

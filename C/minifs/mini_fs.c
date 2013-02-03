@@ -9,19 +9,19 @@
 #define SWAP_ADDR 	((WORD)&__FS_SWAP_SPACE[0])
 #endif
 
-#define SUPER_BLOCK    ((WORD)SEGMENT_SIZE)*(DISK_BLOCK-2)
 
 #define SIZEOF(s,m) ((size_t) sizeof(((s *)0)->m)) 
 
 enum {BLOCK_UNUSED, BLOCK_USED, BLOCK_FAIL};
 
 /**< 文件系统结构体 */
-typedef struct fs_t {
+typedef struct  {
 	BYTE valid;
 	BYTE flag;							/**< 文件系统标志位 */
 #ifdef ENABLE_BLOCK_MGMT
 	BYTE block_status[DISK_BLOCK];/**< 每个物理块的状态 */
 	WORD block_map[DISK_BLOCK];	/**< 文件系统使用的物理块序号 */
+	WORD block_wc[DISK_BLOCK];		/**< 记录每个块被擦写的次数 */
 #endif
 	struct file_info_t {
 		WORD start_addr;				/**< 文件起始地址 */
@@ -44,7 +44,9 @@ static fs_t fs = {
    },  
 };
 
-#define fprintf(...) 
+#define SUPER_BLOCK    ((WORD)SEGMENT_SIZE)*(DISK_BLOCK -1 - (sizeof(fs_t) + SEGMENT_SIZE -1) / SEGMENT_SIZE)
+
+//#define fprintf(...) 
 #define printf(...) 
 
 static void disk_clean(WORD addr, WORD len);
@@ -145,14 +147,14 @@ void f_init(void) {
 	if (p != 0x76) {
 #ifdef ENABLE_BLOCK_MGMT
 	int n;
-	for (id = FILE1, n = 0; id < FILE_ID_END; id++, n++) {
-		fs.block_map[id] = n;
-		fs.block_status[id] = BLOCK_UNUSED;
+	for (n = 0; n < DISK_BLOCK; n++) {
+		fs.block_map[n] = n; //初始化时逻辑块和物理块是联系对应的
+		fs.block_status[n] = BLOCK_UNUSED;
+		fs.block_wc[n] = 0;
 	}
 #endif
 		for (id = FILE1; id < FILE_ID_END; id++) {
 			fs.file[id].file_len = fs.file[id].file_size;
-			fprintf(stderr, "f_erase(%d), start %lu, size %lu\n", id+1, f_addr(id), f_size(id));
 			f_erase(id);
 		}
 		fs.valid = 0x76;
@@ -325,11 +327,15 @@ static void disk_read(WORD addr, BYTE *buf, WORD len) {
 //文件系统使用的块地址是连续的，但这些块在物理上可能就不是连续的，
 //文件系统使用的块0可能是物理块n。
 //(virt_addr) / SEGMENT_SIZE 得到文件系统块编号n，而这个编号的实际物理块是block_map[n]
-static int get_phy_block(WORD virt_addr) {
-	return fs.block_map[(virt_addr) / SEGMENT_SIZE];
+static WORD get_phy_block(WORD virt_addr) {
+	WORD phy_block = fs.block_map[(virt_addr) / SEGMENT_SIZE];
+	//fprintf(stderr, "phy_block = %lu, virt_addr = %lu\n", phy_block, virt_addr);
+	return phy_block;
 }
 static WORD get_phy_addr(WORD virt_addr) { 
-	return get_phy_block(virt_addr) * SEGMENT_SIZE + (virt_addr) % SEGMENT_SIZE;
+	WORD phy_addr = get_phy_block(virt_addr) * SEGMENT_SIZE + (virt_addr) % SEGMENT_SIZE;
+	//fprintf(stderr, "virt_addr %lu -> phy_addr %lu \n", virt_addr, phy_addr);
+	return phy_addr;
 }
 //查找空闲块，返回-1则说明没有空闲块
 static int get_free_block(void) {
@@ -345,15 +351,18 @@ static int get_free_block(void) {
 static void __segment_erase(WORD addr) {
 	int phy_block = get_phy_block(addr);
 	while (segment_erase(get_phy_addr(addr)) != true) {
+		fprintf(stderr, "disk failed\n");
 		fs.block_status[phy_block] = BLOCK_FAIL;	//将此物理块标为坏块
 		if ((phy_block = get_free_block()) == -1)
 			return;	//todo 得不到新块如何处理
 		fs.block_map[addr / SEGMENT_SIZE] = phy_block;	//更新块映射
 	}
+	fs.block_wc[phy_block]++;
 	fs.block_status[phy_block] = BLOCK_USED;		//成功时也强制更新下，主要是为了init时更新每个块的状态
 }
 static void __segment_read(WORD seg_addr, WORD seg_off, WORD buf, WORD len) {
 	while (segment_read(get_phy_addr(seg_addr), seg_off, buf, len) != true) {
+		fprintf(stderr, "disk failed\n");
 		;
 	}
 }
@@ -361,6 +370,7 @@ static void __segment_write(WORD seg_addr, WORD seg_off,  WORD buf, WORD len) {
 	int phy_block =  get_phy_block(seg_addr);
 	while (segment_write(get_phy_addr(seg_addr), seg_off, buf, len) != true) {
 		
+		fprintf(stderr, "disk failed\n");
 		//先将已有数据copy到交换分区, BUG：交换分区此时可能已经在使用
 		#ifndef FS_USE_MEM_SWAP
 		__segment_erase(SWAP_ADDR);
@@ -380,7 +390,7 @@ static void __segment_write(WORD seg_addr, WORD seg_off,  WORD buf, WORD len) {
 			
 	}
 	fs.block_status[phy_block] = BLOCK_USED;		//成功时也强制更新下，主要是为了init时更新每个块的状态 
-}__segment_op
+}
 #else
 static void __segment_erase(WORD addr) {
 	segment_erase(addr);
@@ -392,6 +402,4 @@ static void __segment_write(WORD seg_addr, WORD seg_off,  WORD buf, WORD len) {
 	segment_write(seg_addr, seg_off, buf, len);
 }
 #endif
-
-
 
