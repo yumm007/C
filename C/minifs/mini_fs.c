@@ -9,7 +9,7 @@
 #define SWAP_ADDR 	((WORD)&__FS_SWAP_SPACE[0])
 #endif
 
-#define SUPER_BLOCK  ((WORD)SEGMENT_SIZE)*(DISK_BLOCK-2-(sizeof(fs) + SEGMENT_SIZE -1) / SEGMENT_SIZE)
+#define SUPER_BLOCK    ((WORD)SEGMENT_SIZE)*(DISK_BLOCK-2)
 
 #define SIZEOF(s,m) ((size_t) sizeof(((s *)0)->m)) 
 
@@ -45,7 +45,7 @@ static fs_t fs = {
 };
 
 #define fprintf(...) 
-//#define printf(...) 
+#define printf(...) 
 
 static void disk_clean(WORD addr, WORD len);
 static void disk_read(WORD addr, BYTE *data, WORD len);
@@ -152,6 +152,7 @@ void f_init(void) {
 #endif
 		for (id = FILE1; id < FILE_ID_END; id++) {
 			fs.file[id].file_len = fs.file[id].file_size;
+			fprintf(stderr, "f_erase(%d), start %lu, size %lu\n", id+1, f_addr(id), f_size(id));
 			f_erase(id);
 		}
 		fs.valid = 0x76;
@@ -276,7 +277,7 @@ static void __segment_op(WORD seg_addr, WORD a, WORD b, BYTE step) {
 
 //擦除指定地址的指定长度
 static void segment_clean(WORD seg_addr, WORD offset, WORD noused, WORD len) {
-	fprintf(stderr, "%s(%d,%d,,%d)\n", __FUNCTION__, seg_addr, offset, len);
+	//fprintf(stderr, "%s(%d,%d,,%d)\n", __FUNCTION__, seg_addr, offset, len);
 #ifndef FS_USE_MEM_SWAP
 	__segment_erase(SWAP_ADDR);
 #endif

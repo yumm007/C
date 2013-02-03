@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include "mini_fs.h"
 
-#define TEST_COUNT  	8
+#define TEST_COUNT  	80
 #define BUF_SIZE		800
 
 #define TIMER_CLOCK	32768/4
@@ -119,19 +119,22 @@ void f_test(void) {
 	float ave;
 	BYTE *p;
 	
+	//fprintf(stderr, "-----------A1-----------\n");
 	f_write(FILE4, 0, (const BYTE *)"AAAAAAA", 7);
 	f_write(FILE7, 0, (const BYTE *)"AAAAAAA", 7);
+	//fprintf(stderr, "-----------A2-----------\n");
 	
 	printf("\n\n=================BEGIN TEST %u clock/s ==============\n", TIMER_CLOCK);
 	while (i--) {
 		rand_800(test_str, BUF_SIZE);
     	rand_arr(arr, FILE_ID_END);
 		failed = 0;
-		printf("\n");
+		//printf("\n");
 		
 		w_c = 0;
 		tim = 0;		
 		
+		//fprintf(stderr, "-----------A-----------\n");
 		for (id = FILE1; id < FILE_ID_END; id++) {
 		  	if (id == FILE4 || id == FILE7)
 			  continue;
@@ -139,10 +142,11 @@ void f_test(void) {
 			f_write(id, arr[id].offset, test_str, arr[id].len);
 			tim += timer_end();
 			w_c += arr[id].len;
-			//printf("f_write(FILE%d, \toffset %d, \tlen %d)\t\t...\n", id + 1, arr[id].offset, arr[id].len);
+			//fprintf(stderr, "f_write(FILE%d, addr %lu, \toffset %lu, \tlen %lu)\t\t...\n", id + 1, f_addr(id), arr[id].offset, arr[id].len);
 		}
+		//fprintf(stderr, "-----------Z-----------\n");
 		ave = (tim / TIMER_CLOCK) / w_c * 1000.0 * 1000; 
-		printf("write %lu byte use %lu clock, average %.2fus/B\n", w_c, tim, ave);
+		//printf("write %lu byte use %lu clock, average %.2fus/B\n", w_c, tim, ave);
 		
 		w_c = 0;
 		tim = 0;
@@ -181,13 +185,13 @@ void f_test(void) {
 #endif
 		}
 		ave = (tim / TIMER_CLOCK) / w_c * 1000.0 * 1000;
-		printf("read %lu byte use %lu clock, average %.2fus/B\n", w_c, tim, ave);
+		//printf("read %lu byte use %lu clock, average %.2fus/B\n", w_c, tim, ave);
 		if (!failed)
 			count++;
 	
 		f_sync();
 	}
-#if 1
+#if 0
 	tim = 0;
 	timer_start();
 	f_erase(FILE9);

@@ -12,13 +12,14 @@
 #define DISK_SPACE   SEGMENT_SIZE*DISK_BLOCK
 
 static const BYTE __DISK[DISK_SPACE];
-static BYTE	__DISK_MAP[DISK_SPACE];
+BYTE	__DISK_MAP[DISK_SPACE];
 const BYTE *DISK = __DISK;
 
 //需要移植的函数, 调用者确保地址已经按segment对齐
 bool segment_erase(WORD seg_addr) {
 	memset((char *)&DISK[seg_addr], 0, SEGMENT_SIZE);
 	memset((char *)&__DISK_MAP[seg_addr], 0, SEGMENT_SIZE);
+	//fprintf(stderr, "erase %lu\n", seg_addr);
 	return true;
 }
 
@@ -35,13 +36,14 @@ bool segment_write(WORD seg_addr, WORD offset,  WORD data, WORD len) {
 	
 	for (i = 0; i < len; i++) {
 		if (__DISK_MAP[seg_addr + offset + i] == 1) {
-			fprintf(stderr, "内存写入前未擦除");
+			fprintf(stderr, "write %lu + %lu + %lu before erase\n", seg_addr, offset, len);
 			return false;
 		}
 	}
 
 	memcpy(flash_ptr, (char *)data, (int)len);
 	memset(&__DISK_MAP[seg_addr + offset], 1, (int)len);
+	//fprintf(stderr, "set %lu + %lu + %lu has used\n", seg_addr, offset, len);
 	return true;
 }
 
