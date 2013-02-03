@@ -36,8 +36,6 @@ typedef unsigned long WORD;
 #define MAX_WRITE_UNIT	32					/**< FLASH的最大连续写入单元 */
 #endif
 
-#define DISK_BLOCK	10						/**< 使用10个SEGMENT作为文件系统，其中最后2个SEGMENT分别作为超级块和交换块，不能小于3 */
-
 /**< 使用内存作为块间数据交换空间, 否则在FLASH内开辟一个独立的segment作为交换空间。
 *    RAM空间够的话推荐启用这个宏, 这将大大增加文件系统速度，单需要给文件系统指定一个SEGMENT_SIZE字节的BUF区 
 */
@@ -75,6 +73,9 @@ typedef struct FILE_LEN_TABLE {
 	BYTE FILE8_SIZE[300];
 	BYTE FILE9_SIZE[600];
 } FILE_LEN_TABLE;
+
+/**< 使用足够的SEGMENT作为文件系统，其中最后2个SEGMENT分别作为超级块和交换块，不能小于3 */
+#define DISK_BLOCK   ((sizeof(FILE_LEN_TABLE) + SEGMENT_SIZE -1) / SEGMENT_SIZE + 2)
 
 /**< 系统启动时加载文件系统 */
 void 	f_init(void);

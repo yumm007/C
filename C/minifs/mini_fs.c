@@ -195,14 +195,15 @@ static void __segment_write(WORD seg_addr, WORD seg_off,  WORD buf, WORD len);
 *****************块间复制函数********************
 ************************************************/
 
-#ifndef FS_USE_MEM_SWAP	//不适用内存交换块间数据
+#ifndef FS_USE_MEM_SWAP	//不使用内存交换块间数据
 
 #define SEGMENT_TO_SWAP	segment_copy_segment
 #define SWAP_TO_SEGMENT	segment_copy_segment
 
 #if defined(FS_DISK_ROM_FLASH) || defined(FS_DISK_RAM_FLASH)
-void segment_copy_segment(WORD seg_dst, WORD dst_off, WORD seg_src, WORD len) {\
-	__segment_write(seg_dst, dst_off, seg_src, len);
+void segment_copy_segment(WORD seg_dst, WORD dst_off, WORD seg_src, WORD len) {
+	extern const BYTE *DISK;
+	__segment_write(seg_dst, dst_off, (WORD)&DISK[seg_src], len);
 }
 #endif
 
@@ -258,7 +259,7 @@ static void __segment_op(WORD seg_addr, WORD a, WORD b, BYTE step) {
 		//fprintf(stderr, "a=%d,b=%d,c=%d,d=%d\n",a,b,c,d);
 		if (c < min) {
 			//fprintf(stderr, "area 1: %d, %d, %d, %d\n", a, b, c, d); 
-			if (step == 0)	//将数据从FLASH拷贝到缓冲区
+			if (step == 0)	//将数据从FLASH区C拷贝到缓冲区SWAP
 				__addr_split_opera(SWAP_ADDR + c - seg_addr, c, min - c, MAX_WRITE_UNIT, SEGMENT_TO_SWAP);
 			else				//将数据从缓冲区拷贝到FLASH
 				__addr_split_opera(c, SWAP_ADDR + c - seg_addr, min - c, MAX_WRITE_UNIT, SWAP_TO_SEGMENT);
@@ -378,7 +379,7 @@ static void __segment_write(WORD seg_addr, WORD seg_off,  WORD buf, WORD len) {
 			
 	}
 	fs.block_status[phy_block] = BLOCK_USED;		//成功时也强制更新下，主要是为了init时更新每个块的状态 
-}
+}__segment_op
 #else
 static void __segment_erase(WORD addr) {
 	segment_erase(addr);

@@ -207,15 +207,18 @@ void f_test(void) {
 	printf("append %lu byte use %lu clock, average %.2fus/B \n", f_len(FILE9), tim, ave);
 #endif
 	printf("\n=====Test %d, pass %d, failed %d.=====\n\n", TEST_COUNT, count, TEST_COUNT - count);
-	f_sync();
+	//f_sync();
 	//f_dump();
 }
 
 #ifdef FS_DISK_RAM_FLASH
+#include <unistd.h>
 int main(void) {
 	f_init();
-	while (1)
+	while (1) {
 		f_test();
+		sleep(1);
+	}
 	return 0;
 }
 #endif
