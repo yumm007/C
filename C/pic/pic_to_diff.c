@@ -85,6 +85,7 @@ int main(int argc, char **argv) {
 	output_xy(stdout);	//输出minxy，maxxy，小端格式
 	output_contents(stdout, BUF2);	//输出新文件中更新过的部分
 
+	ret = 0;
 	fclose(fp2);
 _close_fp1:
 	fclose(fp1);
