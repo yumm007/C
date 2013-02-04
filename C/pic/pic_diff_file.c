@@ -39,13 +39,27 @@ static void get_xy(int p, int *x, int *y) {
 	fprintf(stderr, "point %d(%d, %d)\n", p, *x, *y);
 }
 
+static void output_xy(FILE *fp) {
+	fwrite(&min_x, sizeof(min_x), 1, fp);
+	fwrite(&min_y, sizeof(min_y), 1, fp);
+	fwrite(&max_x, sizeof(max_x), 1, fp);
+	fwrite(&max_y, sizeof(max_y), 1, fp);
+}
+
+static void output_contents(FILE *fp, const char *data) {
+	int y;
+	for (y = min_y; y <= max_y; y++)
+		fwrite(&data[y * PIC_ROW_BYTE + min_x], 1, max_x - min_x + 1, fp);
+}
+
+
 int main(int argc, char **argv) {
 	FILE *fp1, *fp2;
 	char BUF1[PIC_BYTE_COUNT], BUF2[PIC_BYTE_COUNT];
 	int ret = -1, i, x, y;
 
 	if (argc != 3) {
-		fprintf(stderr, "%s file1 fil2\n", argv[0]);
+		fprintf(stderr, "%s old_file new_file\n", argv[0]);
 		goto _exit;
 	}
 
@@ -68,6 +82,8 @@ int main(int argc, char **argv) {
 		update_xy(x, y);
 	}
 
+	output_xy(stdout);	//输出minxy，maxxy，小端格式
+	output_contents(stdout, BUF2);	//输出新文件中更新过的部分
 
 	fclose(fp2);
 _close_fp1:
