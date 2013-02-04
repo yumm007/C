@@ -1,7 +1,7 @@
 #include <stdio.h>
 
-#define PIC_ROW_COUNT	10
-#define PIC_ROW_BYTE		21
+#define PIC_ROW_COUNT	172
+#define PIC_ROW_BYTE		18
 #define BUF_SIZE			PIC_ROW_COUNT * PIC_ROW_BYTE
 
 static int *min_x, *min_y, *max_x, *max_y;

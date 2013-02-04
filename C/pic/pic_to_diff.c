@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-#define PIC_ROW_COUNT	10	//屏幕的行数
-#define PIC_ROW_BYTE		21	//每行的字节数
+#define PIC_ROW_COUNT	172	//屏幕的行数
+#define PIC_ROW_BYTE		18	//每行的字节数
 #define PIC_BYTE_COUNT	PIC_ROW_COUNT*PIC_ROW_BYTE
 
 static int min_x, min_y, max_x, max_y;
