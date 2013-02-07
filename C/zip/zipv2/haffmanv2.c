@@ -134,7 +134,7 @@ static int is_leaf_node(UINT16 r) {
 }
 
 static void __save_tree_l(int r, int p) {
-	fprintf(stderr, "%s(%d), _n = %d, p = %d\n", __FUNCTION__, r, _n, p);
+	//fprintf(stderr, "%s(%d), _n = %d, p = %d\n", __FUNCTION__, r, _n, p);
 	if (!is_leaf_node(_t[r].l))  { //不是叶子节点
 		_data[p].d[L] = ++_n;		//保存下一个节点的下标
 		_data[p].v[L] = 0;	
@@ -149,7 +149,7 @@ static void __save_tree_l(int r, int p) {
 }
 
 static void __save_tree_r(int r, int p) {
-	fprintf(stderr, "%s(%d), _n = %d, p = %d\n", __FUNCTION__, r, _n, p);
+	//fprintf(stderr, "%s(%d), _n = %d, p = %d\n", __FUNCTION__, r, _n, p);
 	if (!is_leaf_node(_t[r].r))  { 	//不是叶子节点
 		_data[p].d[R] = ++_n;		//保存下一个节点的下标
 		_data[p].v[R] = 0;	
@@ -171,10 +171,23 @@ static void __save_tree(int r, int p) {
 static void dump_node(const UINT8 *out) {
 	struct node_t *p = (void *)out;
 	int i;
-	for (i = 0; i <= _n; i++) {
-		fprintf(stderr, "code[%d].d[L]=%d, .d[R]=%d, v[L]=%d, v[R]=%d\n",\
-			i, p[i].d[L], p[i].d[R], p[i].v[L], p[i].v[R]);
-	}
+
+	fprintf(stderr, "the code is \n");
+	for (i = 0; i <= _n; i++) 
+		fprintf(stderr, "[%d]\t", i);
+	fprintf(stderr, "\n");
+	for (i = 0; i <= _n; i++) 
+		fprintf(stderr, "0->[%d]\t", p[i].d[L]);
+	fprintf(stderr, "\n");
+	for (i = 0; i <= _n; i++) 
+		fprintf(stderr, "1->[%d]\t", p[i].d[R]);
+	fprintf(stderr, "\n");
+	for (i = 0; i <= _n; i++) 
+		fprintf(stderr, "%d\t", p[i].v[L]);
+	fprintf(stderr, "\n");
+	for (i = 0; i <= _n; i++) 
+		fprintf(stderr, "%d\t", p[i].v[R]);
+	fprintf(stderr, "\n");
 }
 
 static int save_tree(const struct tree_t *t, int r, UINT8 *out) {
