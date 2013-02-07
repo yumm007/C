@@ -19,7 +19,7 @@ static void der(const unsigned char *data, int len, FILE *fp) {
 
 int main(int argc, char **argv) {
 	FILE *fp;
-	unsigned char data[1024];
+	unsigned char data[4096];
 	int n;
 
 	if ((fp = fopen(argv[1], "r")) == NULL) {
@@ -27,7 +27,7 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	n = fread(data, 1, 1024, fp);
+	n = fread(data, 1, 4096, fp);
 
 	der(data, n, stdout);
 

@@ -200,7 +200,7 @@ static int save_tree(const struct tree_t *t, int r, UINT8 *out) {
 
 	dump_node(out);
 
-	return _n;
+	return _n+1;
 }
 
 //*******************************
@@ -237,34 +237,53 @@ static void bit_to_buf(UINT8 *buf, const UINT8 *bit, int bit_len) {
 }
 
 static int dep_len;
-static int byte_to_bit(const struct tree_t *root, UINT8 byte, \
+static int find_it = 0;
+static void byte_to_bit(const struct tree_t *root, UINT8 byte, \
 								UINT8 *arr, UINT8 dep) 
 {
 	
-	if (root->v == byte) {
-		dep_len = dep;
-		return 0;
-	}
-	else if (byte_to_bit(&t[root->r], byte, arr, dep+1) == 0) {
-		arr[dep] = 0;
-	}
-	else if (byte_to_bit(&t[root->r], byte, arr, dep+1) == 0) {
-		arr[dep] = 1;
+
+	if (!find_it && root->l != 0) {
+		byte_to_bit(&t[root->l], byte, arr, dep+1);
+		if (find_it)
+			arr[dep] = '0';
+	} else {
+		if (root->v == byte) {
+			find_it = 1;
+			dep_len = dep;
+			return;
+		}
 	}
 
-	return 0;
+
+	if (!find_it && root->r != 0) {
+		byte_to_bit(&t[root->r], byte, arr, dep+1);
+		if (find_it)
+			arr[dep] = '1';
+	} else {
+		if (root->v == byte) {
+			dep_len = dep;
+			find_it = 1;
+			return;
+		}
+	}
+
+
 }
 
 static int encode(const struct tree_t *root, const UINT8 *data, \
 						int len, UINT8* buf) 
 {
-	int i, b;
+	int i;
 	UINT8 bit[256];
 	
 	reset_bit_ring();
 	for (i = 0; i < len; i++) {
-		b = byte_to_bit(t, data[i], bit, 0);	//获取单个字节的编码
-		bit_to_buf(buf, bit, b);		//发送b个比特位到buf中
+		memset(bit, 0, sizeof(bit));
+		find_it = 0;
+		byte_to_bit(root, data[i], bit, 0);	//获取单个字节的编码
+		fprintf(stderr, "%c:%s\n", data[i], bit);
+		bit_to_buf(buf, bit, dep_len);		//发送b个比特位到buf中
 	}
 	
 	return flush_bit_ring(buf);
@@ -275,7 +294,7 @@ static UINT8 data[1024000];	//1M
 static UINT8 code[1024000];
 int main(int argc, char **argv) {
 	FILE *fp;
-	int ret = -1, len, root;
+	int ret = -1, len, len1,root;
 
 	//if (argc != 2) {
 	//	fprintf(stderr, "Usage %s file_name\n", argv[0]);
@@ -288,12 +307,13 @@ int main(int argc, char **argv) {
 		goto _exit;
 	}
 
-	len = fread(data, 1, sizeof(data), fp);
+	len1 = len = fread(data, 1, sizeof(data), fp);
 
 	root = scan_data_to_arr(data, len, t);
 
 	if (root != -1)
-		save_tree(t, root, code);
+		len = save_tree(t, root, code);
+	encode(&t[root], data, len1, code+len);
 	
 	ret = 0;
 	fclose(fp);
