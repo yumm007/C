@@ -203,8 +203,54 @@ static int save_tree(const struct tree_t *t, int r, UINT8 *out) {
 	return _n;
 }
 
+//*******************************
+//***************编码阶段******
+//*******************************
+
+static UINT8 bit_buf;
+static UINT8 bit_point;
+static int ring_counter;
+static void reset_bit_ring(void) {
+	bit_buf = 0;
+	bit_point = 0;
+	ring_counter = 0;
+}
+static void flush_bit_ring(UINT8 *buf) {
+	bit_buf <<= (7 - bit_point)
+	buf[ring_counter] = bit_buf;
+	ring_counter++;
+	return ring_counter;
+}
+static bit_to_buf(UINT8 *buf, const UINT8 *bit, int bit_len) {
+	int i;
+	for (i = 0; i < bit_len; i++) {
+		bit_buf |= bit[i] ? 1 : 0;
+		bit_buf <<= 1;
+		bit_point++;
+		if (bit_point == 8) {
+			bit_point = 0;
+			bit_buf = 0;
+			bit_point = 0;
+			buf[ring_counter++] = bit_buf;
+		}
+	}
+}
+
+static void encode(const UINT8 *data, int len, UINT8* buf) {
+	int i, b;
+	UINT8 bit[256];
+	
+	reset_bit_ring(void);
+	for (i = 0; i < len; i++) {
+		b = byte_to_bit(data[i], bit);	//获取单个字节的编码
+		bit_to_buf(buf, bit, b);		//发送b个比特位到buf中
+	}
+	n = flush_bit_ring(buf);
+}
+
+
 static UINT8 data[1024000];	//1M
-static UINT8 code[102400];
+static UINT8 code[1024000];
 int main(int argc, char **argv) {
 	FILE *fp;
 	int ret = -1, len, root;
