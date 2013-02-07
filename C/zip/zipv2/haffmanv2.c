@@ -215,13 +215,13 @@ static void reset_bit_ring(void) {
 	bit_point = 0;
 	ring_counter = 0;
 }
-static void flush_bit_ring(UINT8 *buf) {
-	bit_buf <<= (7 - bit_point)
+static int flush_bit_ring(UINT8 *buf) {
+	bit_buf <<= (7 - bit_point);
 	buf[ring_counter] = bit_buf;
 	ring_counter++;
 	return ring_counter;
 }
-static bit_to_buf(UINT8 *buf, const UINT8 *bit, int bit_len) {
+static void bit_to_buf(UINT8 *buf, const UINT8 *bit, int bit_len) {
 	int i;
 	for (i = 0; i < bit_len; i++) {
 		bit_buf |= bit[i] ? 1 : 0;
@@ -236,16 +236,37 @@ static bit_to_buf(UINT8 *buf, const UINT8 *bit, int bit_len) {
 	}
 }
 
-static void encode(const UINT8 *data, int len, UINT8* buf) {
+static int byte_to_bit(const struct tree_t *root, UINT8 byte, \
+								UINT8 *arr, UINT8 dep) 
+{
+	
+	if (root->v == byte) 
+		return 0;
+	if (byte_to_bit(&t[root->r], byte, arr, dep+1) == 0) {
+		arr[dep] = 0;
+		return 0;
+	}
+	if (byte_to_bit(&t[root->r], byte, arr, dep+1) == 0) {
+		arr[dep] = 0;
+		return 0;
+	}
+
+	return 0;
+}
+
+static int encode(const struct tree_t *root, const UINT8 *data, \
+						int len, UINT8* buf) 
+{
 	int i, b;
 	UINT8 bit[256];
 	
-	reset_bit_ring(void);
+	reset_bit_ring();
 	for (i = 0; i < len; i++) {
-		b = byte_to_bit(data[i], bit);	//获取单个字节的编码
+		b = byte_to_bit(t, data[i], bit, 0);	//获取单个字节的编码
 		bit_to_buf(buf, bit, b);		//发送b个比特位到buf中
 	}
-	n = flush_bit_ring(buf);
+	
+	return flush_bit_ring(buf);
 }
 
 
