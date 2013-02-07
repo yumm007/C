@@ -242,32 +242,25 @@ static void byte_to_bit(const struct tree_t *root, UINT8 byte, \
 								UINT8 *arr, UINT8 dep) 
 {
 	
+	if (root->l == root->r && root->l == 0 \
+			&& root->v == byte)
+	{
+		find_it = 1;
+		dep_len = dep;
+		return;
+	}
 
 	if (!find_it && root->l != 0) {
 		byte_to_bit(&t[root->l], byte, arr, dep+1);
 		if (find_it)
 			arr[dep] = '0';
-	} else {
-		if (root->v == byte) {
-			find_it = 1;
-			dep_len = dep;
-			return;
-		}
 	}
-
 
 	if (!find_it && root->r != 0) {
 		byte_to_bit(&t[root->r], byte, arr, dep+1);
 		if (find_it)
 			arr[dep] = '1';
-	} else {
-		if (root->v == byte) {
-			dep_len = dep;
-			find_it = 1;
-			return;
-		}
 	}
-
 
 }
 
