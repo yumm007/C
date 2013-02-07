@@ -275,7 +275,7 @@ static int encode(const struct tree_t *root, const UINT8 *data, \
 		memset(bit, 0, sizeof(bit));
 		find_it = 0;
 		byte_to_bit(root, data[i], bit, 0);	//获取单个字节的编码
-		fprintf(stderr, "%c:%s\n", data[i], bit);
+		//fprintf(stderr, "%c:%s\n", data[i], bit);
 		bit_to_buf(buf, bit, dep_len);		//发送b个比特位到buf中
 	}
 	
@@ -306,8 +306,10 @@ int main(int argc, char **argv) {
 
 	if (root != -1)
 		len = save_tree(t, root, code);
-	encode(&t[root], data, len1, code+len);
-	
+	len += encode(&t[root], data, len1, code+len);
+
+	fprintf(stderr, "souce len %d, encode len %d\n", len1, len);
+
 	ret = 0;
 	fclose(fp);
 _exit:
