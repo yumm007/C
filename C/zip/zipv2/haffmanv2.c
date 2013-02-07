@@ -236,19 +236,20 @@ static void bit_to_buf(UINT8 *buf, const UINT8 *bit, int bit_len) {
 	}
 }
 
+static int dep_len;
 static int byte_to_bit(const struct tree_t *root, UINT8 byte, \
 								UINT8 *arr, UINT8 dep) 
 {
 	
-	if (root->v == byte) 
-		return 0;
-	if (byte_to_bit(&t[root->r], byte, arr, dep+1) == 0) {
-		arr[dep] = 0;
+	if (root->v == byte) {
+		dep_len = dep;
 		return 0;
 	}
-	if (byte_to_bit(&t[root->r], byte, arr, dep+1) == 0) {
+	else if (byte_to_bit(&t[root->r], byte, arr, dep+1) == 0) {
 		arr[dep] = 0;
-		return 0;
+	}
+	else if (byte_to_bit(&t[root->r], byte, arr, dep+1) == 0) {
+		arr[dep] = 1;
 	}
 
 	return 0;
