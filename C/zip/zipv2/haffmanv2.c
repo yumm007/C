@@ -200,7 +200,7 @@ static int save_tree(const struct tree_t *t, int r, UINT8 *out) {
 
 	dump_node(out);
 
-	return _n+1;
+	return (_n+1) * sizeof(struct node_t);
 }
 
 //*******************************
@@ -224,14 +224,14 @@ static int flush_bit_ring(UINT8 *buf) {
 static void bit_to_buf(UINT8 *buf, const UINT8 *bit, int bit_len) {
 	int i;
 	for (i = 0; i < bit_len; i++) {
-		bit_buf |= bit[i] ? 1 : 0;
+		bit_buf |= (bit[i] == '1' ? 1 : 0);
 		bit_buf <<= 1;
 		bit_point++;
 		if (bit_point == 8) {
+			buf[ring_counter++] = bit_buf;
+			fprintf(stderr, "append [%d]=%c\n", ring_counter, bit_buf);
 			bit_point = 0;
 			bit_buf = 0;
-			bit_point = 0;
-			buf[ring_counter++] = bit_buf;
 		}
 	}
 }
@@ -304,9 +304,12 @@ int main(int argc, char **argv) {
 
 	root = scan_data_to_arr(data, len, t);
 
-	if (root != -1)
+	if (root != -1) {
 		len = save_tree(t, root, code);
+		//fwrite(code, 1, len, stdout);
+	}
 	len += encode(&t[root], data, len1, code+len);
+	fwrite(code, 1, len, stdout);
 
 	fprintf(stderr, "souce len %d, encode len %d\n", len1, len);
 
