@@ -12,7 +12,23 @@
 #define KEY1	0x00	//	0x00需要压缩
 #define KEY2	0xff	//	0xff需要压缩
 
+/*
+*	压缩函数
+*	in: 输入流
+*	insize：输入流的长度
+*	out: 压缩后的输出流
+*  return: 压缩后的流长度
+*/
 int rel8_encode(const unsigned char *in, int insize, unsigned char *out); 
+
+/*
+*  解压缩函数
+*	data: 待解码的数据流
+*	len： 待解码的数据流长度
+*	out： 解码后的输出流
+*	return： 解码后的流长度
+*/
 int rel8_decode(const unsigned char *data, int len, unsigned char *out);
 
 #endif
+
