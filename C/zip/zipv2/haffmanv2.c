@@ -229,7 +229,7 @@ static void bit_to_buf(UINT8 *buf, const UINT8 *bit, int bit_len) {
 		bit_point++;
 		if (bit_point == 8) {
 			buf[ring_counter++] = bit_buf;
-			fprintf(stderr, "append [%d]=%c\n", ring_counter, bit_buf);
+			//fprintf(stderr, "append [%d]=%c\n", ring_counter, bit_buf);
 			bit_point = 0;
 			bit_buf = 0;
 		}
