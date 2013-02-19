@@ -41,7 +41,7 @@ extern fs_t fs;
 
 /**< 以下4个宏不需要改动 */
 #define FS_BLOCK     ((sizeof(FILE_LEN_TABLE) + SEGMENT_SIZE -1) / SEGMENT_SIZE) 
-#define SUPER_BLOCK  (FS_BLOCK + (sizeof(fs) + SEGMENT_SIZE -1) / SEGMENT_SIZE)       
+#define SUPER_BLOCK  ((sizeof(fs) + SEGMENT_SIZE -1) / SEGMENT_SIZE)       
 #define SWAP_BLOCK   1  
 #define DISK_BLOCK   (FS_BLOCK + SUPER_BLOCK + SWAP_BLOCK)
 

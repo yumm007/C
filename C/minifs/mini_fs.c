@@ -3,12 +3,8 @@
 #include <stddef.h>
 #include "mini_fs.h"
 
-
 #define SUPER_ADDR	((WORD)SEGMENT_SIZE * FS_BLOCK)
-#define SWAP_ADDR	((WORD)SEGMENT_SIZE * (FS_BLOCK + SUPER_BLOCK))
-
-//#define SUPER_BLOCK  ((WORD)SEGMENT_SIZE)*(DISK_BLOCK-2-(sizeof(fs) + SEGMENT_SIZE -1) / SEGMENT_SIZE)
-//#define SWAP_ADDR    ((WORD)SEGMENT_SIZE)*(DISK_BLOCK-1)
+#define SWAP_ADDR		((WORD)SEGMENT_SIZE * (FS_BLOCK + SUPER_BLOCK))
 
 enum {
 	FS_FLAG_CHANGED	= 0x01,
