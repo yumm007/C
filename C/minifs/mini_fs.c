@@ -3,10 +3,12 @@
 #include <stddef.h>
 #include "mini_fs.h"
 
-#define SWAP_ADDR    ((unsigned int)SEGMENT_SIZE)*(DISK_BLOCK-1)
-//#define SUPER_BLOCK  ((unsigned int)SEGMENT_SIZE)*(DISK_BLOCK-2-(sizeof(fs) + SEGMENT_SIZE -1) / SEGMENT_SIZE)
-#define SUPER_BLOCK    ((WORD)SEGMENT_SIZE)*(DISK_BLOCK -1 - (sizeof(fs_t) + SEGMENT_SIZE -1) / SEGMENT_SIZE)
 
+#define SUPER_ADDR	((WORD)SEGMENT_SIZE * FS_BLOCK)
+#define SWAP_ADDR	((WORD)SEGMENT_SIZE * (FS_BLOCK + SUPER_BLOCK))
+
+//#define SUPER_BLOCK  ((WORD)SEGMENT_SIZE)*(DISK_BLOCK-2-(sizeof(fs) + SEGMENT_SIZE -1) / SEGMENT_SIZE)
+//#define SWAP_ADDR    ((WORD)SEGMENT_SIZE)*(DISK_BLOCK-1)
 
 enum {
 	FS_FLAG_CHANGED	= 0x01,
@@ -16,6 +18,7 @@ static void disk_clean(WORD addr, WORD len);
 static void disk_read(WORD addr, BYTE *data, WORD len);
 static void disk_edit(WORD addr, const BYTE *data, WORD len);
 static void disk_append(WORD addr, const BYTE *data, WORD len);
+extern const BYTE *f_disk_addr(void);
 
 /*******************************************************
 ***	用户接口层代码
@@ -25,7 +28,6 @@ static void disk_append(WORD addr, const BYTE *data, WORD len);
 *******************************************************/
 
 #ifdef FS_DISK_ROM_FLASH
-extern const BYTE *f_disk_addr(void);
 const BYTE* f_rom_read(file_id_t id, WORD offset) {
 	if (id >= FILE_ID_END)
 		return NULL;
@@ -117,16 +119,27 @@ WORD f_len(file_id_t id) {
 	return fs.file[id].file_len;
 }
 
+WORD f_size(file_id_t id) {
+	if ( id >= FILE_ID_END)
+		return 0;
+	return fs.file[id].file_size;
+}
+
+WORD f_addr(file_id_t id) {
+	if ( id >= FILE_ID_END)
+		return 0;
+	return fs.file[id].start_addr;
+}
 
 void f_sync(void) {
 	if (fs.flag & FS_FLAG_CHANGED)
-		disk_edit(SUPER_BLOCK, (BYTE *)&fs, sizeof(fs));
+		disk_edit(SUPER_ADDR, (BYTE *)&fs, sizeof(fs));
 }
 
 void f_init(void) {
 	file_id_t id;
 	BYTE p;
-	segment_read(SUPER_BLOCK, offsetof(fs_t, valid), (WORD)&p, sizeof(p));
+	segment_read(SUPER_ADDR, offsetof(fs_t, valid), (WORD)&p, sizeof(p));
 	
 	if (p != 0x76) {
 		for (id = FILE1; id < FILE_ID_END; id++) {
@@ -136,7 +149,7 @@ void f_init(void) {
 		fs.valid = 0x76;
 		f_sync();
 	} else {
-		segment_read(SUPER_BLOCK, 0, (WORD)&fs, sizeof(fs));
+		segment_read(SUPER_ADDR, 0, (WORD)&fs, sizeof(fs));
 	}
 }
 

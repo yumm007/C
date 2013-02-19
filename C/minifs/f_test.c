@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "mini_fs.h"
+#include <stdbool.h>
 
 #define TEST_COUNT  	80
 #define BUF_SIZE		800
@@ -190,6 +191,17 @@ bool f_test(void) {
 		}
 		ave = (tim / TIMER_CLOCK) / w_c * 1000.0 * 1000;
 		//printf("read %lu byte use %lu clock, average %.2fus/B\n", w_c, tim, ave);
+
+		//f_copy ≤‚ ‘
+		f_erase(FILE9);
+		f_write(FILE9, 0, (const BYTE *)"12345678901234567890", 20);
+		f_write(FILE9, 10, (const BYTE *)"ABCDE", 5);
+		f_read(FILE9, 0, BUF, 20);
+		if (memcmp(BUF, "1234567890ABCDE67890", 20) != 0) {
+			fprintf(stderr, "f_copy test failed.\n");
+			failed = 1;
+		}
+
 		if (!failed)
 			count++;
 		if (failed)

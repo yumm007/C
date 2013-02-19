@@ -17,10 +17,15 @@ Date			Author			Description
 
 /**< 基本数据类型定义头文件 */
 typedef unsigned char BYTE;
+
+#include "mini_fs_conf.h"
+#ifdef FS_DISK_RAM_FLASH
+typedef unsigned long WORD;
+#else
 typedef unsigned int WORD;
+#endif
 
 /**< 文件系统配置信息，由平台自定义 */
-#include "mini_fs_conf.h"
 
 /**< 文件系统结构体 */
 typedef struct fs_t {
@@ -34,6 +39,11 @@ typedef struct fs_t {
 } fs_t;
 extern fs_t fs;
 
+/**< 以下4个宏不需要改动 */
+#define FS_BLOCK     ((sizeof(FILE_LEN_TABLE) + SEGMENT_SIZE -1) / SEGMENT_SIZE) 
+#define SUPER_BLOCK  (FS_BLOCK + (sizeof(fs) + SEGMENT_SIZE -1) / SEGMENT_SIZE)       
+#define SWAP_BLOCK   1  
+#define DISK_BLOCK   (FS_BLOCK + SUPER_BLOCK + SWAP_BLOCK)
 
 /**< 系统启动时加载文件系统 */
 void 	f_init(void);
@@ -77,6 +87,12 @@ WORD f_copy(file_id_t dst, WORD dst_offset, file_id_t src, WORD src_offset, WORD
 
 /**< 返回文件长度 */
 WORD	f_len(file_id_t id);
+
+/**< 返回文件大小 */
+WORD	f_size(file_id_t id);
+
+/**< 返回文件地址 */
+WORD	f_addr(file_id_t id);
 
 /**< 清空文件 */
 void	f_erase(file_id_t id);
