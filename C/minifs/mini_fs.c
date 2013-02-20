@@ -3,11 +3,19 @@
 #include <stddef.h>
 #include "mini_fs.h"
 
+
 #define SUPER_ADDR	((WORD)SEGMENT_SIZE * FS_BLOCK)
-#define SWAP_ADDR		((WORD)SEGMENT_SIZE * (FS_BLOCK + SUPER_BLOCK))
+#define SWAP_ADDR	((WORD)SEGMENT_SIZE * (FS_BLOCK + SUPER_BLOCK))
+
+//#define CHECK_ARGC
 
 enum {
 	FS_FLAG_CHANGED	= 0x01,
+};
+
+enum {
+	NORMAL_WRITE,
+	DIRECT_WRITE,
 };
 
 static void disk_clean(WORD addr, WORD len);
@@ -25,47 +33,58 @@ extern const BYTE *f_disk_addr(void);
 
 #ifdef FS_DISK_ROM_FLASH
 const BYTE* f_rom_read(file_id_t id, WORD offset) {
+#ifdef CHECK_ARGC
 	if (id >= FILE_ID_END)
 		return NULL;
 	if (offset > fs.file[id].file_size)
 		return NULL;
+#endif
 	return &f_disk_addr()[fs.file[id].start_addr + offset];
 }
 #endif
 
 BYTE*	f_read(file_id_t id, WORD offset,	BYTE *buf, WORD len) {
+#ifdef CHECK_ARGC
 	if (id >= FILE_ID_END || buf == NULL)
 		return NULL;
 	if (offset + len > fs.file[id].file_size)
 		len = fs.file[id].file_size - offset;
+#endif
 	disk_read(fs.file[id].start_addr + offset, buf, len);
 	return buf;
 }
 
-WORD f_write(file_id_t id,	WORD offset,	const BYTE *data, WORD len) {
-	WORD n;
+static WORD _f_write(file_id_t id,	WORD offset, const BYTE *data, WORD len, BYTE write_flag) {
+	WORD n, file_addr, file_len;
+	typedef void (*disk_edit_t)(WORD addr, const BYTE *data, WORD len);
+	disk_edit_t disk_edit_p = disk_edit;
+	if (write_flag == DIRECT_WRITE)
+		disk_edit_p = disk_append;
 
+#ifdef CHECK_ARGC
 	if (id >= FILE_ID_END || len == 0)
 		return 0;
 	if (offset + len > fs.file[id].file_size)
 		len = fs.file[id].file_size - offset;
-
+#endif
 	//每次写文件时，计算出需要修改的部分和需要追加的部分
 	//需要修改的部分设计到擦除FLASH，而追加的部分则在文件创建时已经擦写过了
-
-	if (offset >= fs.file[id].file_len) {
+	file_addr = fs.file[id].start_addr;
+	file_len = fs.file[id].file_len;
+	
+	if (offset >= file_len) {
 		//需要保存的数据只需要追加
-		disk_append(fs.file[id].start_addr + offset, data, len);
+		disk_append(file_addr + offset, data, len);
 		fs.file[id].file_len = offset + len;
-	} else if (offset < fs.file[id].file_len && offset + len > fs.file[id].file_len) {
+	} else if (offset < file_len && offset + len > file_len) {
 		//需要保存的数据一部分位于已有数据内部，另外一部分需要追加
-		n = fs.file[id].file_len - offset;
-		disk_edit(fs.file[id].start_addr + offset, data, n);
-		disk_append(fs.file[id].start_addr + fs.file[id].file_len, &data[n], len - n);
+		n = file_len - offset;
+		disk_edit_p(file_addr + offset, data, n);
+		disk_append(file_addr + file_len, &data[n], len - n);
 		fs.file[id].file_len = offset + len;
 	} else {
 		//需要保存的数据完全位于已有数据内部
-		disk_edit(fs.file[id].start_addr + offset, data, len);
+		disk_edit_p(file_addr + offset, data, len);
 	}
 
 	fs.flag |= FS_FLAG_CHANGED;
@@ -73,18 +92,26 @@ WORD f_write(file_id_t id,	WORD offset,	const BYTE *data, WORD len) {
 	return len;
 }
 
+WORD f_write(file_id_t id,	WORD offset, const BYTE *data, WORD len) {
+	return _f_write(id, offset, data, len, NORMAL_WRITE);
+}
+
+WORD 	f_write_direct(file_id_t id, WORD offset,	const BYTE *data, WORD len) {
+	return _f_write(id, offset, data, len, DIRECT_WRITE);
+}		
+	
 WORD f_copy(file_id_t dst, WORD dst_offset, file_id_t src, WORD src_offset, WORD len) {
 	BYTE buf[SEGMENT_TO_SEGMENT_BUF];
 	int i;
-	
+#ifdef CHECK_ARGC
 	if (dst >= FILE_ID_END || src >= FILE_ID_END || len == 0)
 		return 0;
 	if (dst_offset + len > fs.file[dst].file_size)
 		len = fs.file[dst].file_size - dst_offset;	
 	if (src_offset + len > fs.file[src].file_size)
 		len = fs.file[src].file_size - src_offset;
-
-	for (i = len / SEGMENT_TO_SEGMENT_BUF; i > 0; i--, dst_offset += SEGMENT_TO_SEGMENT_BUF, \
+#endif
+	for (i = len >> 5; i > 0; i--, dst_offset += SEGMENT_TO_SEGMENT_BUF, \
 			src_offset += SEGMENT_TO_SEGMENT_BUF, len -= SEGMENT_TO_SEGMENT_BUF) 
 	{
 		f_read(src, src_offset, buf, SEGMENT_TO_SEGMENT_BUF);
@@ -101,8 +128,10 @@ WORD f_copy(file_id_t dst, WORD dst_offset, file_id_t src, WORD src_offset, WORD
 }
 
 void f_erase(file_id_t id) {
+#ifdef CHECK_ARGC
 	if ( id >= FILE_ID_END)
 		return;
+#endif
 	disk_clean(fs.file[id].start_addr, fs.file[id].file_len);
 	fs.file[id].file_len = 0;
 	
@@ -110,20 +139,26 @@ void f_erase(file_id_t id) {
 }
 
 WORD f_len(file_id_t id) {
+#ifdef CHECK_ARGC
 	if ( id >= FILE_ID_END)
 		return 0;
+#endif
 	return fs.file[id].file_len;
 }
 
 WORD f_size(file_id_t id) {
+#ifdef CHECK_ARGC
 	if ( id >= FILE_ID_END)
 		return 0;
+#endif
 	return fs.file[id].file_size;
 }
 
 WORD f_addr(file_id_t id) {
+#ifdef CHECK_ARGC
 	if ( id >= FILE_ID_END)
 		return 0;
+#endif
 	return fs.file[id].start_addr;
 }
 

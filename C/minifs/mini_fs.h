@@ -5,6 +5,7 @@ Project：		ESL
 Description:	FLASH文件系统
 Date			Author			Description
 2013-01-31	于明明			beta版本
+2013-02-20  于明明			加入direct写函数
 */
 
 #ifndef __MINI_FS__
@@ -73,6 +74,18 @@ BYTE*	f_read(file_id_t id, WORD offset,	BYTE *buf, WORD len);
 * @return 返回写入成功的字节数
 */
 WORD 	f_write(file_id_t id, WORD offset,	const BYTE *data, WORD len);
+
+/**
+* 直接写函数
+* 直接往文件的指定偏移量写入指定长度的内容。调用者需要确保此区域被擦除过。
+* 如果此区域已经有内容，而且和要写入的数据内容不一致，则调用此函数后，此区域的数据内容未知
+* @param[in] id 文件ID   
+* @param[in] offset 从文件的偏移地址offset开始写   
+* @param[in] data 待写入的数据
+* @param[in] len 需要写入的字节数
+* @return 返回写入成功的字节数
+*/
+WORD 	f_write_direct(file_id_t id, WORD offset,	const BYTE *data, WORD len);
 
 /**
 * 文件拷贝函数
