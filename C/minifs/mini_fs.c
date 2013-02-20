@@ -10,7 +10,8 @@
 //#define CHECK_ARGC
 
 enum {
-	FS_FLAG_CHANGED	= 0x01,
+	FS_FLAG_CHANGED		= 0x01,
+	FS_FLAG_SWAP_CLEAN	= 0x02,
 };
 
 enum {
@@ -259,6 +260,7 @@ static void __segment_op(WORD seg_addr, WORD a, WORD b, BYTE step) {
 		//fprintf(stderr, "a=%d,b=%d,c=%d,d=%d\n",a,b,c,d);
 		if (c < min) {
 			//fprintf(stderr, "area 1: %d, %d, %d, %d\n", a, b, c, d);
+			fs.flag &= ~FS_FLAG_SWAP_CLEAN;
 			if (step == 0)
 				__addr_split_opera(SWAP_ADDR + c - seg_addr, c, min - c, MAX_WRITE_UNIT, segment_copy_segment);
 			else
@@ -266,6 +268,7 @@ static void __segment_op(WORD seg_addr, WORD a, WORD b, BYTE step) {
 		}
 		if (d > max) {
 			//fprintf(stderr, "area 2: %d, %d, %d, %d\n", a, b, c, d);
+			fs.flag &= ~FS_FLAG_SWAP_CLEAN;
 			if (step == 0)
 				__addr_split_opera(SWAP_ADDR + max - seg_addr, max, d - max, MAX_WRITE_UNIT, segment_copy_segment);
 			else
@@ -276,7 +279,10 @@ static void __segment_op(WORD seg_addr, WORD a, WORD b, BYTE step) {
 
 static void segment_clean(WORD seg_addr, WORD offset, WORD noused, WORD len) {
 	//fprintf(stderr, "%s(%d,%d,,%d)\n", __FUNCTION__, seg_addr, offset, len);
-	segment_erase(SWAP_ADDR);
+	if (!(fs.flag & FS_FLAG_SWAP_CLEAN)) {
+		segment_erase(SWAP_ADDR);
+		fs.flag |= FS_FLAG_SWAP_CLEAN;
+	}
 	__segment_op(seg_addr, seg_addr + offset, seg_addr + offset + len, 0);
 	segment_erase(seg_addr);
 	__segment_op(seg_addr, seg_addr + offset, seg_addr + offset + len, 1);

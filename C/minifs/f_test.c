@@ -247,7 +247,8 @@ BYTE __FS_SWAP_SPACE[SEGMENT_SIZE];
 
 int main(void) {
 	f_init();
-	while (f_test()) {
+	return 0;
+	while (!f_test()) {
 		sleep(1);
 	}
 	return 0;

@@ -41,7 +41,7 @@ const BYTE *f_disk_addr(void) {
 void segment_erase(WORD seg_addr) {
 	memset((char *)&DISK[seg_addr], 0, SEGMENT_SIZE);
 	memset((char *)&__DISK_MAP[seg_addr], 0, SEGMENT_SIZE);
-	//fprintf(stderr, "erase %lu\n", seg_addr);
+	fprintf(stderr, "erase %lu\n", seg_addr);
 }
 
 //需要移植的函数，实现将数据从FLASH拷贝到内存中
