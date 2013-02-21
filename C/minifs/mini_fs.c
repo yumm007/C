@@ -133,6 +133,7 @@ void f_erase(file_id_t id) {
 	if ( id >= FILE_ID_END)
 		return;
 #endif
+	//但文件长度等于0时，不会引发segment_erase操作
 	disk_clean(fs.file[id].start_addr, fs.file[id].file_len);
 	fs.file[id].file_len = 0;
 	
@@ -289,8 +290,6 @@ static void segment_clean(WORD seg_addr, WORD offset, WORD noused, WORD len) {
 }
 
 static void segment_edit(WORD seg_addr, WORD offset, WORD data, WORD len) {
-	if (len == 0)
-		return;
 	segment_clean(seg_addr, offset, data, len);	
 	//写入用户数据
 	__addr_split_opera(seg_addr + offset, (WORD)data, len, MAX_WRITE_UNIT, segment_write);

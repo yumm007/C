@@ -59,6 +59,7 @@ void segment_write(WORD seg_addr, WORD offset,  WORD data, WORD len) {
 	for (i = 0; i < len; i++) {
 		if (__DISK_MAP[seg_addr + offset + i] == 1) {
 			fprintf(stderr, "write %lu + %lu + %lu before erase\n", seg_addr, offset, len);
+			return;
 		}
 	}
 
