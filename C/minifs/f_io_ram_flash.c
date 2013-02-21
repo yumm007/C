@@ -41,8 +41,8 @@ const BYTE *f_disk_addr(void) {
 void segment_erase(WORD seg_addr) {
 	//memset((char *)&DISK[seg_addr], 0, SEGMENT_SIZE);
 	memset((char *)seg_addr, 0, SEGMENT_SIZE);
-	memset((char *)&__DISK_MAP[seg_addr], 0, SEGMENT_SIZE);
-	fprintf(stderr, "erase %lu\n", seg_addr);
+	memset((char *)&__DISK_MAP[seg_addr - (WORD)DISK], 0, SEGMENT_SIZE);
+	//fprintf(stderr, "erase %lu\n", seg_addr);
 }
 
 //需要移植的函数，实现将数据从FLASH拷贝到内存中
@@ -58,14 +58,14 @@ void segment_write(WORD seg_addr, WORD offset,  WORD data, WORD len) {
 	//fprintf(stderr, "%s(%lu, %lu, data, %lu)\n", __FUNCTION__, seg_addr, offset, len);
 
 	for (i = 0; i < len; i++) {
-		if (__DISK_MAP[seg_addr + offset + i] == 1) {
+		if (__DISK_MAP[(seg_addr + offset + i) - (WORD)DISK] == 1) {
 			fprintf(stderr, "write %lu + %lu + %lu before erase\n", seg_addr, offset, len);
 			return;
 		}
 	}
 
 	memcpy(flash_ptr, (char *)data, (int)len);
-	memset(&__DISK_MAP[seg_addr + offset], 1, (int)len);
+	memset(&__DISK_MAP[seg_addr + offset - (WORD)DISK], 1, (int)len);
 	//fprintf(stderr, "set %lu + %lu + %lu has used\n", seg_addr, offset, len);
 }
 

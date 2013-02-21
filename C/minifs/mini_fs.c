@@ -309,7 +309,7 @@ static void segment_clean(WORD seg_addr, WORD offset, WORD noused, WORD len) {
 static void segment_edit(WORD seg_addr, WORD offset, WORD data, WORD len) {
 	segment_clean(seg_addr, offset, data, len);	
 	//写入用户数据
-	__addr_split_opera(seg_addr + offset, (WORD)data, len, MAX_WRITE_UNIT, segment_write);
+	__addr_split_opera(seg_addr + offset, (WORD)data, len, MAX_WRITE_UNIT, _segment_write);
 }
 
 /*******************************************************
@@ -322,7 +322,7 @@ static void disk_edit(WORD addr, const BYTE *data, WORD len) {
 
 static void disk_append(WORD addr, const BYTE *data, WORD len) {
 	//segment_write 只需要写，数据源只会是内存，已经被擦除好了
-	__addr_split_opera(addr, (WORD)data, len, MAX_WRITE_UNIT, segment_write);
+	__addr_split_opera(addr, (WORD)data, len, MAX_WRITE_UNIT, _segment_write);
 }
 
 static void disk_clean(WORD addr, WORD len) {
@@ -332,5 +332,5 @@ static void disk_clean(WORD addr, WORD len) {
 
 static void disk_read(WORD addr, BYTE *buf, WORD len) {
 	//segment_clean 只负责读, 理论上没有对齐限制
-	__addr_split_opera(addr, (WORD)buf, len, MAX_WRITE_UNIT, (op_fun_t)segment_read);
+	__addr_split_opera(addr, (WORD)buf, len, MAX_WRITE_UNIT, (op_fun_t)_segment_read);
 }

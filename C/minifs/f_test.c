@@ -252,7 +252,7 @@ int main(void) {
 	f_erase(FILE1);
 	f_erase(FILE1);
 	f_erase(FILE1);
-	return 0;
+	//return 0;
 	while (f_test()) {
 		sleep(1);
 	}
