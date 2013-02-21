@@ -247,8 +247,13 @@ BYTE __FS_SWAP_SPACE[SEGMENT_SIZE];
 
 int main(void) {
 	f_init();
+	fprintf(stderr, "f_init comp.\n");
+	f_erase(FILE1);
+	f_erase(FILE1);
+	f_erase(FILE1);
+	f_erase(FILE1);
 	return 0;
-	while (!f_test()) {
+	while (f_test()) {
 		sleep(1);
 	}
 	return 0;

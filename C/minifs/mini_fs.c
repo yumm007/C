@@ -137,6 +137,7 @@ void f_erase(file_id_t id) {
 	if ( id >= FILE_ID_END)
 		return;
 #endif
+	//但文件长度等于0时，不会引发segment_erase操作
 	disk_clean(fs.file[id].start_addr, fs.file[id].file_len);
 	fs.file[id].file_len = 0;
 	
