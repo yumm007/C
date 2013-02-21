@@ -25,6 +25,9 @@ static void disk_edit(WORD addr, const BYTE *data, WORD len);
 static void disk_append(WORD addr, const BYTE *data, WORD len);
 extern const BYTE *f_disk_addr(void);
 
+/**<  虚拟地址到物理地址转换 */
+#define VIRT2PHY(virt) ((WORD)&((f_disk_addr())[virt]))
+
 /*******************************************************
 ***	用户接口层代码
 ***	read函数直接返回FLASH地址即可
@@ -33,6 +36,7 @@ extern const BYTE *f_disk_addr(void);
 *******************************************************/
 
 #ifdef FS_DISK_ROM_FLASH
+
 const BYTE* f_rom_read(file_id_t id, WORD offset) {
 #ifdef CHECK_ARGC
 	if (id >= FILE_ID_END)
@@ -168,10 +172,23 @@ void f_sync(void) {
 		disk_edit(SUPER_ADDR, (BYTE *)&fs, sizeof(fs));
 }
 
+/************************************************
+*****************虚拟地址到实际地址映射********************
+************************************************/
+static void _segment_erase(WORD addr) {
+	segment_erase(VIRT2PHY(addr));
+}
+static void _segment_read(WORD seg_addr, WORD seg_off, WORD buf, WORD len) {
+	segment_read(VIRT2PHY(seg_addr), seg_off, buf, len);
+}
+static void _segment_write(WORD seg_addr, WORD seg_off,  WORD buf, WORD len) {
+	segment_write(VIRT2PHY(seg_addr), seg_off, buf,  len);
+}
+
 void f_init(void) {
 	file_id_t id;
 	BYTE p;
-	segment_read(SUPER_ADDR, offsetof(fs_t, valid), (WORD)&p, sizeof(p));
+	_segment_read(SUPER_ADDR, offsetof(fs_t, valid), (WORD)&p, sizeof(p));
 	
 	if (p != 0x76) {
 		for (id = FILE1; id < FILE_ID_END; id++) {
@@ -181,7 +198,7 @@ void f_init(void) {
 		fs.valid = 0x76;
 		f_sync();
 	} else {
-		segment_read(SUPER_ADDR, 0, (WORD)&fs, sizeof(fs));
+		_segment_read(SUPER_ADDR, 0, (WORD)&fs, sizeof(fs));
 	}
 }
 
@@ -191,7 +208,7 @@ void f_init(void) {
 
 #if defined(FS_DISK_ROM_FLASH) || defined(FS_DISK_RAM_FLASH)
 void segment_copy_segment(WORD seg_dst, WORD dst_off, WORD seg_src, WORD len) {\
-	segment_write(seg_dst, dst_off, (WORD)&((f_disk_addr())[seg_src]), len);
+	_segment_write(seg_dst, dst_off, VIRT2PHY(seg_src), len);
 }
 #endif
 
@@ -205,13 +222,13 @@ void segment_copy_segment(WORD seg_dst, WORD dst_off, WORD seg_src, WORD len) {
 	for (i = len / SEGMENT_TO_SEGMENT_BUF; i > 0; i--, dst_addr += SEGMENT_TO_SEGMENT_BUF, \
 			src_addr += SEGMENT_TO_SEGMENT_BUF, len -= SEGMENT_TO_SEGMENT_BUF) 
 	{
-		segment_read(src_addr, 0, (WORD)buf, SEGMENT_TO_SEGMENT_BUF);
-		segment_write(dst_addr, 0, (WORD)buf, SEGMENT_TO_SEGMENT_BUF);
+		_segment_read(src_addr, 0, (WORD)buf, SEGMENT_TO_SEGMENT_BUF);
+		_segment_write(dst_addr, 0, (WORD)buf, SEGMENT_TO_SEGMENT_BUF);
 	}
 	
 	if (len != 0) {
-		segment_read(src_addr, 0, (WORD)buf, len);
-		segment_write(dst_addr, 0, (WORD)buf, len);
+		_segment_read(src_addr, 0, (WORD)buf, len);
+		_segment_write(dst_addr, 0, (WORD)buf, len);
 	}
 }
 #endif
@@ -280,17 +297,15 @@ static void __segment_op(WORD seg_addr, WORD a, WORD b, BYTE step) {
 static void segment_clean(WORD seg_addr, WORD offset, WORD noused, WORD len) {
 	//fprintf(stderr, "%s(%d,%d,,%d)\n", __FUNCTION__, seg_addr, offset, len);
 	if (!(fs.flag & FS_FLAG_SWAP_CLEAN)) {
-		segment_erase(SWAP_ADDR);
+		_segment_erase(SWAP_ADDR);
 		fs.flag |= FS_FLAG_SWAP_CLEAN;
 	}
 	__segment_op(seg_addr, seg_addr + offset, seg_addr + offset + len, 0);
-	segment_erase(seg_addr);
+	_segment_erase(seg_addr);
 	__segment_op(seg_addr, seg_addr + offset, seg_addr + offset + len, 1);
 }
 
 static void segment_edit(WORD seg_addr, WORD offset, WORD data, WORD len) {
-	if (len == 0)
-		return;
 	segment_clean(seg_addr, offset, data, len);	
 	//写入用户数据
 	__addr_split_opera(seg_addr + offset, (WORD)data, len, MAX_WRITE_UNIT, segment_write);
