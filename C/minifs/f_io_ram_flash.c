@@ -30,12 +30,9 @@ fs_t fs = {
 };
 
 
-static const BYTE __DISK[DISK_SPACE];
-const BYTE *DISK = &__DISK[0];
+static BYTE __DISK[DISK_SPACE];
+BYTE *DISK = &__DISK[0];
 BYTE	__DISK_MAP[DISK_SPACE];
-const BYTE *f_disk_addr(void) {
-	return __DISK;
-}
 
 //需要移植的函数, 调用者确保地址已经按segment对齐
 void segment_erase(WORD seg_addr) {

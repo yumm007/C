@@ -23,7 +23,6 @@ static void disk_clean(WORD addr, WORD len);
 static void disk_read(WORD addr, BYTE *data, WORD len);
 static void disk_edit(WORD addr, const BYTE *data, WORD len);
 static void disk_append(WORD addr, const BYTE *data, WORD len);
-extern const BYTE *f_disk_addr(void);
 
 
 static void segment_edit(WORD seg_addr, WORD offset, WORD data, WORD len);
@@ -31,7 +30,8 @@ static void segment_clean(WORD seg_addr, WORD offset, WORD noused, WORD len);
 
 
 /**<  虚拟地址到物理地址转换 */
-#define VIRT2PHY(virt) ((WORD)&((f_disk_addr())[virt]))
+extern BYTE *DISK;
+#define VIRT2PHY(virt) ((WORD)(&DISK[virt]))
 
 /*******************************************************
 ***	用户接口层代码
