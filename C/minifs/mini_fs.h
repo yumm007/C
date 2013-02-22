@@ -115,8 +115,7 @@ extern void segment_erase(WORD addr);
 
 /**
 * IO块读函数
-* @param[in] seg_addr 需要读的块起始地址
-* @param[in] seg_off 块内偏移量
+* @param[in] addr 需要读的地址
 * @param[in] buf 写入的内存区，参数应该为指针，但传参时需要强转为WORD类型
 * @param[in] len 需要读取的字节数, 调用者保证不会超出buf空间
 * @return 无
@@ -125,8 +124,7 @@ extern void segment_read(WORD addr, WORD buf, WORD len);
 
 /**
 * IO块写函数
-* @param[in] seg_addr 需要写的块起始地址
-* @param[in] seg_off 块内偏移量
+* @param[in] addr 需要写的地址
 * @param[in] buf 为数据源，参数应该为指针，但传参时需要强转为WORD类型
 * @param[in] len 需要写入的字节数，调用者保证不会跨MAX_WRITE_UNIT写入
 * @return 无
