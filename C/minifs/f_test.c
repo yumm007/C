@@ -57,13 +57,14 @@ struct  f_test_arr_t {
 
 extern WORD	f_addr(file_id_t id);
 
-extern const BYTE DISK[DISK_SPACE];
+//extern const BYTE DISK[DISK_SPACE];
+extern BYTE *DISK;
 void f_dump(void) {
 	file_id_t i;
 	int j;
 	for (i = FILE1; i < FILE_ID_END; i++) {
 		printf("FILE %u: addr = %lu, len = %lu, size = %lu\n", i + 1, \
-			f_addr(i), f_len(i), f_size(i));
+			(WORD)DISK + f_addr(i), f_len(i), f_size(i));
 		for (j = 0; j < f_size(i); j++)
 			putchar(DISK[f_addr(i) + j]);
 		putchar('\n');
@@ -142,7 +143,9 @@ bool f_test(void) {
 			f_write(id, arr[id].offset, test_str, arr[id].len);
 			if (memcmp(f_read(id, arr[id].offset, BUF, arr[id].len), test_str, arr[id].len) != 0) {
 				fprintf(stderr, "1 memcmp failed after write. FILE%d offset %lu, len %lu\n", id+1, arr[id].offset, arr[id].len);
-			}
+				return false;
+			} 
+			
 			tim += timer_end();
 			w_c += arr[id].len;
 			//fprintf(stderr, "f_write(FILE%d, addr %lu, \toffset %lu, \tlen %lu)\t\t...\n", id + 1, f_addr(id), arr[id].offset, arr[id].len);
@@ -201,7 +204,7 @@ bool f_test(void) {
 		if (memcmp(BUF, "1234567890ABCDE67890", 20) != 0) {
 			fprintf(stderr, "f_copy test failed.\n");
 			failed = 1;
-		}
+		} 
 		}
 
 		if (!failed)
@@ -249,11 +252,12 @@ BYTE __FS_SWAP_SPACE[SEGMENT_SIZE];
 
 int main(void) {
 	f_init();
-	f_erase(FILE1);
-	f_erase(FILE1);
-	f_erase(FILE1);
-	f_erase(FILE1);
-	fprintf(stderr, "f_init comp.\n");
+	//f_erase(FILE1);
+	//f_erase(FILE1);
+	//f_erase(FILE1);
+	//f_erase(FILE1);
+	//f_dump();
+	//fprintf(stderr, "f_init comp.\n");
 	//return 0;
 	while (f_test()) {
 		sleep(1);
