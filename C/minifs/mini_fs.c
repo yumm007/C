@@ -30,7 +30,7 @@ static void segment_clean(WORD seg_addr, WORD offset, WORD noused, WORD len);
 
 
 /**<  虚拟地址到物理地址转换 */
-extern BYTE *DISK;
+extern const BYTE *DISK;
 #define VIRT2PHY(virt) ((WORD)(&DISK[virt]))
 
 /*******************************************************
@@ -49,7 +49,7 @@ const BYTE* f_rom_read(file_id_t id, WORD offset) {
 	if (offset > fs.file[id].file_size)
 		return NULL;
 #endif
-	return &VIRT2PHY([fs.file[id].start_addr + offset]);
+	return (const BYTE *)VIRT2PHY(fs.file[id].start_addr + offset);
 }
 #endif
 
@@ -66,10 +66,10 @@ BYTE*	f_read(file_id_t id, WORD offset,	BYTE *buf, WORD len) {
 
 static WORD _f_write(file_id_t id,	WORD offset, const BYTE *data, WORD len, BYTE write_flag) {
 	WORD n, file_addr, file_len;
-	typedef void (*disk_edit_t)(WORD addr, const BYTE *data, WORD len);
-	disk_edit_t disk_edit_p = disk_edit;
-	if (write_flag == DIRECT_WRITE)
-		disk_edit_p = disk_append;
+	//typedef void (*disk_edit_t)(WORD addr, const BYTE *data, WORD len);
+	//disk_edit_t disk_edit_p = disk_edit;
+	//if (write_flag == DIRECT_WRITE)
+		//disk_edit_p = disk_append;
 
 #ifdef CHECK_ARGC
 	if (id >= FILE_ID_END || len == 0)
@@ -89,12 +89,20 @@ static WORD _f_write(file_id_t id,	WORD offset, const BYTE *data, WORD len, BYTE
 	} else if (offset < file_len && offset + len > file_len) {
 		//需要保存的数据一部分位于已有数据内部，另外一部分需要追加
 		n = file_len - offset;
-		disk_edit_p(file_addr + offset, data, n);
+		//disk_edit_p(file_addr + offset, data, n);
+		if (write_flag == DIRECT_WRITE) 
+			disk_append(file_addr + offset, data, n);
+		else 
+			disk_edit(file_addr + offset, data, n);
 		disk_append(file_addr + file_len, &data[n], len - n);
 		fs.file[id].file_len = offset + len;
 	} else {
 		//需要保存的数据完全位于已有数据内部
-		disk_edit_p(file_addr + offset, data, len);
+		//disk_edit_p(file_addr + offset, data, len);
+		if (write_flag == DIRECT_WRITE) 
+			disk_append(file_addr + offset, data, n);
+		else 
+			disk_edit(file_addr + offset, data, n);
 	}
 
 	fs.flag |= FS_FLAG_CHANGED;
@@ -215,13 +223,13 @@ void segment_copy_segment(WORD seg_dst, WORD dst_off, WORD seg_src, WORD len) {
 	for (i = len / SEGMENT_TO_SEGMENT_BUF; i > 0; i--, dst_addr += SEGMENT_TO_SEGMENT_BUF, \
 			src_addr += SEGMENT_TO_SEGMENT_BUF, len -= SEGMENT_TO_SEGMENT_BUF) 
 	{
-		_segment_read(src_addr, 0, (WORD)buf, SEGMENT_TO_SEGMENT_BUF);
-		_segment_write(dst_addr, 0, (WORD)buf, SEGMENT_TO_SEGMENT_BUF);
+		segment_read(src_addr, 0, (WORD)buf, SEGMENT_TO_SEGMENT_BUF);
+		segment_write(dst_addr, 0, (WORD)buf, SEGMENT_TO_SEGMENT_BUF);
 	}
 	
 	if (len != 0) {
-		_segment_read(src_addr, 0, (WORD)buf, len);
-		_segment_write(dst_addr, 0, (WORD)buf, len);
+		segment_read(src_addr, 0, (WORD)buf, len);
+		segment_write(dst_addr, 0, (WORD)buf, len);
 	}
 }
 #endif
