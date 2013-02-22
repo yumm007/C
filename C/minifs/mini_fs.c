@@ -5,7 +5,7 @@
 
 
 #define SUPER_ADDR	((WORD)SEGMENT_SIZE * FS_BLOCK)
-#define SWAP_ADDR	((WORD)SEGMENT_SIZE * (FS_BLOCK + SUPER_BLOCK))
+#define SWAP_ADDR	((WORD)(SEGMENT_SIZE * (FS_BLOCK + SUPER_BLOCK)))
 
 //#define CHECK_ARGC
 
@@ -49,7 +49,7 @@ const BYTE* f_rom_read(file_id_t id, WORD offset) {
 	if (offset > fs.file[id].file_size)
 		return NULL;
 #endif
-	return &f_disk_addr()[fs.file[id].start_addr + offset];
+	return &VIRT2PHY([fs.file[id].start_addr + offset]);
 }
 #endif
 
@@ -181,9 +181,6 @@ void f_sync(void) {
 /************************************************
 *****************虚拟地址到实际地址映射********************
 ************************************************/
-static void _segment_erase(WORD addr) {
-	segment_erase(VIRT2PHY(addr));
-}
 static void _segment_read(WORD seg_addr, WORD seg_off, WORD buf, WORD len) {
 	segment_read(VIRT2PHY(seg_addr), seg_off, buf, len);
 }
@@ -305,11 +302,11 @@ static void __segment_op(WORD seg_addr, WORD a, WORD b, BYTE step) {
 static void segment_clean(WORD seg_addr, WORD offset, WORD noused, WORD len) {
 	//fprintf(stderr, "%s(%d,%d,,%d)\n", __FUNCTION__, seg_addr, offset, len);
 	if (!(fs.flag & FS_FLAG_SWAP_CLEAN)) {
-		_segment_erase(SWAP_ADDR);
+		segment_erase(VIRT2PHY(SWAP_ADDR));
 		fs.flag |= FS_FLAG_SWAP_CLEAN;
 	}
 	__segment_op(seg_addr, seg_addr + offset, seg_addr + offset + len, 0);
-	_segment_erase(seg_addr);
+	segment_erase(VIRT2PHY(seg_addr));
 	__segment_op(seg_addr, seg_addr + offset, seg_addr + offset + len, 1);
 }
 
