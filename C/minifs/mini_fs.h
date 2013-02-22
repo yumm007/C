@@ -131,7 +131,7 @@ extern void segment_read(WORD addr, WORD buf, WORD len);
 * @param[in] len 需要写入的字节数，调用者保证不会跨MAX_WRITE_UNIT写入
 * @return 无
 */
-extern void segment_write(WORD seg_addr ,  WORD buf, WORD len);
+extern void segment_write(WORD addr, WORD buf, WORD len);
 
 /**@}*/ // mini_fs
 
