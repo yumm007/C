@@ -4,8 +4,8 @@
 #include "mini_fs.h"
 
 
-#define SUPER_ADDR	((WORD)SEGMENT_SIZE * FS_BLOCK)
 #define SWAP_ADDR	((WORD)(SEGMENT_SIZE * (FS_BLOCK + SUPER_BLOCK)))
+#define SUPER_ADDR	((WORD)(SEGMENT_SIZE * FS_BLOCK))
 
 //#define CHECK_ARGC
 
@@ -32,6 +32,8 @@ static void segment_clean(WORD seg_addr, WORD offset, WORD noused, WORD len);
 /**<  虚拟地址到物理地址转换 */
 extern BYTE *DISK;
 #define VIRT2PHY(virt) ((WORD)(&DISK[virt]))
+#define PHY2VIRT(virt) (virt-(WORD)DISK)
+//#define SUPER_ADDR	(VIRT2PHY(SEGMENT_SIZE * FS_BLOCK))
 
 /*******************************************************
 ***	用户接口层代码
@@ -178,20 +180,10 @@ void f_sync(void) {
 		disk_edit(SUPER_ADDR, (BYTE *)&fs, sizeof(fs));
 }
 
-/************************************************
-*****************虚拟地址到实际地址映射********************
-************************************************/
-static void _segment_read(WORD seg_addr, WORD seg_off, WORD buf, WORD len) {
-	segment_read(VIRT2PHY(seg_addr), seg_off, buf, len);
-}
-static void _segment_write(WORD seg_addr, WORD seg_off,  WORD buf, WORD len) {
-	segment_write(VIRT2PHY(seg_addr), seg_off, buf,  len);
-}
-
 void f_init(void) {
 	file_id_t id;
 	BYTE p;
-	_segment_read(SUPER_ADDR, offsetof(fs_t, valid), (WORD)&p, sizeof(p));
+	segment_read(VIRT2PHY(SUPER_ADDR), offsetof(fs_t, valid), (WORD)&p, sizeof(p));
 	
 	if (p != 0x76) {
 		for (id = FILE1; id < FILE_ID_END; id++) {
@@ -201,8 +193,18 @@ void f_init(void) {
 		fs.valid = 0x76;
 		f_sync();
 	} else {
-		_segment_read(SUPER_ADDR, 0, (WORD)&fs, sizeof(fs));
+		segment_read(VIRT2PHY(SUPER_ADDR), 0, (WORD)&fs, sizeof(fs));
 	}
+}
+
+/************************************************
+*****************虚拟地址到实际地址映射********************
+************************************************/
+//static void _segment_read(WORD seg_addr, WORD seg_off, WORD buf, WORD len) {
+//	segment_read(VIRT2PHY(seg_addr), seg_off, buf, len);
+//}
+static void _segment_write(WORD seg_addr, WORD seg_off,  WORD buf, WORD len) {
+	segment_write(VIRT2PHY(seg_addr), seg_off, buf,  len);
 }
 
 /************************************************
@@ -336,5 +338,5 @@ static void disk_clean(WORD addr, WORD len) {
 
 static void disk_read(WORD addr, BYTE *buf, WORD len) {
 	//segment_clean 只负责读, 理论上没有对齐限制
-	__addr_split_opera(addr, (WORD)buf, len, (op_fun_t)_segment_read);
+	__addr_split_opera(VIRT2PHY(addr), (WORD)buf, len, (op_fun_t)segment_read);
 }
