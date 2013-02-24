@@ -224,7 +224,7 @@ static void addr_split_opera(WORD addr, WORD data, WORD len, op_fun_t op) {
 #define MIN(a, b) (a) < (b) ? (a) : (b)
 #define MAX(a, b) (a) > (b) ? (a) : (b)
 
-static void __segment_op(WORD a, WORD b, BYTE step) {
+static void __segment_op(WORD a, WORD b) {
 	WORD id, c, d, min, max;
 	WORD seg_addr = ( a / SEGMENT_SIZE) * SEGMENT_SIZE;
 	//fprintf(stderr, "%s(%d,%d,%d,%d)\n", __FUNCTION__, seg_addr, a, b, step);
@@ -263,11 +263,11 @@ static void segment_clean(WORD addr, WORD noused, WORD len) {
 		fs.flag |= FS_FLAG_SWAP_CLEAN;
 	}
 	fs.flag &= ~FS_FLAG_SWAP_DIRE;
-	__segment_op(addr, addr + len, 0);
+	__segment_op(addr, addr + len);
 	segment_erase((addr / SEGMENT_SIZE) * SEGMENT_SIZE);
 	if (!(fs.flag & FS_FLAG_SWAP_CLEAN)) {	//说明刚才有复制数据的动作
 		fs.flag |= FS_FLAG_SWAP_DIRE;	//更改数据复制方向
-		__segment_op(addr, addr + len, 1);
+		__segment_op(addr, addr + len);
 	}
 }
 
