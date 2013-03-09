@@ -5,8 +5,9 @@ log_file=temp_file
 esl_list=esl_list_file
 esl_data=esl_data_file
 
+#找到符合要求的所有log条目
 grep '^[$]\{3\}' test_log > $log_file
-
+#生成终端ID清单
 esl_list=`cut -d':' -f7 $log_file | sort | uniq`
 
 for id in $esl_list
