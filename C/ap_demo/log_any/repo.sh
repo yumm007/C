@@ -10,13 +10,14 @@ grep '^[$]\{3\}' test_log > $log_file
 #生成终端ID清单
 esl_list=`cut -d':' -f7 $log_file | sort | uniq`
 
+echo -e 'ID\t\t\tFRAME\tPASS\tPACKET\tACK'
 for id in $esl_list
 do
-	echo -n ID=$id
+	echo -n -e $id '\t'
 	#当前终端所有的ACK条目记录在文件data中
 	grep $id $log_file | grep -E '*:*:*:3:*' > $esl_data
 	#统计帧总数和ACK的成功数和PACKET数
-	awk -F: 'BEGIN{FRAME=0;ACK_OK=0;PACKET=0}{FRAME++;if ($8=="OK") {ACK_OK++;};PACKET+=$9;}END{printf ":FRAME=%d:OK=%d%%:PACKET=%d:", FRAME, ACK_OK*100/FRAME, PACKET}' $esl_data
+	awk -F: 'BEGIN{FRAME=0;ACK_OK=0;PACKET=0}{FRAME++;if ($8=="OK") {ACK_OK++;};PACKET+=$9;}END{printf "%d\t%d%%\t%d\t", FRAME, ACK_OK*100/FRAME, PACKET}' $esl_data
 
 	#统计ACK类型
 	cut -d'[' -f2 $esl_data | sed -e 's/\];//' -e 's/,/\n/    g' | cut -d'-' -f3 | sort | uniq -c | awk '{printf "%s=%d,", $2, $1}'
