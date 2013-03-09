@@ -98,18 +98,27 @@ static void rand_800(BYTE *buf, int len) {
 
 static void rand_arr(struct  f_test_arr_t *arr, int len) {
 	file_id_t id;
+	static unsigned char flag = 1;
 	int r;
+
+	flag++;
 	for (id = FILE1; id < FILE_ID_END; id++) {
 		r = rand();
-		arr[id].offset = r % f_size(id);
+		if (flag)
+			arr[id].offset = r % f_size(id);
+		else
+			arr[id].offset = r;
 		srand(r);
 		r = rand();
-		arr[id].len = r % f_size(id) + 1;
+		if (flag)
+			arr[id].len = r % f_size(id) + 1;
+		else
+			arr[id].len = r;
 		srand(r);
-		if (arr[id].offset > arr[id].len)
-			arr[id].len = f_size(id) - arr[id].offset;
-		if (arr[id].offset + arr[id].len > f_size(id))
-			arr[id].len = f_size(id) - arr[id].offset;
+		//if (arr[id].offset > arr[id].len)
+		//	arr[id].len = f_size(id) - arr[id].offset;
+		//if (arr[id].offset + arr[id].len > f_size(id))
+		//	arr[id].len = f_size(id) - arr[id].offset;
 	}		
 }
 
@@ -117,9 +126,8 @@ bool f_test(void) {
 	int i = TEST_COUNT, count = 0, failed;
 	file_id_t id;
   	struct  f_test_arr_t arr[FILE_ID_END];
-	WORD w_c, tim;
-	float ave;
-	BYTE *p;
+	WORD w_c, tim, len;
+	//float ave;
 	
 	f_write(FILE4, 0, (const BYTE *)"AAAAAAA", 7);
 	f_write(FILE7, 0, (const BYTE *)"AAAAAAA", 7);
@@ -140,18 +148,19 @@ bool f_test(void) {
 		  	if (id == FILE4 || id == FILE7)
 				continue;
 			timer_start();
-			f_write(id, arr[id].offset, test_str, arr[id].len);
-			if (memcmp(f_read(id, arr[id].offset, BUF, arr[id].len), test_str, arr[id].len) != 0) {
-				fprintf(stderr, "1 memcmp failed after write. FILE%d offset %lu, len %lu\n", id+1, arr[id].offset, arr[id].len);
-				return false;
-			} 
+			len = f_write(id, arr[id].offset, test_str, arr[id].len);
+			//fprintf(stderr, "write file %d:%lu+%lu, ret %lu.\n", id, arr[id].offset, arr[id].len, len);
+			//if (memcmp(f_read(id, arr[id].offset, BUF, arr[id].len), test_str, arr[id].len) != 0) {
+				//fprintf(stderr, "1 memcmp failed after write. FILE%d offset %lu, len %lu\n", id+1, arr[id].offset, arr[id].len);
+				//return false;
+			//} 
 			
 			tim += timer_end();
 			w_c += arr[id].len;
 			//fprintf(stderr, "f_write(FILE%d, addr %lu, \toffset %lu, \tlen %lu)\t\t...\n", id + 1, f_addr(id), arr[id].offset, arr[id].len);
 		}
 		//fprintf(stderr, "-----------Z-----------\n");
-		ave = (tim / TIMER_CLOCK) / w_c * 1000.0 * 1000; 
+		//ave = (tim / TIMER_CLOCK) / w_c * 1000.0 * 1000; 
 		//printf("write %lu byte use %lu clock, average %.2fus/B\n", w_c, tim, ave);
 		
 		w_c = 0;
@@ -162,9 +171,9 @@ bool f_test(void) {
 		   if (id == FILE4 || id == FILE7) {
 			  w_c += 7;
 			  timer_start();
-			  p = f_read(id, 0, BUF, 7);
+			  f_read(id, 0, BUF, 7);
 			  tim += timer_end();
-			  if (memcmp(p, "AAAAAAA", 7) != 0) {
+			  if (memcmp(BUF, "AAAAAAA", 7) != 0) {
 				 fprintf(stderr, "memcmy failed. FILE%u, offset %d, len %d\n", id +1, 0, 7);
 			  	 failed = 1;
 				 return false;
@@ -172,11 +181,11 @@ bool f_test(void) {
 			  	 ;//printf("f_read(FILE%d, \toffset %d, \tlen %d)\t\tok\n", id + 1, 0, 7);
 			  }
 			  continue;
-		   }  
+		  }  
 		  timer_start();
-		  p = f_read(id, arr[id].offset, BUF, arr[id].len);
+		  len = f_read(id, arr[id].offset, BUF, arr[id].len);
 		  tim += timer_end();			
-			if (memcmp(p, test_str, arr[id].len) != 0) {
+			if (memcmp(BUF, test_str, len) != 0) {
 				fprintf(stderr, "2 memcmy failed. FILE%u, offset %lu, len %lu\n", id +1, arr[id].offset, arr[id].len);
 				failed = 1;
 				w_c += arr[id].len;
@@ -192,7 +201,7 @@ bool f_test(void) {
 			w_c += arr[id].len;
 #endif
 		}
-		ave = (tim / TIMER_CLOCK) / w_c * 1000.0 * 1000;
+		//ave = (tim / TIMER_CLOCK) / w_c * 1000.0 * 1000;
 		//printf("read %lu byte use %lu clock, average %.2fus/B\n", w_c, tim, ave);
 
 		//f_copy ≤‚ ‘

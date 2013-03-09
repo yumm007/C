@@ -61,9 +61,9 @@ const BYTE* f_rom_read(file_id_t id, WORD offset);	/**< 快速读函数，直接返回FLAS
 * @param[in] offset 从文件的偏移地址offset开始读   
 * @param[out] buf 将数据读入到buf中
 * @param[in] len 读入的字节数
-* @return 如果读成功，返回buf地址，如果失败返回NULL
+* @return 返回成功读入的字节数
 */
-BYTE*	f_read(file_id_t id, WORD offset,	BYTE *buf, WORD len);
+WORD	f_read(file_id_t id, WORD offset,	BYTE *buf, WORD len);
 
 /**
 * 标准写函数
