@@ -47,30 +47,25 @@ const BYTE* f_rom_read(file_id_t id, WORD offset) {
 }
 #endif
 
-BYTE*	f_read(file_id_t id, WORD offset,	BYTE *buf, WORD len) {
+WORD f_read(file_id_t id, WORD offset,	BYTE *buf, WORD len) {
 #ifdef CHECK_ARGC
 	#define size fs.file[id].file_size
-	//offset+lenÒç³ö£¬»òÕßoffset>=size
-	if (id >= FILE_ID_END || buf == NULL || \
-		len > size || offset >= size
-	)
-		return NULL;
+	if (id >= FILE_ID_END || buf == NULL || len > size || offset >= size)
+		return 0;
 	if (offset + len > size)
 		len = size - offset;
 	#undef size
 #endif
 	addr_split_opera(VIRT2PHY(fs.file[id].start_addr + offset), \
 							(WORD)buf, len, (op_fun_t)segment_read);
-	return buf;
+	return len;
 }
 
 static WORD _f_write(file_id_t id,	WORD offset, const BYTE *data, WORD len, BYTE write_flag) {
 	WORD n, file_addr, file_len;
 #ifdef CHECK_ARGC
 	#define size fs.file[id].file_size
-	if (id >= FILE_ID_END || len == 0 || data == NULL \
-		|| len > size || offset >= size
-	)
+	if (id >= FILE_ID_END || len == 0 || data == NULL || len > size || offset >= size)
 		return 0;
 	if (offset + len > size)
 		len = size - offset;
@@ -114,7 +109,8 @@ WORD f_copy(file_id_t dst, WORD dst_offset, file_id_t src, WORD src_offset, WORD
 	int i;
 #ifdef CHECK_ARGC
 	if (dst >= FILE_ID_END || src >= FILE_ID_END || len == 0 \
-			|| dst_offset >= fs.file[dst].file_size || src_offset >= fs.file[src].file_size
+			|| dst_offset >= fs.file[dst].file_size || src_offset >= fs.file[src].file_size \
+			|| len > fs.file[dst].file_size || len > fs.file[src].file_size
 		)
 		return 0;
 	if (dst_offset + len > fs.file[dst].file_size)

@@ -18,7 +18,7 @@ struct RF_DATA_T {
 	UINT8 ctrl:3;
 	UINT8 id:5;
 	union {
-		UINT16 pack_id;
+		UINT8 pack_id[2];
 		UINT8 slot;
 	};
 	UINT8 data[DATA_LEN];
@@ -29,7 +29,7 @@ struct RF_ACK_T {
 	UINT8 slot:4;
 	UINT8 id[4];
 	UINT8 err;
-	UINT16 pack_id;
+	UINT8 pack_id[2];
 };
 
 //每次输入2个bit，凑齐8个bit后输出一个字节到out
@@ -81,7 +81,8 @@ static bool send_packet(ID to, UINT32 pack_id, const UINT8 *data, UINT16 len) {
 
 	rf_data.ctrl = 0x3;
 	rf_data.id = 0xf;
-	rf_data.pack_id = pack_id;
+	rf_data.pack_id[0] = pack_id & 0xff;
+	rf_data.pack_id[1] = (pack_id >> 8) & 0xff;
 	memcpy(rf_data.data, data, len);
 
 	while (rty--) {

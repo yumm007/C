@@ -2,10 +2,10 @@
 #include <stdbool.h>
 
 #define PIC_ROW_COUNT	172	//屏幕的行数
-#define PIC_ROW_BYTE		18	//每行的字节数
+#define PIC_ROW_BYTE		9	//每行的字节数
 #define PIC_BYTE_COUNT	PIC_ROW_COUNT*PIC_ROW_BYTE
 
-static int min_x, min_y, max_x, max_y;
+static unsigned short min_x, min_y, max_x, max_y;
 
 //输入每个不同点的坐标，重新界定不同处的方框坐标
 static void update_xy(int x, int y) {
