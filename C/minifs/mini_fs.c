@@ -108,7 +108,7 @@ WORD 	f_write_direct(file_id_t id, WORD offset,	const BYTE *data, WORD len) {
 WORD f_copy(file_id_t dst, WORD dst_offset, file_id_t src, WORD src_offset, WORD len) {
 	BYTE buf[SEGMENT_TO_SEGMENT_BUF];
 	int i;
-#ifdef CHECK_ARGC
+#if 1
 	if (dst >= FILE_ID_END || src >= FILE_ID_END || len == 0 \
 			|| dst_offset >= fs.file[dst].file_size || src_offset >= fs.file[src].file_size \
 			|| len > fs.file[dst].file_size || len > fs.file[src].file_size

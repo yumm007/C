@@ -149,7 +149,7 @@ bool f_test(void) {
 				continue;
 			timer_start();
 			len = f_write(id, arr[id].offset, test_str, arr[id].len);
-			fprintf(stdout, "write file %d:%lu+%lu, ret %lu.\n", id, arr[id].offset, arr[id].len, len);
+			//fprintf(stderr, "write file %d:%lu+%lu, ret %lu.\n", id, arr[id].offset, arr[id].len, len);
 			//if (memcmp(f_read(id, arr[id].offset, BUF, arr[id].len), test_str, arr[id].len) != 0) {
 				//fprintf(stderr, "1 memcmp failed after write. FILE%d offset %lu, len %lu\n", id+1, arr[id].offset, arr[id].len);
 				//return false;
@@ -184,7 +184,7 @@ bool f_test(void) {
 		  }  
 		  timer_start();
 		  len = f_read(id, arr[id].offset, BUF, arr[id].len);
-			fprintf(stdout, "read file %d:%lu+%lu, ret %lu.\n", id, arr[id].offset, arr[id].len, len);
+			//fprintf(stderr, "read file %d:%lu+%lu, ret %lu.\n", id, arr[id].offset, arr[id].len, len);
 		  tim += timer_end();			
 			if (memcmp(BUF, test_str, len) != 0) {
 				fprintf(stderr, "2 memcmy failed. FILE%u, offset %lu, len %lu\n", id +1, arr[id].offset, arr[id].len);
