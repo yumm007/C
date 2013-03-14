@@ -207,14 +207,14 @@ bool f_test(void) {
 
 		//f_copy ≤‚ ‘
 		if (1) {
-		f_erase(FILE9);
-		f_write(FILE9, 0, (const BYTE *)"12345678901234567890", 20);
-		f_write(FILE9, 10, (const BYTE *)"ABCDE", 5);
-		f_read(FILE9, 0, BUF, 20);
-		if (memcmp(BUF, "1234567890ABCDE67890", 20) != 0) {
-			fprintf(stderr, "f_copy test failed.\n");
-			failed = 1;
-		} 
+			f_write(FILE9, 0, (const BYTE *)"12345678901234567890", 20);
+			f_write(FILE8, 10, (const BYTE *)"ABCDE", 5);
+			f_copy(FILE9, 10, FILE8, 10, 5);
+			f_read(FILE9, 0, BUF, 20);
+			if (memcmp(BUF, "1234567890ABCDE67890", 20) != 0) {
+				fprintf(stderr, "f_copy test failed.\n");
+				failed = 1;
+			} 
 		}
 
 		if (!failed)
