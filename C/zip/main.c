@@ -37,8 +37,8 @@ static int offset;
 static unsigned char byte;
 
 static void flush_bit(FILE *fp) {
-	for (; offset < 8; offset++)
-		byte <<= 1;
+	//for (; offset < 8; offset++)
+	//	byte <<= 1;
 	fprintf(fp, "%c", byte);
 	offset = 0;
 	byte = 0;
