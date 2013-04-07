@@ -34,6 +34,9 @@ typedef struct FILE_LEN_TABLE {
 //#define FS_DISK_SPI_FLASH					/**< 使用外部的SPI FLASH */
 #define FS_DISK_RAM_FLASH					/**< 使用内存作为文件系统, 主要用于测试 */
 
+//#define F_COPY_USE_EXT_MEM      			/**< f_copy使用外部缓存 */
+#define F_COPY_CACHE_SIZE	32
+
 
 #ifdef FS_DISK_ROM_FLASH					/**< 内部FLASH的读写参数 */
 #define SEGMENT_SIZE		512				/**< FLASH的最小擦除单元大小 */
@@ -50,6 +53,5 @@ typedef struct FILE_LEN_TABLE {
 #define MAX_WRITE_UNIT	32					/**< FLASH的最大连续写入单元 */
 #endif
 
-#define SEGMENT_TO_SEGMENT_BUF	32		/**< SPI FLASH需要一个临时空交换块间数据 */
 
 #endif

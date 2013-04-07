@@ -37,7 +37,6 @@ extern const BYTE *DISK;
 *******************************************************/
 
 #ifdef FS_DISK_ROM_FLASH
-
 const BYTE* f_rom_read(file_id_t id, WORD offset) {
 #ifdef CHECK_ARGC
 	if (id >= FILE_ID_END || offset >= fs.file[id].file_size)
@@ -105,9 +104,15 @@ WORD 	f_write_direct(file_id_t id, WORD offset,	const BYTE *data, WORD len) {
 }		
 	
 WORD f_copy(file_id_t dst, WORD dst_offset, file_id_t src, WORD src_offset, WORD len) {
-	BYTE buf[SEGMENT_TO_SEGMENT_BUF];
+#ifdef F_COPY_USE_EXT_MEM
+	BYTE *buf = F_COPY_CACHE;
+#else
+	BYTE buf[F_COPY_CACHE_SIZE];
+#endif
 	int i;
-#ifdef CHECK_ARGC
+	WORD len1 = len;
+#if 0
+	//这部分的参数检测由f_read和f_write负责
 	if (dst >= FILE_ID_END || src >= FILE_ID_END || len == 0 \
 			|| dst_offset >= fs.file[dst].file_size || src_offset >= fs.file[src].file_size \
 			|| len > fs.file[dst].file_size || len > fs.file[src].file_size
@@ -118,11 +123,11 @@ WORD f_copy(file_id_t dst, WORD dst_offset, file_id_t src, WORD src_offset, WORD
 	if (src_offset + len > fs.file[src].file_size)
 		len = fs.file[src].file_size - src_offset;
 #endif
-	for (i = len >> 5; i > 0; i--, dst_offset += SEGMENT_TO_SEGMENT_BUF, \
-			src_offset += SEGMENT_TO_SEGMENT_BUF, len -= SEGMENT_TO_SEGMENT_BUF) 
+	for (i = len / F_COPY_CACHE_SIZE; i > 0; i--, dst_offset += F_COPY_CACHE_SIZE, \
+			src_offset += F_COPY_CACHE_SIZE, len -= F_COPY_CACHE_SIZE) 
 	{
-		f_read(src, src_offset, buf, SEGMENT_TO_SEGMENT_BUF);
-		f_write(dst, dst_offset, buf, SEGMENT_TO_SEGMENT_BUF);
+		f_read(src, src_offset, buf, F_COPY_CACHE_SIZE);
+		f_write(dst, dst_offset, buf, F_COPY_CACHE_SIZE);
 	}
 	
 	if (len != 0) {
@@ -131,12 +136,12 @@ WORD f_copy(file_id_t dst, WORD dst_offset, file_id_t src, WORD src_offset, WORD
 	}
 	
 	fs.flag |= FS_FLAG_CHANGED;
-	return len;	
+	return len1;	
 }
 
 void f_erase(file_id_t id) {
 #ifdef CHECK_ARGC
-	if ( id >= FILE_ID_END)
+	if ( id >= FILE_ID_END || fs.file[id].file_len == 0)
 		return;
 #endif
 	//但文件长度等于0时，不会引发segment_erase操作

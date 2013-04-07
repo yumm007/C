@@ -301,12 +301,15 @@ const unsigned char zhenzi1bit[1548 + 8] = { /* 0X01,0X01,0XAC,0X00,0X48,0X00, *
 0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,
 0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF};
 
-#define BUFSIZE 4096
+extern const unsigned char tiaoma[4736+8];
+extern const unsigned char putaojiu[4736];
+
+#define BUFSIZE 40960
 static unsigned char imgcode[BUFSIZE];
 static unsigned char imgdecode[BUFSIZE];
 int main(void) {
-	int len, len1;
-
+	int i, len, len1;
+#if 0
 	len = rel8_encode(gImage_1bit_arr, sizeof(gImage_1bit_arr), imgcode);
 	printf("encode %ld to %d bytes\n", sizeof(gImage_1bit_arr), len);
 	len1 = rel8_decode(imgcode, len, imgdecode);
@@ -322,7 +325,16 @@ int main(void) {
 
 	len = rel8_encode(zhenzi1bit, sizeof(zhenzi1bit), imgcode);
 	fwrite(imgcode, 1, len, stderr);
-
+#else
+	len = rel8_encode(tiaoma, 4736+8, imgcode);
+	printf("const unsigned char tiaoma_rel8[%d]={", len);
+	for (i = 0; i < len; i++) {
+		if (i % 16 == 0)
+			printf("\n");
+		printf("0x%02X,", imgcode[i]);
+	}
+	printf("};\n");
+#endif
 	return 0;
 }
 
