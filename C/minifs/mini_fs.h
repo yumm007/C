@@ -23,7 +23,7 @@ typedef unsigned char BYTE;
 #include "mini_fs_conf.h"
 
 #ifdef FS_DISK_RAM_FLASH
-typedef unsigned int WORD;
+typedef unsigned long WORD;
 #else
 typedef unsigned int WORD;
 #endif

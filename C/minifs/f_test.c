@@ -58,7 +58,7 @@ struct  f_test_arr_t {
 extern WORD	f_addr(file_id_t id);
 
 //extern const BYTE DISK[DISK_SPACE];
-extern BYTE *DISK;
+extern WORD DISK;
 void f_dump(void) {
 	file_id_t i;
 	int j;
@@ -66,7 +66,7 @@ void f_dump(void) {
 		printf("FILE %u: addr = %lu, len = %lu, size = %lu\n", i + 1, \
 			(WORD)DISK + f_addr(i), f_len(i), f_size(i));
 		for (j = 0; j < f_size(i); j++)
-			putchar(DISK[f_addr(i) + j]);
+			putchar(((BYTE *)DISK)[f_addr(i) + j]);
 		putchar('\n');
 	}
 }
@@ -222,7 +222,7 @@ bool f_test(void) {
 		if (failed)
 			break;
 	
-		//f_sync();
+		f_sync();
 	}
 #if 0
 	tim = 0;
@@ -244,6 +244,9 @@ bool f_test(void) {
 	printf("append %lu byte use %lu clock, average %.2fus/B \n", f_len(FILE9), tim, ave);
 #endif
 	fprintf(stderr, "=====Test %d, pass %d, failed %d.=====\n", TEST_COUNT, count, TEST_COUNT - count);
+	f_erase(FILE1);
+	f_erase(FILE3);
+	f_erase(FILE5);
 	f_sync();
 	//f_dump();
 
@@ -271,7 +274,7 @@ int main(void) {
 	//fprintf(stderr, "f_init comp.\n");
 	//return 0;
 	while (f_test()) {
-		fprintf(stderr, "%lld:", count++);
+		fprintf(stderr, "%.8lld:", count++);
 		//sleep(1);
 	}
 	return 0;

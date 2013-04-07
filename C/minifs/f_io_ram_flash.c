@@ -31,7 +31,7 @@ fs_t fs = {
 
 
 static BYTE __DISK[DISK_SPACE];
-BYTE *DISK = &__DISK[0];
+WORD DISK = (WORD) &__DISK[0];
 BYTE	__DISK_MAP[DISK_SPACE];
 
 //需要移植的函数, 调用者确保地址已经按segment对齐
