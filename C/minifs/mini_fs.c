@@ -3,11 +3,8 @@
 #include <stddef.h>
 #include "mini_fs.h"
 
-
 #define SWAP_ADDR		((WORD)(SEGMENT_SIZE * (FS_BLOCK + SUPER_BLOCK)))
 #define SUPER_ADDR	((WORD)(SEGMENT_SIZE * FS_BLOCK))
-
-#define CHECK_ARGC
 
 enum {
 	FS_FLAG_CHANGED		= 0x01,
@@ -25,9 +22,7 @@ static void segment_clean(WORD addr, WORD noused, WORD len);
 typedef void (*op_fun_t)(WORD addr, WORD data, WORD len);
 static void addr_split_opera(WORD addr, WORD data, WORD len, op_fun_t op);
 
-/**<  虚拟地址到物理地址转换 */
-extern const BYTE *DISK;
-#define VIRT2PHY(virt) ((WORD)(&DISK[virt]))
+#define VIRT2PHY(virt) (DISK+virt)
 
 /*******************************************************
 ***	用户接口层代码
@@ -38,23 +33,20 @@ extern const BYTE *DISK;
 
 #ifdef FS_DISK_ROM_FLASH
 const BYTE* f_rom_read(file_id_t id, WORD offset) {
-#ifdef CHECK_ARGC
 	if (id >= FILE_ID_END || offset >= fs.file[id].file_size)
 		return NULL;
-#endif
 	return (const BYTE *)(VIRT2PHY(fs.file[id].start_addr + offset));
 }
 #endif
 
 WORD f_read(file_id_t id, WORD offset,	BYTE *buf, WORD len) {
-#ifdef CHECK_ARGC
 	#define size fs.file[id].file_size
-	if (id >= FILE_ID_END || buf == NULL || len > size || offset >= size)
+	if (id >= FILE_ID_END || buf == NULL || len > size || offset >= size \
+		|| offset + len < len || offset + len < offset)
 		return 0;
 	if (offset + len > size)
 		len = size - offset;
 	#undef size
-#endif
 	addr_split_opera(VIRT2PHY(fs.file[id].start_addr + offset), \
 							(WORD)buf, len, (op_fun_t)segment_read);
 	return len;
@@ -62,14 +54,14 @@ WORD f_read(file_id_t id, WORD offset,	BYTE *buf, WORD len) {
 
 static WORD _f_write(file_id_t id,	WORD offset, const BYTE *data, WORD len, BYTE write_flag) {
 	WORD n, file_addr, file_len;
-#ifdef CHECK_ARGC
 	#define size fs.file[id].file_size
-	if (id >= FILE_ID_END || len == 0 || data == NULL || len > size || offset >= size)
+	if (id >= FILE_ID_END || len == 0 || data == NULL || len > size || offset >= size\
+		|| offset + len < len || offset + len < offset)
 		return 0;
 	if (offset + len > size)
 		len = size - offset;
 	#undef size
-#endif
+	
 	//每次写文件时，计算出需要修改的部分和需要追加的部分
 	//需要修改的部分设计到擦除FLASH，而追加的部分则在文件创建时已经擦写过了
 	file_addr = fs.file[id].start_addr;
@@ -111,18 +103,7 @@ WORD f_copy(file_id_t dst, WORD dst_offset, file_id_t src, WORD src_offset, WORD
 #endif
 	int i;
 	WORD len1 = len;
-#if 0
-	//这部分的参数检测由f_read和f_write负责
-	if (dst >= FILE_ID_END || src >= FILE_ID_END || len == 0 \
-			|| dst_offset >= fs.file[dst].file_size || src_offset >= fs.file[src].file_size \
-			|| len > fs.file[dst].file_size || len > fs.file[src].file_size
-		)
-		return 0;
-	if (dst_offset + len > fs.file[dst].file_size)
-		len = fs.file[dst].file_size - dst_offset;	
-	if (src_offset + len > fs.file[src].file_size)
-		len = fs.file[src].file_size - src_offset;
-#endif
+
 	for (i = len / F_COPY_CACHE_SIZE; i > 0; i--, dst_offset += F_COPY_CACHE_SIZE, \
 			src_offset += F_COPY_CACHE_SIZE, len -= F_COPY_CACHE_SIZE) 
 	{
@@ -140,11 +121,10 @@ WORD f_copy(file_id_t dst, WORD dst_offset, file_id_t src, WORD src_offset, WORD
 }
 
 void f_erase(file_id_t id) {
-#ifdef CHECK_ARGC
+	//当文件长度等于0时，不会引发segment_erase操作
 	if ( id >= FILE_ID_END || fs.file[id].file_len == 0)
 		return;
-#endif
-	//但文件长度等于0时，不会引发segment_erase操作
+	
 	addr_split_opera(VIRT2PHY(fs.file[id].start_addr), \
 			(WORD)NULL, fs.file[id].file_len, segment_clean);
 	fs.file[id].file_len = 0;
@@ -153,26 +133,20 @@ void f_erase(file_id_t id) {
 }
 
 WORD f_len(file_id_t id) {
-#ifdef CHECK_ARGC
 	if ( id >= FILE_ID_END)
 		return 0;
-#endif
 	return fs.file[id].file_len;
 }
 
 WORD f_size(file_id_t id) {
-#ifdef CHECK_ARGC
 	if ( id >= FILE_ID_END)
 		return 0;
-#endif
 	return fs.file[id].file_size;
 }
 
 WORD f_addr(file_id_t id) {
-#ifdef CHECK_ARGC
 	if ( id >= FILE_ID_END)
 		return 0;
-#endif
 	return fs.file[id].start_addr;
 }
 
@@ -200,6 +174,9 @@ void f_init(void) {
 	} else {
 		segment_read(VIRT2PHY(SUPER_ADDR), (WORD)&fs, sizeof(fs));
 	}
+	
+	//防止文件系统增减后，文件地址发送错乱，重置文件结构
+	//初步方法是手动清除FLASH文件系统的所有信息
 }
 
 
@@ -300,16 +277,16 @@ static void data_to_swap(WORD swap_addr, WORD data_addr, WORD len) {
 
 #ifdef FS_DISK_SPI_FLASH
 static void data_to_swap(WORD swap_addr, WORD data_addr, WORD len) {
-	BYTE buf[SEGMENT_TO_SEGMENT_BUF];	//SPI FLASH需要一个临时空交换块间数据
+	BYTE buf[F_COPY_CACHE_SIZE];	//SPI FLASH需要一个临时空交换块间数据
 	BYTE i;
-
+	
 	SWAP(swap_addr, data_addr);
 	
-	for (i = len / SEGMENT_TO_SEGMENT_BUF; i > 0; i--, swap_addr += SEGMENT_TO_SEGMENT_BUF, \
-			data_addr += SEGMENT_TO_SEGMENT_BUF, len -= SEGMENT_TO_SEGMENT_BUF) 
+	for (i = len / F_COPY_CACHE_SIZE; i > 0; i--, swap_addr += F_COPY_CACHE_SIZE, \
+			data_addr += F_COPY_CACHE_SIZE, len -= F_COPY_CACHE_SIZE) 
 	{
-		segment_read(data_addr, (WORD)buf, SEGMENT_TO_SEGMENT_BUF);
-		segment_write(swap_addr, (WORD)buf, SEGMENT_TO_SEGMENT_BUF);
+		segment_read(data_addr, (WORD)buf, F_COPY_CACHE_SIZE);
+		segment_write(swap_addr, (WORD)buf, F_COPY_CACHE_SIZE);
 	}
 	
 	if (len != 0) {
