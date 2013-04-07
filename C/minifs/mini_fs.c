@@ -141,7 +141,7 @@ WORD f_copy(file_id_t dst, WORD dst_offset, file_id_t src, WORD src_offset, WORD
 
 void f_erase(file_id_t id) {
 #ifdef CHECK_ARGC
-	if ( id >= FILE_ID_END)
+	if ( id >= FILE_ID_END || fs.file[id].file_len == 0)
 		return;
 #endif
 	//但文件长度等于0时，不会引发segment_erase操作
