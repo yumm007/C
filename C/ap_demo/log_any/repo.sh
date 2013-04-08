@@ -25,7 +25,6 @@ do
 	echo
 done
 
-
 echo -e '\nQueue Packet'
 grep -a -E '^[^:]{3}:[^:]{1,}:[^:]{1,}:3:8:*' $1 > $log_file
 echo -e 'ID\t\t\tFRAME\tPASS'
@@ -46,16 +45,19 @@ do
 	awk -F: 'BEGIN{FRAME=0;ACK_OK=0}{FRAME++; if (match($8, "PASS")) {ACK_OK++;};}END{printf "%d\t%04f\n", FRAME, ACK_OK/FRAME}' $esl_data
 done
 
-#统计每个case的成功率, 第3个打印点，第6种统计数, ACK 值不为0
+#统计每个case的成功率, 第3个打印点，第6种统计数
 #$$$:23:10:3:6:ESL000:ID=0xa1,0x01,0x02,0x01:PASS(0x04);355;
 echo -e '\nCase'
 for ((i = 0; i < 15; i++))
 do
 	echo -n -e $i: '\t'
-	grep -a -E "^[^:]{3}:[^:]{1,}:$i:3:6:*" $1 | grep -v "FAIL(0x00)" | awk -F: 'BEGIN{OK=0;TOTAL=0}{TOTAL++; if (match($8,"PASS")) {OK++;}; } END{printf "%4f\n", OK/TOTAL}'
+	grep -a -E "^[^:]{3}:[^:]{1,}:$i:3:6:*" $1 | awk -F: 'BEGIN{OK=0;TOTAL=0}{TOTAL++; if (match($8,"PASS")) {OK++;}; } END{printf "%4f\n", OK/TOTAL}'
 done
 
-
+#统计每种错误的概率，第2个打印点，第6中统计数，为FAIL的
+#但要排除case13：随机内容测试
+echo -e '\nFailed Reason'
+grep -a -E "^[^:]{3}:[^:]{1,}:[^:]{1,}:3:6:*" $1 | grep -v -E '^[^:]{3}:[^:]{1,}:13:3:6:*' | grep "FAIL" | cut -d':' -f8 | cut -b6-9 | sort | uniq -c
 
 #删除临时文件
-#rm -rf $log_file $esl_list $esl_data -rf
+rm -rf $log_file $esl_list $esl_data -rf
