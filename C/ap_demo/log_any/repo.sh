@@ -54,7 +54,7 @@ do
 	grep -a -E "^[^:]{3}:[^:]{1,}:$i:3:6:*" $1 | awk -F: 'BEGIN{OK=0;TOTAL=0}{TOTAL++; if (match($8,"PASS")) {OK++;}; } END{printf "%4f\n", OK/TOTAL}'
 done
 
-#统计每种错误的概率，第2个打印点，第6中统计数，为FAIL的
+#统计每种错误的概率，第3个打印点，第6中统计数，为FAIL的
 #但要排除case13：随机内容测试
 echo -e '\nFailed Reason'
 grep -a -E "^[^:]{3}:[^:]{1,}:[^:]{1,}:3:6:*" $1 | grep -v -E '^[^:]{3}:[^:]{1,}:13:3:6:*' | grep "FAIL" | cut -d':' -f8 | cut -b6-9 | sort | uniq -c
