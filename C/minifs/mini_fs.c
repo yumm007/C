@@ -121,10 +121,9 @@ WORD f_copy(file_id_t dst, WORD dst_offset, file_id_t src, WORD src_offset, WORD
 }
 
 void f_erase(file_id_t id) {
-	//当文件长度等于0时，不会引发segment_erase操作
-	if ( id >= FILE_ID_END || fs.file[id].file_len == 0)
+	//当文件长度等于0时，也会引发segment_erase操作
+	if ( id >= FILE_ID_END )
 		return;
-	
 	addr_split_opera(VIRT2PHY(fs.file[id].start_addr), \
 			(WORD)NULL, fs.file[id].file_len, segment_clean);
 	fs.file[id].file_len = 0;
@@ -152,31 +151,41 @@ WORD f_addr(file_id_t id) {
 
 void f_sync(void) {
 	if (fs.flag & FS_FLAG_CHANGED) {
+		fs.flag &= ~FS_FLAG_CHANGED;
 		addr_split_opera(VIRT2PHY(SUPER_ADDR), (WORD)&fs, sizeof(fs), segment_clean);
 		addr_split_opera(VIRT2PHY(SUPER_ADDR), (WORD)&fs, sizeof(fs), segment_write);
-		fs.flag &= ~FS_FLAG_CHANGED;
 	}
 }
 
 void f_init(void) {
 	file_id_t id;
-	BYTE p;
-	segment_read(VIRT2PHY(SUPER_ADDR) + offsetof(fs_t, valid), (WORD)&p, sizeof(p));
 	
-	if (p != 0x76) {
+	segment_read(VIRT2PHY(SUPER_ADDR) + offsetof(fs_t, valid), (WORD)&fs.valid, sizeof(fs.valid));
+	if (fs.valid != 0x76) {
 		addr_split_opera(VIRT2PHY(0), (WORD)NULL, sizeof(FILE_LEN_TABLE), segment_clean);
 		for (id = FILE1; id < FILE_ID_END; id++) {
 			fs.file[id].file_len = 0;
 		}
 		fs.valid = 0x76;
 		fs.flag |= FS_FLAG_CHANGED;
-		f_sync();
 	} else {
-		segment_read(VIRT2PHY(SUPER_ADDR), (WORD)&fs, sizeof(fs));
+		segment_read(VIRT2PHY(SUPER_ADDR) + offsetof(fs_t, flag), (WORD)&fs.flag, sizeof(fs.flag));
+		for (id = FILE1; id < FILE_ID_END; id++) {
+			//只从磁盘的文件系统里读出文件的当前长度，文件的起始地址和大小都是rom中的。
+			segment_read(VIRT2PHY(SUPER_ADDR) + offsetof(fs_t, file) \
+				+ offsetof(struct file_info_t, file_len) + id * sizeof(struct file_info_t ),\
+				(WORD)&fs.file[id].file_len, sizeof(fs.file[id].file_len));
+			//而且如果文件长度大于文件容量，则重置此文件。
+			//主要是为了预防保存文件系统时，刚擦完block，还没有来的及写文件信息，导致下次读取的时候乱码
+			//其次是为了预防磁盘里的文件结构和ROM中的文件结构不一致，导致文件系统结构乱序。
+			if (fs.file[id].file_len > fs.file[id].file_size) {
+				f_erase(id);
+				fs.flag |= FS_FLAG_CHANGED;
+			}
+		}		
 	}
 	
-	//防止文件系统增减后，文件地址发送错乱，重置文件结构
-	//初步方法是手动清除FLASH文件系统的所有信息
+	f_sync();
 }
 
 
