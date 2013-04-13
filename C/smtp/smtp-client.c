@@ -23,7 +23,7 @@ int main(void)
   struct curl_slist *recipients = NULL;
  
   /* value for envelope reverse-path */ 
-  static const char *from = "<dzbq1@wu-mart.com>";
+  static const char *from = "<dzbq1@xxxxx.com>";
  
   /* this becomes the envelope forward-path */ 
   static const char *to = "<yumm007@gmail.com>";
@@ -32,7 +32,7 @@ int main(void)
   if(curl) {
     /* this is the URL for your mailserver - you can also use an smtps:// URL
      * here */ 
-    curl_easy_setopt(curl, CURLOPT_URL, "smtp://smtp.wu-mart.com");
+    curl_easy_setopt(curl, CURLOPT_URL, "smtp://smtp.xxxxx.com");
  
     /* Note that this option isn't strictly required, omitting it will result in
      * libcurl will sent the MAIL FROM command with no sender data. All

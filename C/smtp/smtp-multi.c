@@ -22,12 +22,12 @@
 /*
  * This is the list of basic details you need to tweak to get things right.
  */ 
-#define USERNAME "dzbq1@wu-mart.com"
-#define PASSWORD "hqffqh!"
-#define SMTPSERVER "smtp.wu-mart.com"
+#define USERNAME "dzbq1@xxxxx.com"
+#define PASSWORD "xxxxx"
+#define SMTPSERVER "smtp.xxxxx.com"
 #define SMTPPORT ":25" 
 #define RECIPIENT "<yumm007@gmail.com>"
-#define MAILFROM "<dzbq1@wu-mart.com>"
+#define MAILFROM "<dzbq1@xxxxx.com>"
  
 #define MULTI_PERFORM_HANG_TIMEOUT 60 * 1000
  
