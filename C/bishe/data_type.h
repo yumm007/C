@@ -61,6 +61,30 @@ typedef union {
 	DT_T	data;
 } PKT_T;
 
+typedef enum {
+	AP_INIT,        	//AP初始化
+   AP_SEND_BEACOM,   //AP发送广播桢
+   AP_RCVD_SYNC,     //AP收到同步请求桢
+   AP_SEND_SYNC_ACK, //AP回复同步ACK
+   AP_RCVD_PULL,     //AP收到PULL请求
+   AP_SEND_DATA,     //AP发送数据
+   AP_RECV_DATA_ACK, //AP收到数据ACK
+   AP_SLEEP,         //AP进入休眠
+
+   AP_TASK_END,
+} AP_TASK_T;         //AP工作任务
+
+typedef enum {
+   EP_INIT,          //终端初始化
+   EP_RECV_BEACOM,   //终端接收广播桢
+   EP_SEND_SYNC,     //终端发送同步请求
+   EP_RECV_SYNC_ACK, //终端受到同步ACK
+   EP_SEND_PULL,     //终端发送PULL请求桢
+   EP_RECV_DATA,     //终端收到数据
+   EP_SEND_DATA_ACK, //终端回复数据ACK
+   EP_SLEEP,         //终端进入休眠
+
+   EP_TASK_END,
+} EndPoint_TASK_T;   //终端工作任务
 
 #endif
-
