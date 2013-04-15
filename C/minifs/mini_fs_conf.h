@@ -1,7 +1,7 @@
 #ifndef __MINI_FS_CONF__
 #define __MINI_FS_CONF__
 
-/**< ÎÄ¼þÃû£¬Ê¹ÓÃIDµÄ·½Ê½Ìæ´ú×Ö·û´® */
+/**< ¿¿¿¿¿¿ID¿¿¿¿¿¿¿¿ */
 typedef enum {
    FILE1,
    FILE2,
@@ -16,7 +16,7 @@ typedef enum {
    FILE_ID_END,
 } file_id_t;
 
-/**< ¶¨ÒåÃ¿¸öÎÄ¼þµÄ´óÐ¡£¬Ê¹ÓÃ½á¹¹ÌåµÄ·½Ê½·½±ã¼ÆËãÎÄ¼þµÄÆðÊ¼µØÖ· */
+/**< ¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿ */
 typedef struct FILE_LEN_TABLE {
    BYTE FILE1_SIZE[10];
    BYTE FILE2_SIZE[23];
@@ -30,27 +30,27 @@ typedef struct FILE_LEN_TABLE {
 } FILE_LEN_TABLE;
 
 
-//#define FS_DISK_ROM_FLASH				/**< Ê¹ÓÃMCUÄÚ²¿µÄROM FLASH£¬Ö÷ÒªÇø±ðÔÚ¶Á·½Ê½ÉÏ */
-//#define FS_DISK_SPI_FLASH					/**< Ê¹ÓÃÍâ²¿µÄSPI FLASH */
-#define FS_DISK_RAM_FLASH					/**< Ê¹ÓÃÄÚ´æ×÷ÎªÎÄ¼þÏµÍ³, Ö÷ÒªÓÃÓÚ²âÊÔ */
+//#define FS_DISK_ROM_FLASH				/**< ¿¿MCU¿¿¿ROM FLASH¿¿¿¿¿¿¿¿¿¿ */
+//#define FS_DISK_SPI_FLASH					/**< ¿¿¿¿¿SPI FLASH */
+#define FS_DISK_RAM_FLASH					/**< ¿¿¿¿¿¿¿¿¿¿, ¿¿¿¿¿¿ */
 
-//#define F_COPY_USE_EXT_MEM      			/**< f_copyÊ¹ÓÃÍâ²¿»º´æ */
+//#define F_COPY_USE_EXT_MEM      			/**< f_copy¿¿¿¿¿¿ */
 #define F_COPY_CACHE_SIZE	32
 
 
-#ifdef FS_DISK_ROM_FLASH					/**< ÄÚ²¿FLASHµÄ¶ÁÐ´²ÎÊý */
-#define SEGMENT_SIZE		512				/**< FLASHµÄ×îÐ¡²Á³ýµ¥Ôª´óÐ¡ */
-#define MAX_WRITE_UNIT	32					/**< FLASHµÄ×î´óÐ´Èëµ¥Ôª */
+#ifdef FS_DISK_ROM_FLASH					/**< ¿¿FLASH¿¿¿¿¿ */
+#define SEGMENT_SIZE		512				/**< FLASH¿¿¿¿¿¿¿¿¿ */
+#define MAX_WRITE_UNIT	32					/**< FLASH¿¿¿¿¿¿¿ */
 #endif
 
-#ifdef FS_DISK_SPI_FLASH					/**< Íâ²¿FLASHµÄ¶ÁÐ´²ÎÊý */
-#define SEGMENT_SIZE		4096				/**< FLASHµÄ×îÐ¡²Á³ýµ¥Ôª´óÐ¡ */
-#define MAX_WRITE_UNIT	256				/**< FLASHµÄ×î´óÐ´Èëµ¥Ôª */
+#ifdef FS_DISK_SPI_FLASH					/**< ¿¿FLASH¿¿¿¿¿ */
+#define SEGMENT_SIZE		4096				/**< FLASH¿¿¿¿¿¿¿¿¿ */
+#define MAX_WRITE_UNIT	256				/**< FLASH¿¿¿¿¿¿¿ */
 #endif
 
-#ifdef FS_DISK_RAM_FLASH					/**< ÄÚ²¿FLASHµÄ¶ÁÐ´²ÎÊý */
-#define SEGMENT_SIZE		64				/**< FLASHµÄ×îÐ¡²Á³ýµ¥Ôª´óÐ¡ */
-#define MAX_WRITE_UNIT	32					/**< FLASHµÄ×î´óÁ¬ÐøÐ´Èëµ¥Ôª */
+#ifdef FS_DISK_RAM_FLASH					/**< ¿¿FLASH¿¿¿¿¿ */
+#define SEGMENT_SIZE		64				/**< FLASH¿¿¿¿¿¿¿¿¿ */
+#define MAX_WRITE_UNIT	32					/**< FLASH¿¿¿¿¿¿¿¿¿ */
 #endif
 
 

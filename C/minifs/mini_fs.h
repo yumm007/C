@@ -19,24 +19,27 @@ Date			Author			Description
 /**< 基本数据类型定义头文件 */
 typedef unsigned char BYTE;
 
+/**< 文件系统配置信息，由平台自定义 */
 #include "mini_fs_conf.h"
+
 #ifdef FS_DISK_RAM_FLASH
 typedef unsigned long WORD;
 #else
 typedef unsigned int WORD;
 #endif
 
-/**< 文件系统配置信息，由平台自定义 */
+/**<  虚拟地址到物理地址转换 */
+extern WORD DISK;
 
 /**< 文件系统结构体 */
 typedef struct fs_t {
-	BYTE valid;
-	BYTE flag;
 	struct file_info_t {
 		WORD start_addr;
 		WORD file_len;
 		WORD file_size;		
 	} file[FILE_ID_END];
+	BYTE flag;
+	BYTE valid;
 } fs_t;
 extern fs_t fs;
 
