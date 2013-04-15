@@ -46,7 +46,6 @@ void ap_main(void) {
 	ap_init_task_ring_buf(&task_buf);
 	ap_register_eth_int(&eth_pkg);
 	ap_register_rf_int(&rf_pkg);
-	ap_start_beacom_timer();
 	
 	ap_task(AP_INIT);
 
@@ -56,23 +55,31 @@ void ap_main(void) {
 	}
 }
 
-static void ep_task(PKT *pkt) {
+static void ep_task(PKT_T *pkt, EP_TASK_T task) {
 	switch (ep_task) {
 		case EP_INIT:          //终端初始化
-			break;
-		case EP_RECV_BEACOM:   //终端接收广播桢
-			break;
+			ep_start_beacom_timer();
+			ep_enable_int();
+			//break;
 		case EP_SEND_SYNC:     //终端发送同步请求
+			ep_send_sync();
 			break;
-		case EP_RECV_SYNC_ACK: //终端受到同步ACK
+		case EP_RECV_SYNC_ACK: //终端收到同步ACK
+			ep_save_nw_info(pkg);
 			break;
 		case EP_SEND_PULL:     //终端发送PULL请求桢
 			break;
 		case EP_RECV_DATA:     //终端收到数据
-			break;
+			if (ep_proc_data(pkt) == true)
+				break;
 		case EP_SEND_DATA_ACK: //终端回复数据ACK
+			ep_send_data_ack(pkt);
 			break;
+		case EP_RECV_BEACOM:   //终端接收广播桢
+			if (ep_check_status(pkt) == true)
+				break;
 		case EP_SLEEP:          //终端进入休眠	
+			ep_sleep_wait_int();
 			break;
 		default:
 			break;	
@@ -80,7 +87,21 @@ static void ep_task(PKT *pkt) {
 }
 
 
+void ep_main(void) {
+	PKT_T rf_pkg;
+	RING_BUF	task_buf;
+	EP_TASK_T task;
+	
+	ep_init_task_ring_buf(&task_buf);
+	ep_register_rf_int(&rf_pkg);
+	
+	ep_task(EP_INIT);
 
+	while (1) {
+		task = get_task(&task_buf);
+		ep_task(&rf_pkg, task);
+	}
+}
 
 
 
