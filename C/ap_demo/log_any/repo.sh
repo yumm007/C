@@ -11,7 +11,7 @@ awk -F: '{if ($4==3 && $5==7 && $3 !=17) {print $0};}' $1 > $log_file
 #生成终端ID清单
 grep -a -E 'ID=' $log_file | cut -d':' -f7 | grep -a -v 'FAIL' |sort | uniq > $esl_list
 
-echo -e 'ID\t\t\tFRAME\tPASS\t\tPACKET\tACK[0:DEFAULT, 1:TIMOUT, 2:CRCERR, 3:OK]'
+echo -e 'ID\t\t\tFRAME\tPASS\t\tPACKET\tACK[0:DEFAULT, 1:CRCERR, 2:TIMOUT, 3:OK]'
 for id in `cat $esl_list`
 do
 	echo -n -e $id '\t'
@@ -47,17 +47,17 @@ done
 
 #统计每个case的成功率, 第3个打印点，第6种统计数
 #$$$:23:10:3:6:ESL000:ID=0xa1,0x01,0x02,0x01:PASS(0x04);355;
-#echo -e '\nCase'
-#for ((i = 0; i < 15; i++))
-#do
-#	echo -n -e $i: '\t'
-#	grep -a -E "^[^:]{3}:[^:]{1,}:$i:3:6:*" $1 | awk -F: 'BEGIN{OK=0;TOTAL=0}{TOTAL++; if (match($8,"PASS")) {OK++;}; } END{printf "%4f\n", OK/TOTAL}'
-#done
+echo -e '\nCase'
+for ((i = 0; i < 19; i++))
+do
+	echo -n -e $i: '\t'
+	grep -a -E "^[^:]{3}:[^:]{1,}:$i:3:6:*" $1 | awk -F: 'BEGIN{OK=0;TOTAL=0}{TOTAL++; if (match($8,"PASS")) {OK++;}; } END{printf "%4f\n", OK/TOTAL}'
+done
 
 #统计每种错误的概率，第3个打印点，第6中统计数，为FAIL的
 #但要排除case17：随机内容测试
-#echo -e '\nFailed Reason'
-#grep -a -E "^[^:]{3}:[^:]{1,}:[^:]{1,}:3:6:*" $1 | grep -a -v -E '^[^:]{3}:[^:]{1,}:17:3:6:*' | grep -a "FAIL" | cut -d':' -f8 | cut -b6-9 | sort | uniq -c
+echo -e '\nFailed Reason'
+grep -a -E "^[^:]{3}:[^:]{1,}:[^:]{1,}:3:6:*" $1 | grep -a -v -E '^[^:]{3}:[^:]{1,}:17:3:6:*' | grep -a "FAIL" | cut -d':' -f8 | cut -b6-9 | sort | uniq -c
 
 #删除临时文件
 rm -rf $log_file $esl_list $esl_data -rf
