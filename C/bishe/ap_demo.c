@@ -30,9 +30,10 @@ static void beacam_fun(int sig) {
 	
 	memset(&beacam, 0xff, sizeof(beacam));
 
+	beacam.wakeup.flag = FLAG_BCM_REQ;
+	beacam.wakeup.slot = 0;
 	beacam.wakeup.interval = 2;
 	beacam.wakeup.start_id = 0;
-	beacam.wakeup.slot = 0;
 	
 	while (j--) {
 		for (i = 0; i < ap.client_num; i++) {
@@ -92,23 +93,35 @@ static void ap_init(struct ap_info *ap) {
 	}
 
 	ap->sd = sock_d;
-
-	//for test
-	ap->client_num = 2;
-	ap->c[0].id = 0;
-	ap->c[1].id = 1;
 }
 
 int main(int argc, char *argv[]) {
-	int i;
+	PKT_T pkg;
+	struct sockaddr_in sa;
+	socklen_t len = sizeof(sa);
 
 	ap_init(&ap);
 	set_beacam_interval(BEACAM_INTERVAL_S);
 
 	while (1) {
-		for (i = 0; i < 100000; i++)
-			;
-		printf("next_beacam_time: %d\n", next_beacam_time());
+		recvfrom(ap.sd, &pkg, sizeof(pkg.sync.req), 0, (void *)&sa, &len);
+		switch (FLAG_MASK(pkg.sync.req.flag)) {
+			case FLAG_SYNC_REQ:
+				fprintf(stdout, "SYNC_REQ form %d\n", pkg.sync.req.id);
+				//¿¿¿¿¿¿¿¿list
+				ap.c[ap.client_num].id = pkg.sync.req.id;
+				ap.client_num++;
+				//¿¿¿¿ACK¿
+				memset(&pkg, 0, sizeof(pkg));
+				pkg.sync.ack.flag = FLAG_SYNC_ACK;
+				pkg.sync.ack.interval = BEACAM_INTERVAL_S;
+				pkg.sync.ack.next_interval = next_beacam_time();
+				sendto(ap.sd, &pkg, sizeof(pkg), 0, (void *)&sa, len);
+				break;
+			default:
+				fprintf(stdout, "unknown flag form %d\n", pkg.sync.req.id);
+				break;
+		}
 	}
 
 	close(ap.sd);

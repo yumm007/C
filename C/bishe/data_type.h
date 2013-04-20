@@ -6,14 +6,17 @@ typedef uint8_t UINT8;
 typedef uint16_t  UINT16;
 typedef uint32_t UINT32;
 
-#define FLAG_MASK(x)		((x) & 0x0F)
-#define FLAG_WK_REQ		FLAG_MASK(0)
+#define FLAG_MASK(x)			((x) & 0x0F)
+#define FLAG_SYNC_REQ		FLAG_MASK(0)
+#define FLAG_SYNC_ACK		FLAG_MASK(1)
+#define FLAG_BCM_REQ			FLAG_MASK(2)
+#define FLAG_DATA_REQ		FLAG_MASK(3)
 
 #pragma pack(1)
 typedef struct {
-	UINT16	interval;
+	UINT8		flag;
 	UINT8		slot;
-	UINT8		unused;
+	UINT16	interval;
 	UINT32	start_id;
 	UINT8		bitmap[56];
 } WK_T;			//¹ã²¥°ü
