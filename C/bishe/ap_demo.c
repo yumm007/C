@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <sys/time.h>
+#include <sys/timeb.h>
 #include <signal.h>
 
 #include "nw_conf.h"
@@ -15,6 +16,7 @@
 
 struct ap_info {
 	int sd;						//socket
+	struct timeb start_time;
 	int client_num;	
 	struct client_info {
 		uint16_t id;
@@ -52,14 +54,28 @@ static void beacam_fun(int sig) {
 /**< ÉèÖÃ¹ã²¥¶¨Ê±Æ÷ */
 static void set_beacam_interval(uint16_t tim) {
 	struct itimerval val;
+	struct timeb tp;
+	uint32_t t;
 
-   val.it_value.tv_sec = tim;
-   val.it_value.tv_usec = 0;
+	if (ap.start_time.time == 0 && ap.start_time.millitm == 0) {
+   	val.it_value.tv_sec = tim;
+  		val.it_value.tv_usec = 0;
+	} else {
+		ftime(&tp);
+		t = (tp.time - ap.start_time.time) * 1000 + tp.millitm - ap.start_time.millitm;
+		t = t % (tim *1000); //¶àÁËnÈ¦tºÁÃë
+		t = tim * 1000 - t; //»¹Ê£tºÁÃë
+
+   	val.it_value.tv_sec = t / 1000;
+  		val.it_value.tv_usec = t % 1000;
+	}
+
    val.it_interval.tv_sec = tim;
    val.it_interval.tv_usec = 0;
 
    setitimer(ITIMER_REAL,&val,NULL);
    signal(SIGALRM,beacam_fun);
+	ftime(&ap.start_time);
 }
 
 /**< ·µ»ØÏÂÒ»¸ö¹ã²¥Ê±¼ä£¬µ¥Î»ÎªºÁÃë */
@@ -95,12 +111,42 @@ static void ap_init(struct ap_info *ap) {
 	ap->sd = sock_d;
 }
 
+
+static void save_sync_req(uint32_t id) {
+	FILE *fp;
+	int i, find_it = 0;
+
+	for (i = 0; i < ap.client_num && !find_it; i++) {
+		if (ap.c[ap.client_num].id == id)
+			find_it = 1;
+	}
+
+	if (!find_it) {
+		ap.c[ap.client_num].id = id;
+		ap.client_num++;
+	}
+
+	if ((fp = fopen("ap_db", "w")) == NULL)
+		return;
+	fwrite(&ap, 1, sizeof(ap), fp);
+	fclose(fp);
+}
+
+static void load_sync_req(void) {
+	FILE *fp;
+	if ((fp = fopen("ap_db", "r")) == NULL)
+		return;
+	fread(&ap, 1, sizeof(ap), fp);
+	fclose(fp);
+}
+
 int main(int argc, char *argv[]) {
 	PKT_T pkg;
 	struct sockaddr_in sa;
 	socklen_t len = sizeof(sa);
 
 	ap_init(&ap);
+	load_sync_req();
 	set_beacam_interval(BEACAM_INTERVAL_S);
 
 	while (1) {
@@ -108,10 +154,7 @@ int main(int argc, char *argv[]) {
 		switch (FLAG_MASK(pkg.sync.req.flag)) {
 			case FLAG_SYNC_REQ:
 				fprintf(stdout, "SYNC_REQ form %d\n", pkg.sync.req.id);
-				//¿¿¿¿¿¿¿¿list
-				ap.c[ap.client_num].id = pkg.sync.req.id;
-				ap.client_num++;
-				//¿¿¿¿ACK¿
+				save_sync_req(pkg.sync.req.id);
 				memset(&pkg, 0, sizeof(pkg));
 				pkg.sync.ack.flag = FLAG_SYNC_ACK;
 				pkg.sync.ack.interval = BEACAM_INTERVAL_S;
