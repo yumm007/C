@@ -1,20 +1,15 @@
 #ifndef __DATA_TYPE_H__
 #define __DATA_TYPE_H__
 
-#define AP
-#define EndPoint
-
 //基站和终端的子长可能不一样，因此需要单独定义它们的数据类型
-#ifdef AP
-typedef unsigned char UINT8;
-typedef unsigned short UINT16;
-typedef unsigned int UINT32;
-#elif define EndPoint
-typedef unsigned char UINT8;
-typedef unsigned int UINT16;
-typedef unsigned long UINT32;
-#endif
+typedef uint8_t UINT8;
+typedef uint16_t  UINT16;
+typedef uint32_t UINT32;
 
+#define FLAG_MASK(x)		((x) & 0x0F)
+#define FLAG_WK_REQ		FLAG_MASK(0)
+
+#pragma pack(1)
 typedef struct {
 	UINT16	interval;
 	UINT8		slot;
@@ -60,6 +55,7 @@ typedef union {
 	PU_T	pull;
 	DT_T	data;
 } PKT_T;
+#pragma pack()
 
 typedef enum {
 	AP_INIT,        	//AP初始化
