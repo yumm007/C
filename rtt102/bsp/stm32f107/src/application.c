@@ -41,7 +41,6 @@ extern void udp_recv_demo(void* parameter);
 
 void rt_init_thread_entry(void* parameter)
 {
-	rt_thread_t init_thread;
 /* Filesystem Initialization */
 #ifdef RT_USING_DFS
 	{
@@ -83,14 +82,7 @@ void rt_init_thread_entry(void* parameter)
         rt_kprintf("TCP/IP initialized!\n");
     }
 #endif
-
-    init_thread = rt_thread_create("rcd",
-                                   udp_recv_demo, RT_NULL,
-                                   2048, 9, 20);
-    if (init_thread != RT_NULL)
-        rt_thread_startup(init_thread);
-
-	udp_send_demo(NULL);
+	udp_recv_demo(NULL);
 	
 }
 
