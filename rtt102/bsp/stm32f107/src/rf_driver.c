@@ -3,8 +3,7 @@
 #include "rf_driver.h"
 #include "stm32f10x.h"
 
-void rf_gpio_init()
-{
+void rf_gpio_init(void){
 	GPIO_InitTypeDef GPIO_InitStructure;	
 	
 	GPIO_InitStructure.GPIO_Pin   = A7106_SCS_PIN | A7106_SCK_PIN | A7106_SDIO_PIN | GPIO_Pin_12; 
@@ -27,8 +26,7 @@ void rf_gpio_init()
 	PA_SLEEP();
 }
 
-void rf_sendbyte(UINT8 data)
-{
+static void rf_sendbyte(UINT8 data){
 	int i;
 
 	for(i = 0; i < 8; i++)
@@ -49,8 +47,7 @@ void rf_sendbyte(UINT8 data)
 	}
 }
 
-UINT8 rf_readbyte()
-{
+static UINT8 rf_readbyte(void){
 	int i;
 	UINT8 tmp = 0;
 
@@ -84,8 +81,7 @@ void rf_cmd(UINT8 cmd)
 	CS_HIGH();
 }
 
-void rf_writereg(UINT8 regaddr, UINT8 databyte)
-{
+void rf_writereg(UINT8 regaddr, UINT8 databyte){
 	CS_LOW();
 	rf_sendbyte(regaddr);
 	rf_sendbyte(databyte);
@@ -106,8 +102,7 @@ UINT8 rf_readreg(UINT8 regaddr)
 	return ret;
 }
 
-void rf_setfifolen(UINT8 len)
-{
+void rf_setfifolen(UINT8 len){
 	rf_writereg(FIFO1_REG, len - 1);
 }
 
@@ -162,8 +157,7 @@ void rf_writeid(const UINT8* id_buf)
 	CS_HIGH();  // cs = 1
 }
 
-void rf_setch(UINT8 ch)
-{
+void rf_set_ch(UINT8 ch) {
 	rf_writereg(PLL1_REG, ch);
 }
 
@@ -186,28 +180,130 @@ void rf_setpamode(pa_mode_t mode)
 	}
 }
 
-BOOL rf_issending()
+BOOL rf_issending(void)
 {	
-	if(GIO1_READ())
+	return GIO1_READ() ? TRUE : FALSE;
+}
+
+BOOL RF_CRCCheck(void){
+	return (rf_readreg(MODE_REG) & 0x20) == 0 ? TRUE : FALSE;
+}
+
+void RF_Delay100us(UINT16 num)
+{
+	UINT16 i, j;
+
+	for(i = 0; i < num; i++)
 	{
-		return TRUE;
-	}
-	else
-	{
-		return FALSE;
+		for(j = 0; j < 1025; j++)
+		{
+		}
 	}
 }
 
-BOOL RF_CRCCheck()
+BOOL RF_WaitForTransforComplete(UINT16 timeout)
 {
-	if((rf_readreg(MODE_REG) & 0x20) == 0)
+	UINT16 i = timeout;
+	BOOL ret = TRUE;
+
+	if(i == 0xffff)
 	{
-		return TRUE;
+		while(rf_issending());
 	}
 	else
 	{
-		return FALSE;
+		while(rf_issending())
+		{
+			RF_Delay100us(1);
+			
+			if(i == 0)
+			{
+				ret = FALSE;
+				break;
+			}
+			i--;
+		}	
 	}
+	
+	return ret;
+}
+
+
+typedef enum
+{
+	transfor_type_idle = 0,
+	transfor_type_tx,
+	transfor_type_rx,
+}transfor_type_t;
+
+#define USE_PA
+
+void RF_TransforCmd(transfor_type_t type)
+{
+	if(type == transfor_type_tx)
+	{
+#ifdef USE_PA
+		rf_setpamode(PA_MODE_TX);
+#endif	
+		rf_cmd(CMD_TX);
+	}
+	else if(type == transfor_type_rx)
+	{
+#ifdef USE_PA
+		rf_setpamode(PA_MODE_RX);
+#endif	
+		rf_cmd(CMD_RX);
+	}
+	else
+	{
+#ifdef USE_PA
+		rf_setpamode(PA_MODE_SLEEP);
+#endif	
+		rf_cmd(CMD_PLL);
+	}
+}
+
+static const UINT8 ap_rf_add[] = AP_RF_ADD;
+
+//发送定长的数据给终端
+UINT8 rf_send(const UINT8 *id, const UINT8 *data, UINT8 len) {
+	UINT8 ret;
+	
+	rf_writeid(id);
+	rf_writefifo(data, len);
+
+	RF_TransforCmd(transfor_type_tx);
+
+	ret = RF_WaitForTransforComplete(RF_SND_TM) ? 0: 1;
+
+	RF_TransforCmd(transfor_type_idle);
+	return ret;	
+}
+
+//接收定长的数据到buf
+UINT8 rf_recv(UINT8 *buf, UINT8 len) {
+	UINT8 ret = 0;
+
+	rf_writeid(ap_rf_add);
+	rf_setfifolen(len);
+
+	RF_TransforCmd(transfor_type_rx);
+	if(!RF_WaitForTransforComplete(RF_RCV_TM)) {
+		ret = 2;
+		goto __exit;
+	}
+
+	if(!RF_CRCCheck()){
+		ret = 1;
+		goto __exit;
+	}
+
+	rf_readfifo(buf, len);
+
+__exit:
+	RF_TransforCmd(transfor_type_idle);
+
+	return ret;	
 }
 
 

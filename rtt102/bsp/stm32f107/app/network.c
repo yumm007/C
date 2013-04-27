@@ -2,71 +2,57 @@
 #include <rtthread.h>
 #include <lwip/netdb.h>
 #include <lwip/sockets.h>
+#include "rf_driver.h"
 
-static const char send_data[] = "this is udp data from RF_Thread.\n";
-static char recv_data[128];
+#pragma pack(1)
+struct PKG_DATA_T {
+	rt_uint32_t id;
+	rt_uint8_t rcv_len;
+	rt_uint8_t data_len;
+	rt_uint8_t data[64];
+} data;
 
-void udp_send_demo(void* parameter)
+struct PKG_ACK_T {
+	rt_uint8_t	ack;
+	rt_uint32_t id;
+} ack;
+#pragma pack()
+
+void udp_transpond_demo(void* parameter)
 {
    int sock;
-   struct sockaddr_in server_addr;
-
-   if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
-   {
-       rt_kprintf("Socket error\n");
-       return;
-   }
-
-   memset(&server_addr, 0, sizeof(server_addr));
-   server_addr.sin_family = AF_INET;
-   server_addr.sin_port = htons(6000);
-   server_addr.sin_addr.s_addr = inet_addr("192.168.1.30");
-   //rt_memset(&(server_addr.sin_zero), 0, sizeof(server_addr.sin_zero));
-
-   while (1) {
-  	 //sendto(sock, send_data, strlen(send_data), 0,(struct sockaddr *)&server_addr, sizeof(struct sockaddr));
-  	 //rt_kprintf("sock send = %s\n", send_data);
-	 rt_thread_delay(RT_TICK_PER_SECOND);
-   }
-   lwip_close(sock);
-}
-
-void udp_recv_demo(void* parameter)
-{
-   int sock;
-   int n = 0, off;
+   //int n, off;
    struct sockaddr_in server_addr;
    struct sockaddr_in remote_addr;
-   socklen_t len = sizeof(remote_addr);
+   socklen_t addr_len = sizeof(remote_addr);
+   rt_uint8_t run_flag = 1;
 
-   if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
-   {
+   if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1){
        rt_kprintf("Socket error\n");
-       return;
+       goto __exit;
    }
 
    memset(&server_addr, 0, sizeof(server_addr));
    server_addr.sin_family = AF_INET;
    server_addr.sin_port = htons(6000);
    server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-  // rt_memset(&(server_addr.sin_zero), 0, sizeof(server_addr.sin_zero));
 
    if (bind(sock, (void *)&server_addr, sizeof(server_addr)) == -1) {
        rt_kprintf("Bind error\n");
 	   lwip_close(sock);
-       return;   		
+       run_flag = 0;   		
    }
    
    rt_kprintf("udp_recv_demo start.\n");
-   while (1) {
-   		//recv_data[0] = '\0';	//有offset计算，则丢包率在2.3%
-   		//off = sprintf(recv_data, "%d\t", n++);
+   while (run_flag) {
 		//基站发包流速控制在1.8ms，丢包率在0.1%
-		off = 0;
-   		off += recvfrom(sock, recv_data + off, sizeof(recv_data) - off, 0, (void *)&remote_addr, &len);
-		sendto(sock, recv_data, off, 0, (void *)&remote_addr, len);
-		//rt_kprintf("%d\tsock recv = %s\n", n++, recv_data);
-		//rt_thread_delay(RT_TICK_PER_SECOND);
+   		recvfrom(sock, &data, sizeof(data), 0, (void *)&remote_addr, &addr_len);
+		rf_send((void *)&data.id, (void *)&data.data, data.data_len);
+		//如果需要检查ACK，则打开接收
+		if (data.rcv_len > 0 && rf_recv((void *)&data.data, data.rcv_len) == 0)
+			sendto(sock, data.data, data.rcv_len, 0, (void *)&remote_addr, addr_len);		
    }
    lwip_close(sock);
+__exit:
+   rt_kprintf("udp_recv_demo end.\n");
 }

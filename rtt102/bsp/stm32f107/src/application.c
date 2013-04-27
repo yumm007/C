@@ -36,35 +36,12 @@
 #include "stm32_eth.h"
 #endif
 
-extern void udp_send_demo(void* parameter);
-extern void udp_recv_demo(void* parameter);
+#include "rf_driver.h"
+
+extern void udp_transpond_demo(void* parameter);
 
 void rt_init_thread_entry(void* parameter)
 {
-/* Filesystem Initialization */
-#ifdef RT_USING_DFS
-	{
-		/* init the device filesystem */
-		dfs_init();
-
-#ifdef RT_USING_DFS_ELMFAT
-		/* init the elm chan FatFs filesystam*/
-		elm_init();
-
-        /* init sdcard driver */
-        rt_hw_msd_init();
-
-        /* mount sd card fat partition 1 as root directory */
-        if (dfs_mount("sd0", "/", "elm", 0, 0) == 0)
-        {
-            rt_kprintf("File System initialized!\n");
-        }
-        else
-            rt_kprintf("File System initialzation failed!\n");
-#endif
-	}
-#endif
-
     /* LwIP Initialization */
 #ifdef RT_USING_LWIP
     {
@@ -82,7 +59,8 @@ void rt_init_thread_entry(void* parameter)
         rt_kprintf("TCP/IP initialized!\n");
     }
 #endif
-	udp_recv_demo(NULL);
+	rf_init();
+	udp_transpond_demo(NULL);
 	
 }
 

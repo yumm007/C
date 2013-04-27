@@ -75,6 +75,12 @@
 #define CMD_TFR             0xE0    //1110,xxxx TX FIFO reset
 #define CMD_RFR             0xF0    //1111,xxxx RX FIFO reset
 
+#define AP_RF_ADD			{192,168,44,1}
+#define AP_RF_CHN			0
+
+#define RF_RCV_TM			100
+#define RF_SND_TM			400
+
 typedef enum
 {
 	PA_MODE_TX = 1,
@@ -82,6 +88,7 @@ typedef enum
 	PA_MODE_SLEEP,
 }pa_mode_t;
 
+BOOL rf_init(void);
 void rf_gpio_init(void);
 void rf_sendbyte(UINT8 data);
 UINT8 rf_readbyte(void);
@@ -92,10 +99,12 @@ void rf_setfifolen(UINT8 len);
 UINT8 rf_readfifo(UINT8* dst, UINT8 len);
 UINT8 rf_writefifo(const UINT8* src, UINT8 len);
 void rf_writeid(const UINT8* id_buf);
-void rf_setch(UINT8 ch);
+void rf_set_ch(UINT8 ch);
 void rf_setpamode(pa_mode_t mode);
 BOOL rf_issending(void);
 BOOL RF_CRCCheck(void);
+UINT8 rf_send(const UINT8 *id, const UINT8 *data, UINT8 len);
+UINT8 rf_recv(UINT8 *buf, UINT8 len);
 
 #endif
 

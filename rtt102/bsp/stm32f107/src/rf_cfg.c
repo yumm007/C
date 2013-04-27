@@ -6,8 +6,7 @@ static BOOL rf_cal(void);
 static BOOL rf_rco_cal(void);
 static void rf_config(void);
 
-//更新参数设置，验证WAKEUPID, CRC错误
-//张冬波修改2012-11-6 21:05:02
+
 #if 1
 //static UINT8 rf_config_array[] = 
 UINT8 rf_config_array[] = 
@@ -144,13 +143,12 @@ UINT8 rf_config_array[] =
 };
 #endif
 
-BOOL bs_rf_init()
+BOOL rf_init(void)
 {
 	BOOL ret = FALSE;
 	UINT32 i, j;
 
 	rf_gpio_init();
-	//rf_timer_init();
 
 	rf_writereg(MODE_REG, 0x00);
 	rf_writereg(CPC_REG, 0x77);
@@ -161,17 +159,18 @@ BOOL bs_rf_init()
 	{
 		if(rf_cal() && rf_rco_cal())
 		{
-			rf_cmd(CMD_STBY);
 			for(i = 0; i < 7777777; i++);
 			ret = TRUE;
 			break;	
 		}
 	}
 	
+	rf_set_ch(AP_RF_CHN);
+
 	return ret;
 }
 
-void bs_rf_deinit()
+void rf_deinit(void)
 {
 	int i;
 	rf_gpio_init();

@@ -7,7 +7,7 @@
 
   <Targets>
     <Target>
-      <TargetName>RT-Thread STM32</TargetName>
+      <TargetName>AP_DEMO</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
       <TargetOption>
@@ -345,7 +345,7 @@
               <MiscControls></MiscControls>
               <Define>STM32F10X_CL, USE_STDPERIPH_DRIVER</Define>
               <Undefine></Undefine>
-              <IncludePath>Libraries\STM32F10x_StdPeriph_Driver\inc;Libraries\CMSIS\CM3\CoreSupport;..\..\components\dfs;..\..\components\finsh;..\..\components\net\lwip\src\include;.;..\..\components\net\lwip\src\include\ipv4;..\..\include;..\..\components\net\lwip\src\arch\include;..\..\components\dfs\include;..\..\components\net\lwip\src;..\..\libcpu\arm\common;..\..\libcpu\arm\stm32;..\..\components\net\lwip\src\include\netif;Libraries\CMSIS\CM3\DeviceSupport\ST\STM32F10x</IncludePath>
+              <IncludePath>Libraries\STM32F10x_StdPeriph_Driver\inc;Libraries\CMSIS\CM3\CoreSupport;..\..\components\dfs;..\..\components\finsh;..\..\components\net\lwip\src\include;.;..\..\components\net\lwip\src\include\ipv4;..\..\include;..\..\components\net\lwip\src\arch\include;..\..\components\dfs\include;..\..\components\net\lwip\src;..\..\libcpu\arm\common;..\..\libcpu\arm\stm32;..\..\components\net\lwip\src\include\netif;Libraries\CMSIS\CM3\DeviceSupport\ST\STM32F10x;.\inc</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -388,42 +388,42 @@
             <File>
               <FileName>application.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\application.c</FilePath>
-            </File>
-            <File>
-              <FileName>startup.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\startup.c</FilePath>
+              <FilePath>.\src\application.c</FilePath>
             </File>
             <File>
               <FileName>board.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\board.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f10x_it.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\stm32f10x_it.c</FilePath>
-            </File>
-            <File>
-              <FileName>usart.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\usart.c</FilePath>
-            </File>
-            <File>
-              <FileName>serial.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\serial.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32_eth.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\stm32_eth.c</FilePath>
+              <FilePath>.\src\board.c</FilePath>
             </File>
             <File>
               <FileName>msd.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\msd.c</FilePath>
+              <FilePath>.\src\msd.c</FilePath>
+            </File>
+            <File>
+              <FileName>serial.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\serial.c</FilePath>
+            </File>
+            <File>
+              <FileName>startup.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\startup.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32_eth.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\stm32_eth.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f10x_it.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\stm32f10x_it.c</FilePath>
+            </File>
+            <File>
+              <FileName>usart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\usart.c</FilePath>
             </File>
           </Files>
         </Group>
