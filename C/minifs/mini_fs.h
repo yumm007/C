@@ -20,10 +20,11 @@ Date			Author			Description
 typedef unsigned char BYTE;
 
 /**< 文件系统配置信息，由平台自定义 */
+#include <stdbool.h>
 #include "mini_fs_conf.h"
 
 #ifdef FS_DISK_RAM_FLASH
-typedef unsigned int WORD;
+typedef unsigned long WORD;
 #else
 typedef unsigned int WORD;
 #endif
@@ -40,6 +41,12 @@ typedef struct fs_t {
 		WORD file_len;
 		WORD file_size;		
 	} file[FILE_ID_END];
+#ifdef ENABLE_BLOCK_MGMT
+	BYTE block_status[FS_USE_SEGMENT_MAX];	/**< 每个物理块的状态 */
+	WORD block_map[FS_USE_SEGMENT_MAX];		/**< 文件系统使用的物理块序号 */
+	WORD block_wc[FS_USE_SEGMENT_MAX];		/**< 记录每个块被擦写的次数 */
+	#undef MAX_BLOCK_
+#endif
 } fs_t;
 extern fs_t fs;
 
@@ -47,7 +54,8 @@ extern fs_t fs;
 #define FS_BLOCK     ((sizeof(FILE_LEN_TABLE) + SEGMENT_SIZE -1) / SEGMENT_SIZE) 
 #define SUPER_BLOCK  ((sizeof(fs) + SEGMENT_SIZE -1) / SEGMENT_SIZE)       
 #define SWAP_BLOCK   1  
-#define DISK_BLOCK   (FS_BLOCK + SUPER_BLOCK + SWAP_BLOCK)
+#define _MAX_(a, b)	((a) > (b) ? (a) : (b))
+#define DISK_BLOCK   _MAX_((FS_BLOCK + SUPER_BLOCK + SWAP_BLOCK), FS_USE_SEGMENT_MAX)
 
 /**< 系统启动时加载文件系统 */
 void 	f_init(void);
@@ -114,7 +122,7 @@ WORD	f_addr(file_id_t id);
 void	f_erase(file_id_t id);
 
 /**< 擦除一个最小的块，调用则保证地址addr按 SEGMENT_SIZE 对齐 */
-extern void segment_erase(WORD addr);
+extern bool segment_erase(WORD addr);
 
 /**
 * IO块读函数
@@ -123,7 +131,7 @@ extern void segment_erase(WORD addr);
 * @param[in] len 需要读取的字节数, 调用者保证不会超出buf空间
 * @return 无
 */
-extern void segment_read(WORD addr, WORD buf, WORD len);
+extern bool segment_read(WORD addr, WORD buf, WORD len);
 
 /**
 * IO块写函数
@@ -132,7 +140,7 @@ extern void segment_read(WORD addr, WORD buf, WORD len);
 * @param[in] len 需要写入的字节数，调用者保证不会跨MAX_WRITE_UNIT写入
 * @return 无
 */
-extern void segment_write(WORD addr, WORD buf, WORD len);
+extern bool segment_write(WORD addr, WORD buf, WORD len);
 
 /**@}*/ // mini_fs
 

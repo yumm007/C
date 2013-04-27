@@ -265,6 +265,7 @@ BYTE __FS_SWAP_SPACE[SEGMENT_SIZE];
 
 int main(void) {
 	unsigned long long int count = 0;
+	f_init();
 	//f_erase(FILE1);
 	//f_erase(FILE1);
 	//f_erase(FILE1);

@@ -16,7 +16,6 @@ typedef enum {
    FILE_ID_END,
 } file_id_t;
 
-/**< ¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿ */
 typedef struct FILE_LEN_TABLE {
    BYTE FILE1_SIZE[10];
    BYTE FILE2_SIZE[23];
@@ -38,20 +37,23 @@ typedef struct FILE_LEN_TABLE {
 #define F_COPY_CACHE_SIZE	32
 
 
-#ifdef FS_DISK_ROM_FLASH					/**< ¿¿FLASH¿¿¿¿¿ */
-#define SEGMENT_SIZE		512				/**< FLASH¿¿¿¿¿¿¿¿¿ */
-#define MAX_WRITE_UNIT	32					/**< FLASH¿¿¿¿¿¿¿ */
+#ifdef FS_DISK_ROM_FLASH					/**< ¿¿FLASH¿¿¿¿? */
+#define SEGMENT_SIZE		512				/**< FLASH¿¿¿¿¿¿¿¿? */
+#define MAX_WRITE_UNIT	32					/**< FLASH¿¿¿¿¿¿? */
 #endif
 
-#ifdef FS_DISK_SPI_FLASH					/**< ¿¿FLASH¿¿¿¿¿ */
-#define SEGMENT_SIZE		4096				/**< FLASH¿¿¿¿¿¿¿¿¿ */
-#define MAX_WRITE_UNIT	256				/**< FLASH¿¿¿¿¿¿¿ */
+#ifdef FS_DISK_SPI_FLASH					/**< ¿¿FLASH¿¿¿¿? */
+#define SEGMENT_SIZE		4096				/**< FLASH¿¿¿¿¿¿¿¿? */
+#define MAX_WRITE_UNIT	256				/**< FLASH¿¿¿¿¿¿? */
 #endif
 
-#ifdef FS_DISK_RAM_FLASH					/**< ¿¿FLASH¿¿¿¿¿ */
-#define SEGMENT_SIZE		64				/**< FLASH¿¿¿¿¿¿¿¿¿ */
-#define MAX_WRITE_UNIT	32					/**< FLASH¿¿¿¿¿¿¿¿¿ */
+#ifdef FS_DISK_RAM_FLASH					/**< ¿¿FLASH¿¿¿¿? */
+#define SEGMENT_SIZE		64				/**< FLASH¿¿¿¿¿¿¿¿? */
+#define MAX_WRITE_UNIT	32					/**< FLASH¿¿¿¿¿¿¿¿? */
 #endif
 
+#define ENABLE_BLOCK_MGMT
+#define FS_USE_SEGMENT_MAX	10000
+#define SEGMENT_ERASE_MAX	50000
 
 #endif
