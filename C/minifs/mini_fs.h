@@ -23,7 +23,7 @@ typedef unsigned char BYTE;
 #include "mini_fs_conf.h"
 
 #ifdef FS_DISK_RAM_FLASH
-typedef unsigned long WORD;
+typedef unsigned int WORD;
 #else
 typedef unsigned int WORD;
 #endif
@@ -33,13 +33,13 @@ extern WORD DISK;
 
 /**< 文件系统结构体 */
 typedef struct fs_t {
+	BYTE valid;
+	BYTE flag;
 	struct file_info_t {
 		WORD start_addr;
 		WORD file_len;
 		WORD file_size;		
 	} file[FILE_ID_END];
-	BYTE flag;
-	BYTE valid;
 } fs_t;
 extern fs_t fs;
 
