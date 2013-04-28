@@ -11,9 +11,6 @@
 ***   使用一个字节映射区，判断写入前对于的字节是否被擦除过
 *******************************************************/
 #define SIZEOF(s,m) ((size_t) sizeof(((s *)0)->m)) 
-
-#define DISK_SPACE   SEGMENT_SIZE*DISK_BLOCK
-
 fs_t fs = { 
    .flag = 0,
    .file = { 
@@ -29,17 +26,9 @@ fs_t fs = {
    },     
 };
 
-static BYTE __DISK[DISK_SPACE];
-WORD DISK = (WORD) &__DISK[0];
-BYTE	__DISK_MAP[DISK_SPACE];
-
 //需要移植的函数, 调用者确保地址已经按segment对齐
 bool segment_erase(WORD seg_addr) {
-	//memset((char *)&DISK[seg_addr], 0, SEGMENT_SIZE);
-	memset((char *)seg_addr, 0, SEGMENT_SIZE);
-	memset((char *)&__DISK_MAP[seg_addr - (WORD)DISK], 0, SEGMENT_SIZE);
-	//fprintf(stderr, "erase %lu\n", seg_addr);
-
+	memset((char *)seg_addr, 0xff, SEGMENT_SIZE);
 	return true;
 }
 
@@ -52,20 +41,10 @@ bool segment_read(WORD addr, WORD buf, WORD len) {
 
 //需要移植的函数，将数据从内存写到FLASH，调用者保证所在的FLASH已经被擦过且操作不跨段
 bool segment_write(WORD addr,  WORD data, WORD len) {
-	int i;
-	char *flash_ptr = (char *)(addr);
+	WORD i;
 	//fprintf(stderr, "%s(%lu, data, %lu)\n", __FUNCTION__, addr, len);
-
-	for (i = 0; i < len; i++) {
-		if (__DISK_MAP[(addr+ i) - (WORD)DISK] == 1) {
-			//fprintf(stderr, "write %lu + %lu before erase\n", addr, len);
-			return false;
-		}
-	}
-
-	memcpy(flash_ptr, (char *)data, (int)len);
-	memset(&__DISK_MAP[addr - (WORD)DISK], 1, (int)len);
-	//fprintf(stderr, "set %lu + %lu has used\n", addr, len);
+	for (i = 0; i < len; i++)
+		((BYTE *)addr)[i] &= ((BYTE *)data)[i];
 	return true;
 }
 

@@ -1,13 +1,3 @@
-/**
-Copyright (C) 2012, 北京汉朔科技有限公司
-All Rights Reserved World Wide.
-Project：		ESL
-Description:	FLASH文件系统
-Date			Author			Description
-2013-01-31	于明明			beta版本
-2013-02-20  于明明			加入direct写函数
-*/
-
 #ifndef __MINI_FS__
 #define __MINI_FS__
 
@@ -41,21 +31,13 @@ typedef struct fs_t {
 		WORD file_len;
 		WORD file_size;		
 	} file[FILE_ID_END];
-#ifdef ENABLE_BLOCK_MGMT
+#ifdef FS_ENABLE_BLOCK_MGMT
 	BYTE block_status[FS_USE_SEGMENT_MAX];	/**< 每个物理块的状态 */
 	WORD block_map[FS_USE_SEGMENT_MAX];		/**< 文件系统使用的物理块序号 */
 	WORD block_wc[FS_USE_SEGMENT_MAX];		/**< 记录每个块被擦写的次数 */
-	#undef MAX_BLOCK_
 #endif
 } fs_t;
 extern fs_t fs;
-
-/**< 以下4个宏不需要改动 */
-#define FS_BLOCK     ((sizeof(FILE_LEN_TABLE) + SEGMENT_SIZE -1) / SEGMENT_SIZE) 
-#define SUPER_BLOCK  ((sizeof(fs) + SEGMENT_SIZE -1) / SEGMENT_SIZE)       
-#define SWAP_BLOCK   1  
-#define _MAX_(a, b)	((a) > (b) ? (a) : (b))
-#define DISK_BLOCK   _MAX_((FS_BLOCK + SUPER_BLOCK + SWAP_BLOCK), FS_USE_SEGMENT_MAX)
 
 /**< 系统启动时加载文件系统 */
 void 	f_init(void);

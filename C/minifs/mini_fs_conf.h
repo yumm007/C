@@ -33,7 +33,8 @@ typedef struct FILE_LEN_TABLE {
 //#define FS_DISK_SPI_FLASH					/**< ¿¿¿¿¿SPI FLASH */
 #define FS_DISK_RAM_FLASH					/**< ¿¿¿¿¿¿¿¿¿¿, ¿¿¿¿¿¿ */
 
-//#define F_COPY_USE_EXT_MEM      			/**< f_copy¿¿¿¿¿¿ */
+#define FS_ENABLE_BLOCK_MGMT
+#define FS_USE_MEM_SWAP
 #define F_COPY_CACHE_SIZE	32
 
 
@@ -52,10 +53,11 @@ typedef struct FILE_LEN_TABLE {
 #define MAX_WRITE_UNIT	32					/**< FLASH¿¿¿¿¿¿¿¿? */
 #endif
 
-#define ENABLE_BLOCK_MGMT
+#ifdef FS_ENABLE_BLOCK_MGMT
 #define FS_USE_SEGMENT_MAX	1000
 #define SEGMENT_ERASE_MAX	500
-
-#define FS_USE_MEM_SWAP
+#else
+#define FS_USE_SEGMENT_MAX	0
+#endif
 
 #endif
