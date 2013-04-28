@@ -58,8 +58,8 @@ bool segment_write(WORD addr,  WORD data, WORD len) {
 
 	for (i = 0; i < len; i++) {
 		if (__DISK_MAP[(addr+ i) - (WORD)DISK] == 1) {
-			fprintf(stderr, "write %lu + %lu before erase\n", addr, len);
-			memset(0, 0, 1);
+			//fprintf(stderr, "write %lu + %lu before erase\n", addr, len);
+			return false;
 		}
 	}
 

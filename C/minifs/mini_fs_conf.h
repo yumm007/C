@@ -53,7 +53,9 @@ typedef struct FILE_LEN_TABLE {
 #endif
 
 #define ENABLE_BLOCK_MGMT
-#define FS_USE_SEGMENT_MAX	10000
-#define SEGMENT_ERASE_MAX	50000
+#define FS_USE_SEGMENT_MAX	1000
+#define SEGMENT_ERASE_MAX	500
+
+#define FS_USE_MEM_SWAP
 
 #endif

@@ -109,19 +109,19 @@ WORD 	f_write_direct(file_id_t id, WORD offset,	const BYTE *data, WORD len);
 */
 WORD f_copy(file_id_t dst, WORD dst_offset, file_id_t src, WORD src_offset, WORD len);
 
-/**< 返回文件长度 */
+/** 返回文件长度 */
 WORD	f_len(file_id_t id);
 
-/**< 返回文件大小 */
+/** 返回文件大小 */
 WORD	f_size(file_id_t id);
 
-/**< 返回文件地址 */
+/** 返回文件地址 */
 WORD	f_addr(file_id_t id);
 
-/**< 清空文件 */
+/** 清空文件 */
 void	f_erase(file_id_t id);
 
-/**< 擦除一个最小的块，调用则保证地址addr按 SEGMENT_SIZE 对齐 */
+/** 擦除一个最小的块，调用则保证地址addr按 SEGMENT_SIZE 对齐 */
 extern bool segment_erase(WORD addr);
 
 /**
