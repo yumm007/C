@@ -34,7 +34,7 @@ typedef struct FILE_LEN_TABLE {
 #define FS_DISK_RAM_FLASH					/**< 真真真真真, 真真真 */
 
 #define FS_ENABLE_BLOCK_MGMT
-#define FS_USE_MEM_SWAP
+//#define FS_USE_MEM_SWAP
 #define F_COPY_CACHE_SIZE	32
 
 

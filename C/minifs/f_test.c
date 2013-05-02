@@ -206,7 +206,7 @@ bool f_test(void) {
 		//printf("read %lu byte use %lu clock, average %.2fus/B\n", w_c, tim, ave);
 
 		//f_copy ≤‚ ‘
-		if (1) {
+		if (0) {
 			f_write(FILE9, 0, (const BYTE *)"12345678901234567890", 20);
 			f_write(FILE8, 10, (const BYTE *)"ABCDE", 5);
 			f_copy(FILE9, 10, FILE8, 10, 5);

@@ -380,7 +380,7 @@ static void __segment_erase(WORD addr) {
 		if ((phy_block = get_free_block()) == -1) {
 			fs.flag |= FS_FLAG_NO_FREE_SPACE;
 			//fprintf(stdout, "----no free block----\n");
-			return;	//todo 得不到新块如何处理
+			return;
 		}
 		//fprintf(stdout, "request new block %d for it.\n", phy_block);
 		fs.block_map[(addr) / SEGMENT_SIZE] = phy_block;	//更新块映射
@@ -429,7 +429,7 @@ static void __segment_write(WORD seg_addr, WORD buf, WORD len) {
 		}
 		fs.block_map[(seg_addr) / SEGMENT_SIZE] = phy_block;	//更新块映射
 
-		//擦除新块, 并将原块中的其他数据copy到新块中。BUG: 擦除失败时可能会引发递归循环
+		//擦除新块, 并将原块中的其他数据copy到新块中
 		__segment_erase((seg_addr / SEGMENT_SIZE) * SEGMENT_SIZE);
 		if (!(fs.flag & FS_FLAG_SWAP_CLEAN)) {	//说明刚才有复制数据的动作
 			fs.flag |= FS_FLAG_SWAP_DIRE;	//更改数据复制方向
