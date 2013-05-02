@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
-
+#include <string.h>
 
 #define    ASC_12_OFFS  0
 #define    ASC_16_OFFS	 (ASC_12_OFFS + 1536)
@@ -8,9 +8,9 @@
 #define    HZK_16_OFFS	 (ASC_24_OFFS + 12288)
 #define    HZK_24_OFFS	 (HZK_16_OFFS + 267616)
 
-#define LCD_ROW	240
-#define LCD_LINE	320
-#define LCD_LINE_EMPTY	0	//字符之间隔一个像素
+#define LCD_ROW	72
+#define LCD_LINE	172
+#define LCD_LINE_EMPTY	1	//字符之间隔一个像素
 
 typedef enum {
     FONT_12	= 12,
@@ -27,6 +27,11 @@ typedef enum {
     HZK_24,
     FONT_ERR,
 } FONT_TYPE_T;
+
+static uint8_t LCD[LCD_LINE][LCD_ROW/8];	//屏幕点阵文件
+static void lcd_dump(void) {
+	fwrite(LCD, 1, sizeof(LCD), stderr);
+}
 
 static void spi_read(uint32_t addr, uint8_t *buf, int len) {
 	FILE *fp;
@@ -76,7 +81,7 @@ static const struct __font_bit_size font_bit_size[] = {
 	{0,0,0},		//error
 };
 
-unsigned int get_bitmap(FONT_TYPE_T font_type, unsigned char *bit_buf, const unsigned char *str) {
+static uint8_t get_bitmap(FONT_TYPE_T font_type, uint8_t *bit_buf, const uint8_t *str) {
 	uint32_t offset;
 	int len = font_bit_size[font_type].s;
 
@@ -106,7 +111,7 @@ unsigned int get_bitmap(FONT_TYPE_T font_type, unsigned char *bit_buf, const uns
 }
 
 //从低位到高位，位为0表示描背景色，位为1表示为字体颜色；
-static void send_8bit(FONT_TYPE_T font_type, unsigned char tmp) {
+static void send_8bit(FONT_TYPE_T font_type, uint8_t tmp) {
    int i;
    static int j = 0;
    int flag = 0;
@@ -123,13 +128,37 @@ static void send_8bit(FONT_TYPE_T font_type, unsigned char tmp) {
    }
 }
 
+
+static int next_x, next_y;
+static uint8_t byte_rev(uint8_t data) {
+	uint8_t val = 0;
+	int i;
+	for (i = 7; i >= 0; i--) {
+		val |= (((data >> i) & 0x1) << (7 - i));
+	}
+	return ~val;
+}
+
+static void send_bitmap(FONT_TYPE_T font_type, uint8_t *tmp) {
+   int i, j, row, line;
+
+	line = font_bit_size[font_type].l;
+	row = font_bit_size[font_type].r / 8;
+
+	for (i = 0; i < line; i++)
+		for (j = 0; j < row; j++)
+			LCD[next_y + i][(LCD_ROW / 8 -1 )- (next_x/8 + (j))] = byte_rev(tmp[i * row + (j)]);
+}
+
 static void MainLCD_Window_Set(int cur_row, int cur_line, int next_row, int next_line) {
-	;
+	//x的起止地址按8bit对齐
+	next_x = cur_row;
+	next_y = cur_line;
 }
 
 //设置屏幕起始和结束为止,并将
 //row, line指向下一个空白位置,可能换行也可能跳到行首
-void set_lcd_row_line(FONT_TYPE_T font_type, int *rows, int *lines) {
+static void set_lcd_row_line(FONT_TYPE_T font_type, int *rows, int *lines) {
 	int font_size_r, font_size_l, cur_row = *rows, cur_line = *lines, next_row, next_line;
 
 	font_size_r = font_bit_size[font_type].r;
@@ -158,7 +187,7 @@ void set_lcd_row_line(FONT_TYPE_T font_type, int *rows, int *lines) {
 
 }
 
-void lcd_print(FONT_SIZE_T size, int row, int lines, const uint8_t *str) {
+static void lcd_print(FONT_SIZE_T size, int row, int lines, const uint8_t *str) {
 	unsigned char is_hz;
 	unsigned char bit_buf[FONT_MAX * (FONT_MAX/8)];
 	int i, j;
@@ -173,9 +202,10 @@ void lcd_print(FONT_SIZE_T size, int row, int lines, const uint8_t *str) {
 
 		//从字库中取出当前字的点阵, 并返回总共的字节数
 		j = get_bitmap(font_type, bit_buf, str);
+		send_bitmap(font_type, bit_buf);
 		for (i = 0; i < j; i++) { 
 		    //从低位到高位，位为0表示描背景色，位为1表示为字体颜色；
-		    send_8bit(font_type, bit_buf[i]);
+		    //send_8bit(font_type, bit_buf[i]);
 		}
 		//row, line始终指向下一个空白位置,可能换行也可能跳到行首
 		str = is_hz ? str + 2 : str + 1;	//指向下一个字符
@@ -183,6 +213,8 @@ void lcd_print(FONT_SIZE_T size, int row, int lines, const uint8_t *str) {
 }
 
 int main(int argc, char **argv) {
-	lcd_print(FONT_16, 0, 0, (uint8_t *)"abc啊哈哦的@!");
+	memset(LCD, 0xff, sizeof(LCD));
+	lcd_print(FONT_16, 0, 0, (uint8_t *)"abc一二三四@!好的子额个会自动换行");
+	lcd_dump();
 	return 0;
 }
