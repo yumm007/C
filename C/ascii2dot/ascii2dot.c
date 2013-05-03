@@ -10,8 +10,8 @@
 #define	  HZK_14_OFFS	 (784064) //size = 189504
 #define	  ASC_14_OFFS	 (HZK_14_OFFS + 189504)
 
-#define LCD_ROW	32			//必需按8对齐
-#define LCD_LINE	14
+#define LCD_ROW	16			//必需按8对齐
+#define LCD_LINE	16
 #define LCD_LINE_EMPTY	0	//字符之间隔一个像素
 
 typedef enum {
@@ -182,15 +182,15 @@ static void send_bitmap(FONT_TYPE_T font_type, uint8_t *tmp) {
 			n = (start_y + i * LCD_ROW) + (start_x + j * 8);	//计算出第n个bit
 			for (k = 0; k < 8; k++) {
 				n1 = n + k;
-				//n1 = n1 / LCD_ROW * LCD_ROW + (LCD_ROW - n1 % LCD_ROW);
+				//n1 = n1 / LCD_ROW * LCD_ROW + (LCD_ROW - n1 % LCD_ROW); //倒显
 				//printf("set (%d + %d , %d + %d + %d) bit %d = %d, %d[%d], %d\n", \
 				//	start_y, i * LCD_ROW,start_x,j*8,k, n+k, (((c>>(7-k))&0x1)<<((n+k)%8)), c, k, n);
-				//printf("set bit %d to %d\n", n1, (((c>>(7-k))&0x1)<<(n1%8)));
+				printf("set bit %d to %d, %d,%d,%d\n", n1, (((c>>(7-k))&0x1)<<(n1%8)), c, k, n);
 				lcd = &LCD[n1/8];
 				*lcd &= ~(1 << (n1%8));
 				*lcd |= (((c>>(7-k))&0x1)<<(n1%8));	//置LCD的第n个bit
 			}
-			//printf("lcd[%d]=%d\n", n/8, LCD[n/8]);
+			printf("lcd[%d]=%d\n", n/8, LCD[n/8]);
 #endif
 		}
 }
@@ -263,7 +263,7 @@ static void lcd_print(FONT_SIZE_T size, int row, int lines, const uint8_t *str) 
 int main(int argc, char **argv) {
 	memset(LCD, 0xff, sizeof(LCD));
 	//lcd_print(FONT_14, 0, 0, (uint8_t *)"abc一二三四@!好的子额个会自动换行");
-	lcd_print(FONT_14, 0, 0, (uint8_t *)"还有");
+	lcd_print(FONT_16, 0, 0, (uint8_t *)"还有");
 	lcd_dump();
 	return 0;
 }
