@@ -13,8 +13,9 @@
 #define	  HZK_14_OFFS	 (784064) //size = 189504
 #define	  ASC_14_OFFS	 (HZK_14_OFFS + 189504)
 
-#define LCD_ROW	64			//必需按8对齐
-#define LCD_LINE	72
+#define _LCD_ROW	34		//必需按8对齐
+#define LCD_ROW ((_LCD_ROW + 7) / 8 * 8)
+#define LCD_LINE	64
 #define LCD_LINE_EMPTY	0	//字符之间隔一个像素
 
 typedef enum {
@@ -140,18 +141,13 @@ static uint8_t get_bitmap(FONT_TYPE_T font_type, uint8_t *bit_buf, const uint8_t
 }
 
 static int start_x, start_y, end_x, end_y;
-static uint8_t byte_rev(uint8_t data) {
-	uint8_t val = 0;
-	int i;
-	for (i = 7; i >= 0; i--) {
-		val |= (((data >> i) & 0x1) << (7 - i));
-	}
-	return ~val;
-}
-
 static void set_arr_bit(uint8_t *arr, int bitn, int val) {
 	uint8_t *p = &arr[bitn / 8];
 	//printf("set arr bit %d to %d\n", bitn, val);
+
+	//反显
+	//bitn = bitn / LCD_ROW * LCD_ROW + (LCD_ROW-1 - bitn % LCD_ROW);
+
 	*p &= ~(1 << (7 - bitn % 8));
 	*p |= ((val & 1) << (7 - bitn % 8));	//置LCD的第n个bit
 }
@@ -164,7 +160,7 @@ static void send_bitmap(FONT_TYPE_T font_type, uint8_t *tmp) {
 	for (line = 0; line < font_bit_size[font_type].l; line++) {
 		//每次从tmp中取出一个字的一行
 		for (row = 0, bit = 0; row < font_low_align; row++) {
-				c = byte_rev(tmp[line * font_low_align + row]);
+				c = ~(tmp[line * font_low_align + row]);
 				//printf("tmp[%d * (%d + 7) / 8 + %d = %d ] = %d\n", \
 					line, font_row, row, line * ((font_row + 7) / 8) + row, c);
 				for (k = 0; k < 8; k++) { //依次置位
@@ -173,9 +169,9 @@ static void send_bitmap(FONT_TYPE_T font_type, uint8_t *tmp) {
 						//printf("skip %d, k = %d\n", row, k);
 						continue;
 					}
-					set_arr_bit(LCD, (start_y + line) * LCD_ROW + start_x + bit, (c >> k) & 1);
+					set_arr_bit(LCD, (start_y + line) * LCD_ROW + start_x + bit, (c >> (7 - k)) & 1);
 					//printf("set_arr_bit (%d + %d) * %d + %d + %d = %d = %d\n", \
-						start_y , line , LCD_ROW , start_x , bit, (start_y + line) * LCD_ROW + start_x + bit, (c >> k) & 1);
+						start_y , line , LCD_ROW , start_x , bit, (start_y + line) * LCD_ROW + start_x + bit, (c >> (7 - k)) & 1);
 					bit++;
 				}
 		}
@@ -246,7 +242,7 @@ static void lcd_print(FONT_SIZE_T size, int row, int lines, const uint8_t *str) 
 int main(int argc, char **argv) {
 	memset(LCD, 0xff, sizeof(LCD));
 	lcd_print(FONT_14, 0, 0, (uint8_t *)"abc一二三四@!好的子额个会自动换行");
-	//lcd_print(FONT_14, 0, 0, (uint8_t *)"还有一个人");
+	//lcd_print(FONT_14, 0, 0, (uint8_t *)"一");
 	lcd_dump();
 	return 0;
 }
