@@ -2,6 +2,9 @@
 #include <stdint.h>
 #include <string.h>
 
+//字节正序，横向取摸
+//0x82[10000010] 对于像素为*_____*_
+
 #define    ASC_12_OFFS  0
 #define    ASC_16_OFFS	 (ASC_12_OFFS + 1536)
 #define    ASC_24_OFFS	 (ASC_16_OFFS + 4096)
@@ -10,8 +13,8 @@
 #define	  HZK_14_OFFS	 (784064) //size = 189504
 #define	  ASC_14_OFFS	 (HZK_14_OFFS + 189504)
 
-#define LCD_ROW	16			//必需按8对齐
-#define LCD_LINE	16
+#define LCD_ROW	64			//必需按8对齐
+#define LCD_LINE	72
 #define LCD_LINE_EMPTY	0	//字符之间隔一个像素
 
 typedef enum {
@@ -136,26 +139,6 @@ static uint8_t get_bitmap(FONT_TYPE_T font_type, uint8_t *bit_buf, const uint8_t
 	return len;
 }
 
-//字节正序，横向取摸
-//从低位到高位，位为0表示描背景色，位为1表示为字体颜色；
-static void send_8bit(FONT_TYPE_T font_type, uint8_t tmp) {
-   int i;
-   static int j = 0;
-   int flag = 0;
-
-   for (i = 7; i >= 0; i--)
-			printf("%s", tmp & (1 << i) ? "--" : "  ");
-
-   j += 8;
-	flag = j >= font_bit_size[font_type].r;
-
-   if (flag) {
-		printf("\n");
-		j = 0;
-   }
-}
-
-
 static int start_x, start_y, end_x, end_y;
 static uint8_t byte_rev(uint8_t data) {
 	uint8_t val = 0;
@@ -166,36 +149,41 @@ static uint8_t byte_rev(uint8_t data) {
 	return ~val;
 }
 
+static void set_arr_bit(uint8_t *arr, int bitn, int val) {
+	uint8_t *p = &arr[bitn / 8];
+	//printf("set arr bit %d to %d\n", bitn, val);
+	*p &= ~(1 << (7 - bitn % 8));
+	*p |= ((val & 1) << (7 - bitn % 8));	//置LCD的第n个bit
+}
+
 static void send_bitmap(FONT_TYPE_T font_type, uint8_t *tmp) {
-   int i, j, row, line, k, n, n1;
-	uint8_t c, *lcd;
+	uint8_t c;
+	int bit, line, row, k;
+	int font_row = font_bit_size[font_type].r, font_low_align = (font_row + 7) / 8;
 
-	line = font_bit_size[font_type].l;
-	row = (font_bit_size[font_type].r + 7) / 8;
-
-	for (i = 0; i < line; i++)
-		for (j = 0; j < row; j++) {
-#if 0
-			LCD[(start_y + i) * ((LCD_ROW / 8 -1 )- (start_x/8 + j))] = byte_rev(tmp[i * row + (j)]);
-#else
-			c = byte_rev(tmp[i * row + j]);
-			n = (start_y + i * LCD_ROW) + (start_x + j * 8);	//计算出第n个bit
-			for (k = 0; k < 8; k++) {
-				n1 = n + k;
-				//n1 = n1 / LCD_ROW * LCD_ROW + (LCD_ROW - n1 % LCD_ROW); //倒显
-				//printf("set (%d + %d , %d + %d + %d) bit %d = %d, %d[%d], %d\n", \
-				//	start_y, i * LCD_ROW,start_x,j*8,k, n+k, (((c>>(7-k))&0x1)<<((n+k)%8)), c, k, n);
-				printf("set bit %d to %d, %d,%d,%d\n", n1, (((c>>(7-k))&0x1)<<(n1%8)), c, k, n);
-				lcd = &LCD[n1/8];
-				*lcd &= ~(1 << (n1%8));
-				*lcd |= (((c>>(7-k))&0x1)<<(n1%8));	//置LCD的第n个bit
-			}
-			printf("lcd[%d]=%d\n", n/8, LCD[n/8]);
-#endif
+	for (line = 0; line < font_bit_size[font_type].l; line++) {
+		//每次从tmp中取出一个字的一行
+		for (row = 0, bit = 0; row < font_low_align; row++) {
+				c = byte_rev(tmp[line * font_low_align + row]);
+				//printf("tmp[%d * (%d + 7) / 8 + %d = %d ] = %d\n", \
+					line, font_row, row, line * ((font_row + 7) / 8) + row, c);
+				for (k = 0; k < 8; k++) { //依次置位
+					//但要跳过最后若干位，比如14像素宽的字体，第2个字节的高2位是不需要的
+					if (row == (font_low_align -1) && font_row % 8 != 0 && k >= font_row % 8) {
+						//printf("skip %d, k = %d\n", row, k);
+						continue;
+					}
+					set_arr_bit(LCD, (start_y + line) * LCD_ROW + start_x + bit, (c >> k) & 1);
+					//printf("set_arr_bit (%d + %d) * %d + %d + %d = %d = %d\n", \
+						start_y , line , LCD_ROW , start_x , bit, (start_y + line) * LCD_ROW + start_x + bit, (c >> k) & 1);
+					bit++;
+				}
 		}
+	}
 }
 
 static void MainLCD_Window_Set(int cur_row, int cur_line, int next_row, int next_line) {
+	//printf("set (%d,%d) (%d,%d)\n", cur_row, cur_line, next_row, next_line);
 	//x的起止地址按8bit对齐
 	start_x = cur_row;
 	start_y = cur_line;
@@ -237,7 +225,6 @@ static void set_lcd_row_line(FONT_TYPE_T font_type, int *rows, int *lines) {
 static void lcd_print(FONT_SIZE_T size, int row, int lines, const uint8_t *str) {
 	unsigned char is_hz;
 	unsigned char bit_buf[FONT_MAX * (FONT_MAX/8)];
-	int i, j;
 	FONT_TYPE_T font_type;
 
 	while (*str != '\0') {
@@ -247,14 +234,10 @@ static void lcd_print(FONT_SIZE_T size, int row, int lines, const uint8_t *str) 
 		//设置屏幕输出的起始位置
 		set_lcd_row_line(font_type, &row, &lines);
 
-		//从字库中取出当前字的点阵, 并返回总共的字节数
+		//从字库中取出当前字的点阵
 		memset(bit_buf, 0x0, sizeof(bit_buf));
-		j = get_bitmap(font_type, bit_buf, str);
+		get_bitmap(font_type, bit_buf, str);
 		send_bitmap(font_type, bit_buf);
-		for (i = 0; i < j; i++) { 
-		    //从低位到高位，位为0表示描背景色，位为1表示为字体颜色；
-		    //send_8bit(font_type, bit_buf[i]);
-		}
 		//row, line始终指向下一个空白位置,可能换行也可能跳到行首
 		str = is_hz ? str + 2 : str + 1;	//指向下一个字符
 	}
@@ -262,8 +245,8 @@ static void lcd_print(FONT_SIZE_T size, int row, int lines, const uint8_t *str) 
 
 int main(int argc, char **argv) {
 	memset(LCD, 0xff, sizeof(LCD));
-	//lcd_print(FONT_14, 0, 0, (uint8_t *)"abc一二三四@!好的子额个会自动换行");
-	lcd_print(FONT_16, 0, 0, (uint8_t *)"还有");
+	lcd_print(FONT_14, 0, 0, (uint8_t *)"abc一二三四@!好的子额个会自动换行");
+	//lcd_print(FONT_14, 0, 0, (uint8_t *)"还有一个人");
 	lcd_dump();
 	return 0;
 }
