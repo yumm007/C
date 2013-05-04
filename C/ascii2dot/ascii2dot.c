@@ -13,9 +13,9 @@
 #define	  HZK_14_OFFS	 (784064) //size = 189504
 #define	  ASC_14_OFFS	 (HZK_14_OFFS + 189504)
 
-#define _LCD_ROW	34		//必需按8对齐
+#define _LCD_ROW	72	//必需按8对齐
 #define LCD_ROW ((_LCD_ROW + 7) / 8 * 8)
-#define LCD_LINE	64
+#define LCD_LINE	172
 #define LCD_LINE_EMPTY	0	//字符之间隔一个像素
 
 typedef enum {
@@ -39,17 +39,55 @@ typedef enum {
     FONT_ERR,
 } FONT_TYPE_T;
 
-static uint8_t LCD[LCD_LINE * (LCD_ROW + 7 )/8];	//屏幕点阵文件
+static uint8_t LCD[LCD_LINE * LCD_ROW/8];	//屏幕点阵文件
+static uint8_t LCD_NEW[LCD_LINE * LCD_ROW/8];	//屏幕点阵文件
+
+//按照纵向的方式存储文件
+static void lcd2dot(void) {
+	uint8_t c, line_buf[LCD_LINE];	//一次纵向取line个字符
+	int k, row, line, B, n = 0;
+
+	for (row = 0; row < LCD_ROW /8; row++) {
+		//区一纵向的字节到line中
+		for (line = 0; line < LCD_LINE; line++)
+			line_buf[line] = LCD[line * LCD_ROW / 8 + row];
+		//将它们的各位纵向合并成一个字节
+		for (k = 0; k < 8; k++) {
+			for (B = 0; B < LCD_LINE; B += 8) { //纵向8个一组
+				c = 0;
+				c |= (((line_buf[B + 0] >> k) & 1) << 7);
+				c |= (((line_buf[B + 1] >> k) & 1) << 6);
+				c |= (((line_buf[B + 2] >> k) & 1) << 5);
+				c |= (((line_buf[B + 3] >> k) & 1) << 4);
+				c |= (((line_buf[B + 4] >> k) & 1) << 3);
+				c |= (((line_buf[B + 5] >> k) & 1) << 2);
+				c |= (((line_buf[B + 6] >> k) & 1) << 1);
+				c |= (((line_buf[B + 7] >> k) & 1) << 0);
+				LCD_NEW[n++] = c;
+			}
+		}
+	}
+}
+
 static void lcd_dump(void) {
 	int i, j, k;
 	//fwrite(LCD, 1, sizeof(LCD), stderr);
-	
+	lcd2dot();
+
 	for (i = 0; i < LCD_LINE; i++) {
 		for (j = 0; j < LCD_ROW / 8; j++)
 			for (k = 7; k >= 0; k--)
 				printf("%s", LCD[i * LCD_ROW / 8 + j] & (1 << k) ? "--" : "  ");
 		printf("\n");
 	}
+
+	for (i = 0; i < LCD_ROW; i++) {
+		for (j = 0; j < LCD_LINE / 8; j++)
+			for (k = 7; k >= 0; k--)
+				printf("%s", LCD_NEW[i * LCD_LINE / 8 + j] & (1 << k) ? "--" : "  ");
+		printf("\n");
+	}
+
 }
 
 static void spi_read(uint32_t addr, uint8_t *buf, int len) {
@@ -160,16 +198,16 @@ static void send_bitmap(FONT_TYPE_T font_type, uint8_t *tmp) {
 	for (line = 0; line < font_bit_size[font_type].l; line++) {
 		//每次从tmp中取出一个字的一行
 		for (row = 0, bit = 0; row < font_low_align; row++) {
-				c = ~(tmp[line * font_low_align + row]);
+				c = ~(tmp[line * font_low_align + (font_low_align - 1 -row)]);
 				//printf("tmp[%d * (%d + 7) / 8 + %d = %d ] = %d\n", \
 					line, font_row, row, line * ((font_row + 7) / 8) + row, c);
 				for (k = 0; k < 8; k++) { //依次置位
 					//但要跳过最后若干位，比如14像素宽的字体，第2个字节的高2位是不需要的
-					if (row == (font_low_align -1) && font_row % 8 != 0 && k >= font_row % 8) {
+					//if (row == (font_low_align -1) && font_row % 8 != 0 && k < 7 - font_row % 8) {
 						//printf("skip %d, k = %d\n", row, k);
-						continue;
-					}
-					set_arr_bit(LCD, (start_y + line) * LCD_ROW + start_x + bit, (c >> (7 - k)) & 1);
+					//	continue;
+					//}
+					set_arr_bit(LCD, (start_y + line) * LCD_ROW + start_x + bit, (c >> (7-k)) & 1);
 					//printf("set_arr_bit (%d + %d) * %d + %d + %d = %d = %d\n", \
 						start_y , line , LCD_ROW , start_x , bit, (start_y + line) * LCD_ROW + start_x + bit, (c >> (7 - k)) & 1);
 					bit++;
