@@ -425,6 +425,16 @@
               <FileType>1</FileType>
               <FilePath>.\src\usart.c</FilePath>
             </File>
+            <File>
+              <FileName>rf_cfg.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\rf_cfg.c</FilePath>
+            </File>
+            <File>
+              <FileName>rf_driver.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\rf_driver.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
