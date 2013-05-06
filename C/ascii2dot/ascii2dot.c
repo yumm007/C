@@ -12,6 +12,7 @@
 #define    HZK_24_OFFS	 (HZK_16_OFFS + 267616)
 #define	  HZK_14_OFFS	 (784064) //size = 189504
 #define	  ASC_14_OFFS	 (HZK_14_OFFS + 189504)
+#define	  HZK_12_OFFS	 974898 //新宋 9号字体，12x12，size = 162432
 
 #define LCD_ROW	176			//必需按8对齐
 #define LCD_LINE	72
@@ -34,6 +35,7 @@ typedef enum {
     HZK_16,
     HZK_24,
 	 HZK_14,
+	 HZK_12,
 
     FONT_ERR,
 } FONT_TYPE_T;
@@ -112,7 +114,7 @@ FONT_TYPE_T get_word_type(FONT_SIZE_T size, uint8_t is_hz) {
 
   switch (size){
 	case FONT_12:
-	    ret = !is_hz ? ASC_12: FONT_ERR;
+	    ret = !is_hz ? ASC_12: HZK_12;
 	    break;
 	case FONT_16:
 	    ret = !is_hz ? ASC_16: HZK_16;
@@ -144,6 +146,7 @@ static const struct __font_bit_size font_bit_size[] = {
 	{16,16,32},		//HZK_16
 	{24,24,72},		//HZK_24
 	{14,14,28},		//HZK_14
+	{12,12,24},		//HZK_12	
 	{0,0,0},		//error
 };
 
@@ -172,6 +175,9 @@ static uint8_t get_bitmap(FONT_TYPE_T font_type, uint8_t *bit_buf, const uint8_t
 	    	break;
 		case HZK_14:
 	    	offset = HZK_14_OFFS + (94*(str[0] - 0xa0  - 15 - 1) + (str[1] - 0xa0 -1)) * len;		
+	    	break;
+		case HZK_12:
+	    	offset = HZK_12_OFFS + (94*(str[0] - 0xa0  - 15 - 1) + (str[1] - 0xa0 -1)) * len;		
 	    	break;
 		default:
 	    	break;	
@@ -289,8 +295,8 @@ static void lcd_print(FONT_SIZE_T size, int row, int lines, const uint8_t *str) 
 int main(int argc, char **argv) {
 	memset(LCD, 0xff, sizeof(LCD));
 	//lcd_print(FONT_14, 0, 0, (uint8_t *)"abc一二三四@!好的这个是会自动换行的!满屏幕显示看看效果怎么样");
-	lcd_print(FONT_14, 0, 0, (uint8_t *)"奥丽轩马蒙斯产区红葡萄酒");
-	lcd_print(FONT_14, 0, 16, (uint8_t *)"法国");
+	lcd_print(FONT_12, 0, 0, (uint8_t *)"奥丽轩马蒙斯法定产区红葡萄酒");
+	lcd_print(FONT_12, 0, 16, (uint8_t *)"法国");
 	lcd_dump();
 	return 0;
 }
