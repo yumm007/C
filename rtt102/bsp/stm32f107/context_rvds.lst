@@ -266,9 +266,10 @@ ARM Macro Assembler    Page 5
 
               E000ED04 
               E000ED20 
-Command Line: --debug --xref --cpu=Cortex-M3 --apcs=interwork --depend=.\out\co
-ntext_rvds.d -o.\out\context_rvds.o -IC:\Keil\ARM\INC -IC:\Keil\ARM\INC\ST\STM3
-2F10x --list=.\context_rvds.lst ..\..\libcpu\arm\cortex-m3\context_rvds.S
+Command Line: --debug --xref --cpu=Cortex-M3 --apcs=interwork --depend=C:\temp\
+obj\context_rvds.d -oC:\temp\obj\context_rvds.o -IC:\Keil\ARM\INC -IC:\Keil\ARM
+\INC\ST\STM32F10x --list=.\context_rvds.lst ..\..\libcpu\arm\cortex-m3\context_
+rvds.S
 
 
 
