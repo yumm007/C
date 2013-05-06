@@ -13,8 +13,8 @@
 #define	  HZK_14_OFFS	 (784064) //size = 189504
 #define	  ASC_14_OFFS	 (HZK_14_OFFS + 189504)
 
-#define LCD_ROW	64			//必需按8对齐
-#define LCD_LINE	72
+#define LCD_ROW	72			//必需按8对齐
+#define LCD_LINE	172
 #define LCD_LINE_EMPTY	0	//字符之间隔一个像素
 
 typedef enum {
@@ -41,7 +41,7 @@ typedef enum {
 static uint8_t LCD[LCD_LINE * (LCD_ROW + 7 )/8];	//屏幕点阵文件
 static void lcd_dump(void) {
 	int i, j, k;
-	//fwrite(LCD, 1, sizeof(LCD), stderr);
+	fwrite(LCD, 1, sizeof(LCD), stderr);
 	
 	for (i = 0; i < LCD_LINE; i++) {
 		for (j = 0; j < LCD_ROW / 8; j++)
