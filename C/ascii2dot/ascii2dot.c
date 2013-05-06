@@ -15,7 +15,7 @@
 
 #define LCD_ROW	176			//必需按8对齐
 #define LCD_LINE	72
-#define LCD_LINE_EMPTY	1	//字符之间隔一个像素
+#define LCD_LINE_EMPTY	0	//字符之间隔一个像素
 
 typedef enum {
     FONT_12	= 12,
@@ -288,8 +288,9 @@ static void lcd_print(FONT_SIZE_T size, int row, int lines, const uint8_t *str) 
 
 int main(int argc, char **argv) {
 	memset(LCD, 0xff, sizeof(LCD));
-	lcd_print(FONT_14, 0, 0, (uint8_t *)"abc一二三四@!好的这个是会自动换行的!满屏幕显示看看效果怎么样");
-	//lcd_print(FONT_14, 0, 0, (uint8_t *)"好的");
+	//lcd_print(FONT_14, 0, 0, (uint8_t *)"abc一二三四@!好的这个是会自动换行的!满屏幕显示看看效果怎么样");
+	lcd_print(FONT_14, 0, 0, (uint8_t *)"奥丽轩马蒙斯产区红葡萄酒");
+	lcd_print(FONT_14, 0, 16, (uint8_t *)"法国");
 	lcd_dump();
 	return 0;
 }
