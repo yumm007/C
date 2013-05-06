@@ -32,7 +32,9 @@ static void lcd2dot(void) {
 				NEW_LCD[n++] = c;
 			}
 			//最后几个bit可能凑不齐一个字节，需要清为0
-			NEW_LCD[n-1] &= (0xff << (7 - LCD_LINE % 8));
+			//NEW_LCD[n-1] &= (0xff << (7 - LCD_LINE % 8));
+			if (LCD_LINE % 8)
+				n--;
 		}
 	}
 }
@@ -41,8 +43,8 @@ static void arr_dump(void) {
 	int i, j;
 
 	for (j = 0; j < LCD_ROW; j++) {
-		for (i = 0; i < (LCD_LINE + 7) / 8; i++)
-			printf("%02X, ", NEW_LCD[j * ((LCD_LINE+7) /8) + i]);
+		for (i = 0; i < (LCD_LINE + 0) / 8; i++)
+			printf("%02X, ", NEW_LCD[j * ((LCD_LINE+0) /8) + i]);
 		printf("\n");
 	}
 	

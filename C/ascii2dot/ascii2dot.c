@@ -13,9 +13,9 @@
 #define	  HZK_14_OFFS	 (784064) //size = 189504
 #define	  ASC_14_OFFS	 (HZK_14_OFFS + 189504)
 
-#define LCD_ROW	64			//必需按8对齐
+#define LCD_ROW	176			//必需按8对齐
 #define LCD_LINE	72
-#define LCD_LINE_EMPTY	0	//字符之间隔一个像素
+#define LCD_LINE_EMPTY	1	//字符之间隔一个像素
 
 typedef enum {
     FONT_12	= 12,
@@ -38,10 +38,45 @@ typedef enum {
     FONT_ERR,
 } FONT_TYPE_T;
 
-static uint8_t LCD[LCD_LINE * (LCD_ROW + 7 )/8];	//屏幕点阵文件
+static uint8_t LCD[LCD_LINE * ((LCD_ROW + 7 )/8)];	//屏幕点阵文件
+static uint8_t NEW_LCD[LCD_ROW * ((LCD_LINE + 7) / 8)];
+
+//按照纵向的方式存储文件
+static void lcd2dot(void) {
+   uint8_t c, line_buf[LCD_LINE];   //一次纵向取line个字符
+   int k, row, line, B, n = 0;
+
+   for (row = 0; row < (LCD_ROW +7) /8; row++) {
+      //取一纵向的字节到line中
+      for (line = 0; line < LCD_LINE; line++)
+         line_buf[line] = LCD[line * ((LCD_ROW + 7) / 8) + row];
+      //将它们的各位纵向合并成一个字节
+      for (k = 7; k >= 0; k--) {
+         for (B = 0; B < LCD_LINE; B += 8) { //纵向8个一组
+            c = 0;
+            c |= (((line_buf[B + 0] >> k) & 1) << 7); 
+            c |= (((line_buf[B + 1] >> k) & 1) << 6); 
+            c |= (((line_buf[B + 2] >> k) & 1) << 5); 
+            c |= (((line_buf[B + 3] >> k) & 1) << 4); 
+            c |= (((line_buf[B + 4] >> k) & 1) << 3); 
+            c |= (((line_buf[B + 5] >> k) & 1) << 2); 
+            c |= (((line_buf[B + 6] >> k) & 1) << 1); 
+            c |= (((line_buf[B + 7] >> k) & 1) << 0); 
+            NEW_LCD[n++] = c;
+         }   
+         //最后几个bit可能凑不齐一个字节，丢弃之
+         //NEW_LCD[n-1] &= (0xff << (7 - LCD_LINE % 8));
+			if (LCD_LINE % 8)
+				n--;
+      }   
+   }   
+}
+
 static void lcd_dump(void) {
 	int i, j, k;
-	//fwrite(LCD, 1, sizeof(LCD), stderr);
+
+	lcd2dot();
+	fwrite(NEW_LCD, 1, sizeof(NEW_LCD), stderr);
 
 	for (i = 0; i < LCD_LINE; i++) {
 		for (j = 0; j < LCD_ROW / 8; j++)
@@ -49,6 +84,14 @@ static void lcd_dump(void) {
 				printf("%s", LCD[i * LCD_ROW / 8 + j] & (1 << k) ? "--" : "  ");
 		printf("\n");
 	}
+#if 1
+	for (i = 0; i < LCD_ROW; i++) {
+		for (j = 0; j < LCD_LINE / 8; j++)
+			for (k = 7; k >= 0; k--)
+				printf("%s", NEW_LCD[i * LCD_LINE / 8 + j] & (1 << k) ? "--" : "  ");
+		printf("\n");
+	}
+#endif
 }
 
 static void spi_read(uint32_t addr, uint8_t *buf, int len) {
@@ -245,8 +288,8 @@ static void lcd_print(FONT_SIZE_T size, int row, int lines, const uint8_t *str) 
 
 int main(int argc, char **argv) {
 	memset(LCD, 0xff, sizeof(LCD));
-	lcd_print(FONT_14, 0, 0, (uint8_t *)"abc一二三四@!好的子额个会自动换行");
-	//lcd_print(FONT_14, 0, 0, (uint8_t *)"还有一个人");
+	lcd_print(FONT_14, 0, 0, (uint8_t *)"abc一二三四@!好的这个是会自动换行的!满屏幕显示看看效果怎么样");
+	//lcd_print(FONT_14, 0, 0, (uint8_t *)"好的");
 	lcd_dump();
 	return 0;
 }
