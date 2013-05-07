@@ -30,12 +30,28 @@
 #define QR_VERSION_M	1 // 10 ~ 26
 #define QR_VERSION_L	2 // 27 ~ 40
 
+
+//max possible bits resolution 177*177/8+1 = 3917
+
+#if 0
 #define MAX_ALLCODEWORD	 3706 //The maximum total number of code words
 #define MAX_DATACODEWORD 2956 //Maximum data word code (version 40-L)
 
 #define MAX_CODEBLOCK	  153 //(Including RS code word) the maximum number of block data code word
 #define MAX_MODULESIZE	  177 //Maximum number of modules in a side
 #define MAX_BITDATA		 3917 // finfile data
+#else
+
+#define MAX_BITS	25		//定义支持的最大码元数 P11
+
+#define MAX_ALLCODEWORD	 44 //数据容量,原为3706 P11
+#define MAX_DATACODEWORD 34 //数据码字数，原为2956. P20
+
+#define MAX_CODEBLOCK	  153 //(Including RS code word) the maximum number of block data code word
+#define MAX_MODULESIZE	  MAX_BITS //Maximum number of modules in a side
+#define MAX_BITDATA		  (MAX_BITS * MAX_BITS / 8 + 1) // finfile data
+
+#endif
 
 //Margin when drawing a bitmap
 //#define QR_MARGIN	4
