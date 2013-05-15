@@ -75,12 +75,13 @@ static void lcd2dot(void) {
 }
 
 static void lcd_dump(void) {
-	int i, j, k;
-
+	uint16_t xy[] = {0, 0, LCD_LINE / 8 -1, 172 -1};
 	lcd2dot();
-	fwrite(NEW_LCD, 1, sizeof(NEW_LCD), stderr);
+	fwrite(xy, 1, sizeof(xy), stdout);
+	fwrite(NEW_LCD, 1, 172 * 72/8, stdout);
 
 #if 0
+	int i, j, k;
 	for (i = 0; i < LCD_LINE; i++) {
 		for (j = 0; j < LCD_ROW / 8; j++)
 			for (k = 7; k >= 0; k--)
