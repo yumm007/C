@@ -15,10 +15,8 @@
 #define	  ASC_14_OFFS	 (HZK_14_OFFS + 189504)
 #define	  HZK_12_OFFS	 974898 //新宋 9号字体，12x12，size = 162432
 
-#define LCD_REAL_ROW	172			//必需按8对齐
 #define LCD_ROW	176			//必需按8对齐
 #define LCD_LINE	72
-#define LCD_LINE_EMPTY	0	//字符之间隔一个像素
 
 typedef enum {
     FONT_12	= 12,
@@ -42,13 +40,12 @@ typedef enum {
     FONT_ERR,
 } FONT_TYPE_T;
 
-static uint8_t LCD[LCD_LINE * ((LCD_ROW + 7 )/8)];	//屏幕点阵文件
-static uint8_t NEW_LCD[LCD_ROW * ((LCD_LINE + 7) / 8)];
-
 typedef struct LCD_T {
 	int	row;
 	int	line;
 	int 	real_row;
+
+	int lcd_line_empty;
 
 	int start_x;
 	int start_y;
@@ -69,6 +66,9 @@ static LCD_T *lcd_init(void) {
 		free(lcd->trun_right_buf); free(lcd->buf); free(lcd);
 		return NULL;
 	}
+
+	lcd->lcd_line_empty = 0;
+	lcd->real_row = 172;
 
 	memset(lcd->buf, 0xff, LCD_LINE * ((LCD_ROW + 7 )/8));
 
@@ -107,10 +107,10 @@ static void lcd2dot(LCD_T *lcd) {
 }
 
 static void lcd_dump(LCD_T *lcd) {
-	uint16_t xy[] = {0, 0, LCD_LINE / 8 -1, LCD_REAL_ROW -1};
+	uint16_t xy[] = {0, 0, LCD_LINE / 8 -1, lcd->real_row -1};
 	lcd2dot(lcd);
 	fwrite(xy, 1, sizeof(xy), stdout);
-	fwrite(lcd->trun_right_buf, 1, LCD_LINE * LCD_REAL_ROW/8, stdout);
+	fwrite(lcd->trun_right_buf, 1, LCD_LINE * lcd->real_row / 8, stdout);
 
 #if 0
 	int i, j, k;
@@ -221,7 +221,6 @@ static uint8_t get_bitmap(FONT_TYPE_T font_type, uint8_t *bit_buf, const uint8_t
 	return len;
 }
 
-static int start_x, start_y, end_x, end_y;
 static uint8_t byte_rev(uint8_t data) {
 	uint8_t val = 0;
 	int i;
@@ -253,25 +252,16 @@ static void send_bitmap(FONT_TYPE_T font_type, uint8_t *tmp, LCD_T *lcd) {
 						//printf("skip %d, k = %d\n", row, k);
 						continue;
 					}
-					set_arr_bit(lcd->buf, (start_y + line) * LCD_ROW + start_x + bit, (c >> k) & 1);
+					set_arr_bit(lcd->buf, (lcd->start_y + line) * LCD_ROW + lcd->start_x + bit, (c >> k) & 1);
 					bit++;
 				}
 		}
 	}
 }
 
-static void MainLCD_Window_Set(int cur_row, int cur_line, int next_row, int next_line) {
-	//printf("set (%d,%d) (%d,%d)\n", cur_row, cur_line, next_row, next_line);
-	//x的起止地址按8bit对齐
-	start_x = cur_row;
-	start_y = cur_line;
-	end_x = next_row;
-	end_y = next_line;
-}
-
 //设置屏幕起始和结束为止,并将
 //row, line指向下一个空白位置,可能换行也可能跳到行首
-static void set_lcd_row_line(FONT_TYPE_T font_type, int *rows, int *lines) {
+static void set_lcd_row_line(FONT_TYPE_T font_type, int *rows, int *lines, LCD_T *lcd) {
 	int font_size_r, font_size_l, cur_row = *rows, cur_line = *lines, next_row, next_line;
 
 	font_size_r = font_bit_size[font_type].r;
@@ -279,7 +269,7 @@ static void set_lcd_row_line(FONT_TYPE_T font_type, int *rows, int *lines) {
 
 	if (cur_row + font_size_r > LCD_ROW) {
 		cur_row = 0;
-		cur_line += font_size_l + LCD_LINE_EMPTY;
+		cur_line += font_size_l + lcd->lcd_line_empty;
 	}
 
 	if (cur_line + font_size_l > LCD_LINE) {
@@ -290,10 +280,11 @@ static void set_lcd_row_line(FONT_TYPE_T font_type, int *rows, int *lines) {
 	next_row = 	 cur_row + font_size_r;
 	next_line =  cur_line + font_size_l;
 
-	MainLCD_Window_Set(cur_row, cur_line, next_row-1, next_line-1);
+	lcd->start_x = cur_row;
+	lcd->start_y = cur_line;
 
-	next_row += LCD_LINE_EMPTY;
-	next_line += LCD_LINE_EMPTY;
+	next_row += lcd->lcd_line_empty;
+	next_line += lcd->lcd_line_empty;
 
  	*rows = next_row;
 	*lines = cur_line;
@@ -310,7 +301,7 @@ static void lcd_print(FONT_SIZE_T size, int row, int lines, const uint8_t *str, 
 		//返回字体类型
 		font_type = get_word_type(size, is_hz);
 		//设置屏幕输出的起始位置
-		set_lcd_row_line(font_type, &row, &lines);
+		set_lcd_row_line(font_type, &row, &lines, lcd);
 
 		//从字库中取出当前字的点阵
 		memset(bit_buf, 0x0, sizeof(bit_buf));
