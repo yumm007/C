@@ -69,7 +69,7 @@ static uint16_t cal_crc(const unsigned char *data, int len) {
             crc ^= 0x1021;
       }    
    }   
-	fprintf(stderr, "rel_8 %d bytes = %02X.\n", len, crc);
+	fprintf(stderr, "crc %d bytes = %02X.\n", len, crc);
 	return crc;
 }
 
