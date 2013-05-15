@@ -84,16 +84,11 @@ struct protocal_t {
 };
 #pragma pack()
 
+int protocal_data(const uint8_t *content, int len) {
+	struct protocal_t prt_data;
 
-static struct protocal_t prt_data;
-static uint8_t content[MAX_CONTENT_LEN];
-
-int main(int argc, char **argv) {
-	int len = 0, c;
-
-
-	while (len < MAX_CONTENT_LEN && (c = getchar()) != EOF)
-		content[len++] = c;
+	//while (len < MAX_CONTENT_LEN && (c = getchar()) != EOF)
+	//	content[len++] = c;
 
 	fprintf(stderr, "read %d bytes.\n", len);
 
