@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "fb_draw.h"
+
 //字节正序，横向取摸
 //0x82[10000010] 对于像素为*_____*_
 
@@ -114,17 +116,20 @@ static int lcd_flush(LCD_T *lcd, uint8_t *buf) {
 	for (i = 0; i < lcd->line; i++) {
 		for (j = 0; j < lcd->row / 8; j++)
 			for (k = 7; k >= 0; k--)
-				printf("%s", lcd->buf[i * lcd->row / 8 + j] & (1 << k) ? "--" : "  ");
+				//printf("%s", lcd->buf[i * lcd->row / 8 + j] & (1 << k) ? "--" : "  ");
+				fb_draw_point(i, j*8 + k, lcd->buf[i * lcd->line / 8 + j] & (1 << k) ? 0x0000 : 0xffff);
 		printf("\n");
 	}
+#else
+	int i, j, k;
 	for (i = 0; i < lcd->row; i++) {
 		for (j = 0; j < lcd->line / 8; j++)
-			for (k = 7; k >= 0; k--)
-				printf("%s", buf[i * LCD_LINE / 8 + j] & (1 << k) ? "--" : "  ");
-		printf("\n");
+			for (k = 7; k >= 0; k--) {
+				//printf("%s", buf[i * LCD_LINE / 8 + j] & (1 << k) ? "--" : "  ");
+				fb_draw_point(i, j*8 + 7 - k, buf[i * lcd->line / 8 + j + 8] & (1 << k) ? 0x0000 : 0xffff);
+				}
 	}
 #endif
-
 	free(lcd->buf); free(lcd);
 	return lcd->real_row * lcd->line /8 + 8;
 }
@@ -235,6 +240,10 @@ static void set_arr_bit(uint8_t *arr, int bitn, int val) {
 	//printf("set arr bit %d to %d\n", bitn, val);
 	*p &= ~(1 << (7 - bitn % 8));
 	*p |= ((val & 1) << (7 - bitn % 8));	//置LCD的第n个bit
+
+
+
+	//fb_draw_point(bitn % 72, bitn / 72, val ? 0x0000 : 0xffff);
 }
 
 static void send_bitmap(FONT_TYPE_T font_type, uint8_t *tmp, LCD_T *lcd) {
@@ -312,22 +321,37 @@ static void lcd_print(FONT_SIZE_T size, int row, int lines, const uint8_t *str, 
 	}
 }
 
-
 extern int protocal_data(const uint8_t *content, int len);
-int main(int argc, char **argv) {
-	int len;
-	LCD_T *lcd;
-	uint8_t lcd_buf[176*72/8 + 8];
 
-	if ((lcd = lcd_init(172, 72)) == NULL) {
+int main(int argc, char **argv) {
+	int len, line, row;
+	LCD_T *lcd;
+	uint8_t lcd_buf[1024*1024];
+
+	if (argc == 1) {
+		line = 172;
+		row = 72;
+	} else if (atoi(argv[1]) == 29){
+		line = 296;
+		row = 128;
+	} else {
+		line = 172;
+		row = 72;
+	}
+
+	if ((lcd = lcd_init(line, row)) == NULL) {
 		return 1;
 	}
 	
+	fb_open();
+
 	//lcd_print(FONT_14, 0, 0, (uint8_t *)"abc一二三四@!好的这个是会自动换行的!满屏幕显示看看效果怎么样");
 	lcd_print(FONT_12, 0, 0, (uint8_t *)"奥丽轩马蒙斯法定产区红葡萄酒", lcd);
 	lcd_print(FONT_12, 0, 16, (uint8_t *)"法国", lcd);
 	lcd_print(FONT_24, 12 * 8, 32, (uint8_t *)"349.5", lcd);
 	len = lcd_flush(lcd, lcd_buf); //保存至lcd_buf, 并返回长度
+
+	//fwrite(lcd_buf+8, 1, len -8 , stdout);
 
 	protocal_data(lcd_buf, len);
 
