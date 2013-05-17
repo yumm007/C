@@ -346,12 +346,10 @@ int main(int argc, char **argv) {
 	fb_open();
 
 	//lcd_print(FONT_14, 0, 0, (uint8_t *)"abc一二三四@!好的这个是会自动换行的!满屏幕显示看看效果怎么样");
-	lcd_print(FONT_12, 0, 0, (uint8_t *)"奥丽轩马蒙斯法定产区红葡萄酒", lcd);
-	lcd_print(FONT_12, 0, 16, (uint8_t *)"法国", lcd);
-	lcd_print(FONT_24, 12 * 8, 32, (uint8_t *)"349.5", lcd);
+	lcd_print(FONT_24, 0, 0, (uint8_t *)"奥丽轩马蒙斯法定产区红葡萄酒", lcd);
+	lcd_print(FONT_24, 0, 48, (uint8_t *)"法国 巴黎", lcd);
+	lcd_print(FONT_24, 24 * 8, 60, (uint8_t *)"349.5", lcd);
 	len = lcd_flush(lcd, lcd_buf); //保存至lcd_buf, 并返回长度
-
-	//fwrite(lcd_buf+8, 1, len -8 , stdout);
 
 	protocal_data(lcd_buf, len);
 
