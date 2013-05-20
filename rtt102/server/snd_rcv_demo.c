@@ -10,10 +10,12 @@
 #include <sys/select.h>
 #include <sys/time.h>
 
-static int ns = 0, nr = 0;
+#include "rf_dot_module.h"
+
 #if 0
 static const char send_data[] = "this is udp data from RF_Thread.";
 static char recv_data[60];
+static int ns = 0, nr = 0;
 
 static void *udp_send_demo(void* parameter)
 {
@@ -165,14 +167,62 @@ static int ap_init(SRV_T *srv) {
    bzero(&srv->ap_addr, sizeof(srv->ap_addr));
    srv->ap_addr.sin_family = AF_INET;
    srv->ap_addr.sin_port = htons(6000);
-   srv->ap_addr.sin_addr.s_addr = inet_addr("192.168.1.103");
+   srv->ap_addr.sin_addr.s_addr = inet_addr("192.168.1.30");
 
 	return 0;
 }
 
+
+static SRV_T srv;
+rf_ret_t RF_TxBuf(const uint8_t *rcv_id, const uint8_t* data, uint8_t len, uint16_t timeout) {
+
+	memcpy(srv.snd_data.id, rcv_id, sizeof(srv.snd_data.id));
+	memcpy(srv.snd_data.snd_buf, data, len);
+
+	srv.snd_data.rcv_len = 10;
+	srv.snd_data.snd_len = len;
+	srv.snd_data.snd_buf[0] = 0xAA | ((len >> 8) & 1);
+	srv.snd_data.snd_buf[1] = len;
+
+	sendto(srv.sock, &srv.snd_data, sizeof(srv.snd_data), 0, (void *)&srv.ap_addr, sizeof(srv.ap_addr));
+	RF_Delay100us(15);
+
+	return rf_ret_ok;
+}
+
+rf_ret_t RF_RxBuf(const uint8_t *rcv_id, uint8_t* buf, uint8_t len, uint16_t timeout) {
+	struct timeval tim;
+	fd_set rfds;
+	rf_ret_t ret = rf_ret_timeout;
+
+	FD_ZERO(&rfds);
+	FD_SET(srv.sock, &rfds);
+	tim.tv_sec = 0;
+	tim.tv_usec = timeout * 1000;
+
+	if (select(srv.sock +1, &rfds, NULL, NULL, &tim) > 0) {
+		recvfrom(srv.sock, buf, len, 0, NULL, NULL);
+		ret = rf_ret_ok;
+	} 
+	return ret;
+}
+
+void RF_Delay100us(uint16_t num) {
+	struct timeval tim;
+	tim.tv_sec = 0;
+	tim.tv_usec = num * 100;
+	select(0, NULL, NULL, NULL, &tim);
+}
+
+static void send_data(SRV_T *srv, const uint8_t *id, const uint8_t *buf, int len) {
+	uint8_t ack[1024];
+	rf_dot_transfer(id, buf, len, ack);
+}
+
 int main(int argc, char **argv) {
-	SRV_T srv;
-	uint8_t client_id[] = {0x74, 0x01, 0x02, 0x04};
+	uint8_t wakeup_id[] = {0x56, 0x00, 0x00, 0x00};
+	uint8_t slave_id[]  = {0xA1, 0x01, 0x02, 0x04};
+	uint8_t buf[6400];
 	//pthread_t psend, precv;
 
 	//pthread_create(&psend, NULL, udp_send_demo, NULL);
@@ -182,9 +232,12 @@ int main(int argc, char **argv) {
 		return 1;
 
 	while (1) {
-		send_wakeup_frame(&srv, client_id);
-		sleep(3);
-		printf("send %d, recv %d, miss %0.4f.\n", ns, nr, (ns - nr) / (float)ns);
+		send_wakeup_frame(&srv, wakeup_id);
+		printf("wakeup finished.\n");
+		send_data(&srv, slave_id, buf, sizeof(buf));
+		printf("send finished.\n");
+		sleep(10);
+		//printf("send %d, recv %d, miss %0.4f.\n", ns, nr, (ns - nr) / (float)ns);
 	}
 
 	return 0;
