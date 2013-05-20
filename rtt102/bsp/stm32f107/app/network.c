@@ -11,11 +11,6 @@ struct PKG_DATA_T {
 	rt_uint8_t data_len;
 	rt_uint8_t data[64];
 } data;
-
-struct PKG_ACK_T {
-	rt_uint8_t	ack;
-	rt_uint32_t id;
-} ack;
 #pragma pack()
 
 void udp_transpond_demo(void* parameter)
