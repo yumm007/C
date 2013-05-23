@@ -60,7 +60,7 @@ int main(void) {
 	//my_connect(sd, "127.0.0.1", 22);
 	shutdown(sd, SHUT_RDWR);
 	//my_connect(sd, "127.0.0.1", 22);
-	
+	fill_write_data(&pkt->buf.write);
 	close(sd);
 	return 0;
 }

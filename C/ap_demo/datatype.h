@@ -8,7 +8,7 @@
 typedef struct HS_PKT_T {
 
 	/** 数据包头  */
-	struct HS_PKT_H {
+	struct HS_PKT_HEADER_T {
 		uint16_t version;
 		uint16_t version_s;
 		uint8_t version_str[8];
@@ -19,8 +19,8 @@ typedef struct HS_PKT_T {
 		uint16_t para;
 		uint16_t para_s;
 		
-		uint32_t lenth;
-		uint32_t lenth_s;
+		uint32_t len;
+		uint32_t len_s;
 
 		uint16_t reserved0;
 		uint16_t reserved1;
@@ -29,7 +29,7 @@ typedef struct HS_PKT_T {
 
 	/** 数据包内容  */
 	union {
-		struct HS_PKT_OP_WRITEDATA {
+		struct HS_PKT_OP_WRITEDATA_T {
 			uint8_t ctrl;
 			uint8_t para;
 			uint8_t powermode;
@@ -74,5 +74,8 @@ typedef struct HS_PKT_T {
 } HS_PKT_T;
 
 #pragma pack()
+
+int fill_write_data(struct HS_PKT_OP_WRITEDATA_T *buf);
+int fill_header(struct HS_PKT_HEADER_T *header);
 
 #endif
