@@ -3,11 +3,18 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <errno.h>
 
 #include <arpa/inet.h>
 
-static int my_connect(int sd, const char *addr, int port){
+int socket_open(const char *addr, int port) {
+	int sd;
 	struct sockaddr_in svr;
+
+	if ((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+		perror("socket:");
+		goto _exit;
+	} 
 
 	bzero(&svr, sizeof(svr));
 	svr.sin_family = AF_INET;
@@ -16,23 +23,8 @@ static int my_connect(int sd, const char *addr, int port){
 
 	if (connect(sd, (void *)&svr, sizeof(svr)) == -1) {
 		perror("connect:");
-		return -1;
-	}
-
-	return 0;
-}
-
-
-int socket_open(const char *addr, int port) {
-	int sd;
-
-	if ((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-		perror("socket:");
-		goto _exit;
-	} 
-
-	if (my_connect(sd, addr, port) == -1)
 		goto _close;
+	}
 	
 	return sd;
 
@@ -40,6 +32,28 @@ _close:
 	close(sd);
 _exit:
 	return sd;
+}
+
+int socket_write(int sd, uint8_t *data, int len) {
+	int n, err;
+	struct timeval tim = {3, 0};
+
+	//set send timeout
+	setsockopt(sd, SOL_SOCKET, SO_SNDTIMEO, &tim, sizeof(tim));
+	while (len > 0) {
+		n = send(sd, data, len, 0);
+		err = errno;
+		if (n > 0 && (err == EAGAIN || err == EWOULDBLOCK)) {
+			//timeout
+			data += n;
+			len -= n;
+		} else if (err == EINTR) // intterupt
+			continue;
+		else 
+			break; //other err
+	}
+
+	return n;
 }
 
 #include "datatype.h"
@@ -53,13 +67,10 @@ int main(void) {
 		return -1;
 	
 	read(sd, &pkt->buf.write, 1024);
-
+	socket_write(sd, (uint8_t *)&pkt->buf.write, 10);
 
 	printf("%s\n", (char *)&pkt->buf.write);
 
-	//my_connect(sd, "127.0.0.1", 22);
-	shutdown(sd, SHUT_RDWR);
-	//my_connect(sd, "127.0.0.1", 22);
 	fill_write_data(&pkt->buf.write);
 	close(sd);
 	return 0;

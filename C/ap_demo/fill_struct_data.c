@@ -19,6 +19,8 @@ int fill_write_data(struct HS_PKT_OP_WRITEDATA_T *buf) {
 	data_area = &buf->data[0];
 	sleep_area = (void *)&buf->data[buf->data_esl_num];
 
+	(void) data_area;
+	(void) sleep_area;
 	return ((char *)&(buf->sleep[buf->sleep_esl_num]) - (char *)buf);
 }
 
