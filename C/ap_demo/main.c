@@ -7,6 +7,8 @@
 
 #include <arpa/inet.h>
 
+#include "datatype.h"
+
 int socket_open(const char *addr, int port) {
 	int sd;
 	struct sockaddr_in svr;
@@ -53,10 +55,10 @@ int socket_write(int sd, uint8_t *data, int len) {
 			break; //other err
 	}
 
+	write_dump((void *)data, stderr);
 	return n;
 }
 
-#include "datatype.h"
 
 int main(void) {
 	int sd;

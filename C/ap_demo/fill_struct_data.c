@@ -1,5 +1,6 @@
-#include "datatype.h"
+#include <stdio.h>
 #include <string.h>
+#include "datatype.h"
 
 /** Ìî³äwritedata Êı¾İÄÚÈİ  */
 int fill_write_data(struct HS_PKT_OP_WRITEDATA_T *buf) {

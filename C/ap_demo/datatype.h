@@ -3,6 +3,18 @@
 
 #include <stdint.h>
 
+
+enum {
+	HS_OPCODE_WRITEDATA,
+	HS_OPCODE_KICKOFF,
+	HS_OPCODE_CANCAL,
+	HS_OPCODE_PING,
+	HS_OPCODE_ACK,
+	HS_OPCODE_NACK,
+
+	HS_OPCODE_MAX,
+};
+
 #pragma pack(1)
 /** 网络数据包格式  */
 typedef struct HS_PKT_T {
@@ -77,5 +89,7 @@ typedef struct HS_PKT_T {
 
 int fill_write_data(struct HS_PKT_OP_WRITEDATA_T *buf);
 int fill_header(struct HS_PKT_HEADER_T *header);
+
+void write_dump(const HS_PKT_T *pkg, FILE *fp);
 
 #endif
