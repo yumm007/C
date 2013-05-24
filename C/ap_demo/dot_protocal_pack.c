@@ -90,12 +90,19 @@ struct protocal_t {
 #pragma pack()
 
 int protocal_data(const uint8_t *content, int len, uint8_t *buf) {
+	int old_len = len;
 	struct protocal_t *prt_data = (void *)buf;
-
+	
 	len = rel8_encode(content, len, prt_data->content);
+	if (len < old_len)
+		prt_data->flag = 0x40;	//REL-8压缩格式
+	else {
+		prt_data->flag = 0x00;	//压缩效果不好，不压缩
+		memcpy(ptr_data->content, content, old_len);
+		len = old_len;
+	}
 
 	prt_data->size = len + sizeof(prt_data->size) + sizeof(prt_data->flag);
-	prt_data->flag = 0x40;	//REL-8压缩格式
 	prt_data->crc = cal_crc((void *)&prt_data->size, prt_data->size);
 
 	//fprintf(stderr, "CRC_VAL = 0x%02X, CRC_LEN = %d\n", prt_data->crc, prt_data->size);
