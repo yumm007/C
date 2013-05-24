@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <stdint.h>
 
 #define KEY1 0xff
@@ -98,7 +99,7 @@ int protocal_data(const uint8_t *content, int len, uint8_t *buf) {
 		prt_data->flag = 0x40;	//REL-8压缩格式
 	else {
 		prt_data->flag = 0x00;	//压缩效果不好，不压缩
-		memcpy(ptr_data->content, content, old_len);
+		memcpy(prt_data->content, content, old_len);
 		len = old_len;
 	}
 
