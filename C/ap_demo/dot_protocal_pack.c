@@ -98,5 +98,6 @@ int protocal_data(const uint8_t *content, int len, uint8_t *buf) {
 	prt_data->flag = 0x40;	//REL-8Ñ¹Ëõ¸ñÊ½
 	prt_data->crc = cal_crc((void *)&prt_data->size, prt_data->size);
 
+	//fprintf(stderr, "CRC_VAL = 0x%02X, CRC_LEN = %d\n", prt_data->crc, prt_data->size);
 	return prt_data->size + sizeof(prt_data->crc);
 }
