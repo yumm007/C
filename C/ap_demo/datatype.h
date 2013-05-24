@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-
+/** opcode ±àºÅ */
 enum {
 	HS_OPCODE_WRITEDATA,
 	HS_OPCODE_KICKOFF,
@@ -54,7 +54,7 @@ typedef struct HS_PKT_T {
 			struct data_area_t {
 				uint32_t id;
 				uint32_t len;
-				uint32_t data[0];
+				uint8_t data[0];
 			} data[0];
 			struct sleep_area_t {
 				uint32_t id;
@@ -85,11 +85,25 @@ typedef struct HS_PKT_T {
 
 } HS_PKT_T;
 
+#define PRODUCT_NAME_MAX_LEN	128
+#define PORDUCT_ORIGIN_MAX_LEN	128
+struct dot_info_t {
+   int type;    //¿¿¿¿¿2.0¿2.9¿¿4.3¿
+   uint32_t dot_id;   //¿¿¿ID
+
+   int product_id;   //¿¿ID
+   float price;   //¿¿
+   char name[PRODUCT_NAME_MAX_LEN];  //¿¿¿
+   char origin[PORDUCT_ORIGIN_MAX_LEN];   //¿¿   
+   //¿¿¿¿¿¿
+};
+
 #pragma pack()
 
 int fill_write_data(struct HS_PKT_OP_WRITEDATA_T *buf);
 int fill_header(struct HS_PKT_HEADER_T *header);
 
 void write_dump(const HS_PKT_T *pkg, FILE *fp);
+int lcd_display(const struct dot_info_t *info, uint8_t *out_buf);
 
 #endif

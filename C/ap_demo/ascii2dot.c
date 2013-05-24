@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "datatype.h"
+
 //字节正序，横向取摸
 //0x82[10000010] 对于像素为*_____*_
 
@@ -321,12 +323,13 @@ static void lcd_print(FONT_SIZE_T size, int row, int lines, const uint8_t *str, 
 
 extern int protocal_data(const uint8_t *content, int len, uint8_t *buf);
 
-int lcd_display(int size, uint8_t *buf, int buf_len) {
+int lcd_display(const struct dot_info_t *info, uint8_t *out_buf) {
 	int len, line, row;
 	LCD_T *lcd;
 	uint8_t lcd_buf[1024*1024];
+	char price[64];
 
-	switch (size) {
+	switch (info->type) {
 		case 29:
 			line = 296;
 			row = 128;
@@ -340,12 +343,13 @@ int lcd_display(int size, uint8_t *buf, int buf_len) {
 	if ((lcd = lcd_init(line, row)) == NULL) {
 		return 1;
 	}
-	
-	//lcd_print(FONT_14, 0, 0, (uint8_t *)"abc一二三四@!好的这个是会自动换行的!满屏幕显示看看效果怎么样");
-	lcd_print(FONT_24, 0, 0, (uint8_t *)"奥丽轩马蒙斯法定产区红葡萄酒", lcd);
-	lcd_print(FONT_24, 0, 48, (uint8_t *)"法国 巴黎", lcd);
-	lcd_print(FONT_24, 24 * 8, 60, (uint8_t *)"349.5", lcd);
-	len = lcd_flush(lcd, lcd_buf); //保存至lcd_buf, 并返回长度
 
-	return protocal_data(lcd_buf, len, buf);
+	snprintf(price, sizeof(price), "%0.2f", info->price);
+	
+	lcd_print(FONT_24, 0, 0, (uint8_t *)info->name, lcd);
+	lcd_print(FONT_24, 0, 48, (uint8_t *)info->origin, lcd);
+	lcd_print(FONT_24, 24 * 8, 60, (uint8_t *)price, lcd);
+	len = lcd_flush(lcd, lcd_buf);
+
+	return protocal_data(lcd_buf, len, out_buf);
 }

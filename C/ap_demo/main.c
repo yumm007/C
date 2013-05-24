@@ -61,19 +61,22 @@ int socket_write(int sd, uint8_t *data, int len) {
 
 
 int main(void) {
-	int sd;
-	char bufs[1024];
+	int sd, len;
+	char bufs[1024*10];
 	HS_PKT_T *pkt =(void *)bufs;
 
 	if ((sd = socket_open("127.0.0.1", 21)) == -1)
 		return -1;
 	
-	read(sd, &pkt->buf.write, 1024);
-	socket_write(sd, (uint8_t *)&pkt->buf.write, 10);
+	//read(sd, &pkt->buf.write, 1024);
+	//socket_write(sd, (uint8_t *)&pkt->buf.write, 10);
 
-	printf("%s\n", (char *)&pkt->buf.write);
+	//printf("%s\n", (char *)&pkt->buf.write);
+	len = fill_header(&pkt->header);
+	len += fill_write_data(&pkt->buf.write);
 
-	fill_write_data(&pkt->buf.write);
+	socket_write(sd, (void *)pkt, len);
+
 	close(sd);
 	return 0;
 }
