@@ -86,7 +86,7 @@ typedef struct HS_PKT_T {
 } HS_PKT_T;
 
 #define PRODUCT_NAME_MAX_LEN	128
-#define PORDUCT_ORIGIN_MAX_LEN	128
+#define PORDUCT_ORIGIN_MAX_LEN	24
 struct dot_info_t {
    int type;    //¿¿¿¿¿2.0¿2.9¿¿4.3¿
    uint32_t dot_id;   //¿¿¿ID
@@ -104,6 +104,7 @@ int fill_header(struct HS_PKT_HEADER_T *header);
 int fill_write_data(struct HS_PKT_OP_WRITEDATA_T *buf, int buf_len, const struct dot_info_t * data_ids, int data_n, \
                     const uint32_t *sleep_ids, int sleep_n);
 void write_dump(const HS_PKT_T *pkg, FILE *fp);
+void esl_data_dump(const struct dot_info_t *info, FILE *fp, int len);
 int lcd_display(const struct dot_info_t *info, uint8_t *out_buf, int out_len);
 
 #endif

@@ -15,6 +15,7 @@ static int fill_write_data_data_sleep(const struct dot_info_t * info,\
 		if (d->len == 0)
 			return -1;
 		len -= d->len;
+		esl_data_dump(info, stderr, d->len);
       d = (void *)((char *)d + d->len);
    }
 

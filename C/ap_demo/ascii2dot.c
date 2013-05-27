@@ -350,8 +350,8 @@ int lcd_display(const struct dot_info_t *info, uint8_t *out_buf, int out_len) {
 
 	snprintf(price, sizeof(price), "%0.2f", info->price);
 	
-	lcd_print(FONT_24, 0, 0, (uint8_t *)info->name, lcd);
-	lcd_print(FONT_24, 0, 48, (uint8_t *)info->origin, lcd);
+	lcd_print(FONT_12, 0, 0, (uint8_t *)info->name, lcd);
+	lcd_print(FONT_12, 0, 48, (uint8_t *)info->origin, lcd);
 	lcd_print(FONT_24, 24 * 8, 60, (uint8_t *)price, lcd);
 	len = lcd_flush(lcd, lcd_buf);
 
