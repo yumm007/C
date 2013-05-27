@@ -324,9 +324,9 @@ static void lcd_print(FONT_SIZE_T size, int row, int lines, const uint8_t *str, 
 extern int protocal_data(const uint8_t *content, int content_len, uint8_t *buf, int buf_len);
 
 int lcd_display(const struct dot_info_t *info, uint8_t *out_buf, int out_len) {
-	int len, line, row;
+	int len = 0, line, row;
 	LCD_T *lcd;
-	uint8_t *lcd_buf;
+	uint8_t *lcd_dot;
 	char price[64];
 
 	switch (info->type) {
@@ -340,12 +340,12 @@ int lcd_display(const struct dot_info_t *info, uint8_t *out_buf, int out_len) {
 			break;
 	}
 
-	if ((lcd_buf = malloc((line+7)/8*8 * (row+7)/8*8)) == NULL) {
-		return 0;
+	if ((lcd_dot = malloc((line+7)/8*8 * (row+7)/8*8)) == NULL) {
+		goto _ret;
 	}
 
 	if ((lcd = lcd_init(line, row)) == NULL) {
-		return 0;
+		goto _free_buf;
 	}
 
 	snprintf(price, sizeof(price), "%0.2f", info->price);
@@ -353,11 +353,13 @@ int lcd_display(const struct dot_info_t *info, uint8_t *out_buf, int out_len) {
 	lcd_print(FONT_12, 0, 0, (uint8_t *)info->name, lcd);
 	lcd_print(FONT_12, 0, 48, (uint8_t *)info->origin, lcd);
 	lcd_print(FONT_24, 24 * 8, 60, (uint8_t *)price, lcd);
-	len = lcd_flush(lcd, lcd_buf);
+	len = lcd_flush(lcd, lcd_dot);
 
 	//protocol_data失败时返回0，此返回值也会被上层调用者接收到
-	len = protocal_data(lcd_buf, len, out_buf, out_len);
+	len = protocal_data(lcd_dot, len, out_buf, out_len);
 
-	free(lcd_buf);
+_free_buf:
+	free(lcd_dot);
+_ret:
 	return len;
 }

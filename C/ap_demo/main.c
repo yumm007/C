@@ -143,6 +143,9 @@ int main(void) {
 			ret = -1;
 			break;
 		}
+
+		free(data_ids);
+		free(sleep_ids);
 	}
 
 	close(sd);
