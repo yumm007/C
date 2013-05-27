@@ -60,23 +60,33 @@ int socket_write(int sd, uint8_t *data, int len) {
 }
 
 
+static const struct dot_info_t data_ids[] = { 
+   {20, 0x56780001, 11111111, 7.9, "烟台苹果", "山东"},
+   {20, 0x56780001, 11111111, 7.9, "烟台苹果", "山东"},
+   {29, 0x56780002, 11111112, 3.2, "进口香蕉", "越南"},
+};
+
+static const uint32_t sleep_ids[] = {0x56780003, 0x56780004};
+
 int main(void) {
-	int sd, len;
+	int ret = 0, sd, len, data_n, sleep_n, n;
 	char bufs[1024*10];
 	HS_PKT_T *pkt =(void *)bufs;
 
 	if ((sd = socket_open("127.0.0.1", 21)) == -1)
 		return -1;
 	
-	//read(sd, &pkt->buf.write, 1024);
-	//socket_write(sd, (uint8_t *)&pkt->buf.write, 10);
-
-	//printf("%s\n", (char *)&pkt->buf.write);
 	len = fill_header(&pkt->header);
-	len += fill_write_data(&pkt->buf.write);
-
-	socket_write(sd, (void *)pkt, len);
+	data_n = sizeof(data_ids) / sizeof(data_ids[0]);
+	sleep_n = sizeof(sleep_ids) / sizeof(sleep_ids[0]);
+	n = fill_write_data(&pkt->buf.write, sizeof(bufs) - len, data_ids, data_n, sleep_ids, sleep_n);
+	if (n != 0)
+		socket_write(sd, (void *)pkt, len);
+	else {
+		fprintf(stderr, "fill_write_data() failed.\n");
+		ret = -1;
+	}
 
 	close(sd);
-	return 0;
+	return ret;
 }

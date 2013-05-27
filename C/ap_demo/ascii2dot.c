@@ -321,12 +321,12 @@ static void lcd_print(FONT_SIZE_T size, int row, int lines, const uint8_t *str, 
 	}
 }
 
-extern int protocal_data(const uint8_t *content, int len, uint8_t *buf);
+extern int protocal_data(const uint8_t *content, int content_len, uint8_t *buf, int buf_len);
 
-int lcd_display(const struct dot_info_t *info, uint8_t *out_buf) {
+int lcd_display(const struct dot_info_t *info, uint8_t *out_buf, int out_len) {
 	int len, line, row;
 	LCD_T *lcd;
-	uint8_t lcd_buf[1024*1024];
+	uint8_t *lcd_buf;
 	char price[64];
 
 	switch (info->type) {
@@ -340,8 +340,12 @@ int lcd_display(const struct dot_info_t *info, uint8_t *out_buf) {
 			break;
 	}
 
+	if ((lcd_buf = malloc((line+7)/8*8 * (row+7)/8*8)) == NULL) {
+		return 0;
+	}
+
 	if ((lcd = lcd_init(line, row)) == NULL) {
-		return 1;
+		return 0;
 	}
 
 	snprintf(price, sizeof(price), "%0.2f", info->price);
@@ -351,5 +355,9 @@ int lcd_display(const struct dot_info_t *info, uint8_t *out_buf) {
 	lcd_print(FONT_24, 24 * 8, 60, (uint8_t *)price, lcd);
 	len = lcd_flush(lcd, lcd_buf);
 
-	return protocal_data(lcd_buf, len, out_buf);
+	//protocol_data失败时返回0，此返回值也会被上层调用者接收到
+	len = protocal_data(lcd_buf, len, out_buf, out_len);
+
+	free(lcd_buf);
+	return len;
 }

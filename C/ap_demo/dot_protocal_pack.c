@@ -1,11 +1,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+#include <stddef.h>
 
 #define KEY1 0xff
 #define KEY2 0x00
-
-#define MAX_CONTENT_LEN	1024*1024	//1M
 
 //输出若干个0x00或者0xff
 //采用宏的方式替代函数，因为要同时修改好几个值
@@ -21,7 +20,7 @@
 						}\
 					} while(0);
 
-static int rel8_encode(const unsigned char *in, int insize, unsigned char *out) {
+static int rel8_encode(const unsigned char *in, int insize, unsigned char *out, int out_size) {
 	//连续找到find_c个0x00或者0xff, 只使用1个字节，即最大能表示找到256个相同的字符
 	unsigned char find_c = 0;
 	int find_key1 = 0, find_key2 = 0; //找到0x00或者找到0xff标志
@@ -29,7 +28,7 @@ static int rel8_encode(const unsigned char *in, int insize, unsigned char *out) 
 
 	while (insize--) {
 		//防止溢出
-		if (n == MAX_CONTENT_LEN)
+		if (n >= out_size)
 			return 0;
 
 		switch (*in) {
@@ -86,21 +85,26 @@ struct protocal_t {
 	uint16_t crc;
 	uint32_t size;
 	uint8_t	flag;
-	uint8_t	content[MAX_CONTENT_LEN];
+	uint8_t	content[0];
 };
 #pragma pack()
 
-int protocal_data(const uint8_t *content, int len, uint8_t *buf) {
-	int old_len = len;
+int protocal_data(const uint8_t *content, int content_len, uint8_t *buf, int buf_len) {
+	int len, n;
 	struct protocal_t *prt_data = (void *)buf;
 	
-	len = rel8_encode(content, len, prt_data->content);
-	if (len < old_len)
+	n = buf_len - offsetof(struct protocal_t, content);
+	if (n <= 0)
+		return 0;
+	len = rel8_encode(content, content_len, prt_data->content, n);
+	if (len == 0)
+		return 0;
+	else if (len < content_len)
 		prt_data->flag = 0x40;	//REL-8压缩格式
 	else {
 		prt_data->flag = 0x00;	//压缩效果不好，不压缩
-		memcpy(prt_data->content, content, old_len);
-		len = old_len;
+		memcpy(prt_data->content, content, content_len);
+		len = content_len;
 	}
 
 	prt_data->size = len + sizeof(prt_data->size) + sizeof(prt_data->flag);
