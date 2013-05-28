@@ -11,7 +11,7 @@
 #include "datatype.h"
 
 int socket_open(const char *addr, int port) {
-	int sd;
+	int sd = -1;
 	struct sockaddr_in svr;
 
 	if ((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
@@ -33,6 +33,7 @@ int socket_open(const char *addr, int port) {
 
 _close:
 	close(sd);
+	sd = -1;
 _exit:
 	return sd;
 }
@@ -56,7 +57,7 @@ int socket_write(int sd, uint8_t *data, int len) {
 			break; //other err
 	}
 
-	write_dump((void *)data, stderr);
+	//write_dump((void *)data, stderr);
 	return n;
 }
 
@@ -86,17 +87,18 @@ static int make_rand_dot_info(struct dot_info_t **data_ids, uint32_t **sleep_ids
 	if (seed == 0) {
 		srand((int) getpid());
 		seed = 1;
+		if ((*data_ids = malloc(sizeof(struct dot_info_t) * 25)) == NULL \
+			|| (*sleep_ids = malloc(sizeof(uint32_t) * 25)) == NULL) 
+		{
+			fprintf(stderr, "err free %p\n", *data_ids);
+			fprintf(stderr, "err free %p\n", *sleep_ids);
+			free(*data_ids);
+			free(*sleep_ids);
+			return -1;
+		}
 	}
 	
 	n = rand() % 20 + 1;
-
-	if ((*data_ids = malloc(sizeof(struct dot_info_t) * n)) == NULL \
-		|| (*sleep_ids = malloc(sizeof(uint32_t) * n)) == NULL) 
-	{
-		free(*data_ids);
-		free(*sleep_ids);
-		return -1;
-	}
 
 	for (i = 0; i < n; i++) {
 		(*data_ids)[i].type = i % 2 == 0 ? 20 : 29;
@@ -119,13 +121,13 @@ int main(void) {
 	struct dot_info_t *data_ids = NULL;
 	uint32_t *sleep_ids = NULL;
 
-	if ((sd = socket_open("127.0.0.1", 21)) == -1)
+	if ((sd = socket_open("127.0.0.1", 10001)) == -1)
 		return -1;
 	
 	while (1) {
 		len = fill_header(&pkt->header);
 		n = make_rand_dot_info(&data_ids, &sleep_ids);
-		if (n == 0) {
+		if (n <= 0) {
 			ret = -1;
 			break;
 		}
@@ -133,8 +135,9 @@ int main(void) {
 		data_n = n;
 		sleep_n = n;
 		n = fill_write_data(&pkt->buf.write, sizeof(bufs) - len, data_ids, data_n, sleep_ids, sleep_n);
-		if (n != 0) {
-			//socket_write(sd, (void *)pkt, len);
+		if (n > 0) {
+			socket_write(sd, (void *)pkt, len + n);
+			fprintf(stderr, "send %d + %d \n", len, n);
 			pkt->header.len = n;
 			pkt->header.len_s = ~n;
 			//write_dump((void *)pkt, stderr);
@@ -144,8 +147,10 @@ int main(void) {
 			break;
 		}
 
-		free(data_ids);
-		free(sleep_ids);
+		//fprintf(stderr, "free %p\n", data_ids);
+		//fprintf(stderr, "free %p\n", sleep_ids);
+		//free(data_ids);
+		//free(sleep_ids);
 	}
 
 	close(sd);
