@@ -33,12 +33,12 @@ static int reg_sig(void) {
 	return 0;
 }
 
+enum {HTP_OPEN, HTP_RECV, HTP_SEND, HTP_CLOSE};
 
 int main(void) {
 	htp_header_t h;
-	char buf[1024];
+	int status = HTP_OPEN;
 	int n = 0;
-	int err_flag = 1;
 	struct itimerval tim = {
 		.it_interval = {0, 20},
 		.it_value = {0, 20},
@@ -53,29 +53,44 @@ int main(void) {
 	setitimer(ITIMER_REAL, &tim, NULL);
 
 	while (1) {
-		if (err_flag == 1 && htp_open(&s) != 0) {
-			fprintf(stderr, "htp_open error.\n");
-			return -1;
-		}
-		//n = read_socket(s.socket, buf, sizeof(buf), 1000*2);
-		if (htp_recv(&s, &h) != true) {
-			printf("htp_recv failed %d\n", n);
-			err_flag = 1;
-			htp_close(&s);
-		} else {
-			printf("htp_recv ok %d\n", n);
-			err_flag = 0;
+		switch (status) {
+		case HTP_OPEN:
+			if (htp_open(&s) != 0) {
+				fprintf(stderr, "htp_open error.\n");
+				status = HTP_OPEN;
+			} else {
+				status = HTP_RECV;
+				sleep(1);
+			}
+			break;
+		case HTP_RECV:
+			if (htp_recv(&s, &h) != true) {
+				printf("htp_recv failed %d\n", n);
+				status = HTP_CLOSE;
+			} else {
+				status = HTP_SEND;
+				printf("htp_recv ok %d\n", n);
+			}
+			break;
+		case HTP_SEND:
 			if (htp_send(&s, &h) != true) {
 				printf("htp_send failed %d\n", n);
-				err_flag = 1;
-				htp_close(&s);
+				status = HTP_CLOSE;
 			} else {
-				printf("htp_send ok %d\n", n);
+				printf("htp_send %d bytes\n", s.len);
+				status = HTP_RECV;
 			}
+			n++;
 			free(s.buf);
+			break;
+		case HTP_CLOSE:
+			htp_close(&s);
+			status = HTP_OPEN;
+			break;
+		default:
+			break;
 		}
-
-		n++;
 	}
+
 	return 0;
 }
