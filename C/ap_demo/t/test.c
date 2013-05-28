@@ -35,9 +35,9 @@ static int reg_sig(void) {
 
 
 int main(void) {
-	//htp_header_t h;
+	htp_header_t h;
 	char buf[1024];
-	int n;
+	int n = 0;
 	int err_flag = 1;
 	struct itimerval tim = {
 		.it_interval = {0, 20},
@@ -50,7 +50,6 @@ int main(void) {
 	};
 	
 	reg_sig();
-	//alarm(1);
 	setitimer(ITIMER_REAL, &tim, NULL);
 
 	while (1) {
@@ -58,15 +57,25 @@ int main(void) {
 			fprintf(stderr, "htp_open error.\n");
 			return -1;
 		}
-		n = read_socket(s.socket, buf, sizeof(buf), 1000*2);
-		if (n != sizeof(buf)) {
-			fprintf(stderr, "read 1000*20, ret = %d\n", n);
+		//n = read_socket(s.socket, buf, sizeof(buf), 1000*2);
+		if (htp_recv(&s, &h) != true) {
+			printf("htp_recv failed %d\n", n);
 			err_flag = 1;
 			htp_close(&s);
 		} else {
-			printf("read_socket return %d\n", n);
+			printf("htp_recv ok %d\n", n);
 			err_flag = 0;
+			if (htp_send(&s, &h) != true) {
+				printf("htp_send failed %d\n", n);
+				err_flag = 1;
+				htp_close(&s);
+			} else {
+				printf("htp_send ok %d\n", n);
+			}
+			free(s.buf);
 		}
+
+		n++;
 	}
 	return 0;
 }

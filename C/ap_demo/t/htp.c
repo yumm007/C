@@ -17,6 +17,7 @@ INT32 htp_open(htp_socket_t *htp_socket) {
 	SOCKET sd;
 	struct sockaddr_in svr;
 	int ret;
+	int i;
 
 	if ((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
 		ret = errno;
@@ -28,10 +29,13 @@ INT32 htp_open(htp_socket_t *htp_socket) {
 	svr.sin_addr.s_addr = inet_addr(htp_socket->ip_addr);
 	svr.sin_port = htons(htp_socket->port);
 
-	while (connect(sd, (void *)&svr, sizeof(svr)) == -1) {
-		ret = errno;
-		if (ret != EINTR)
-			goto _close;
+	for (i = 0; i < 100; i++) {
+		if (connect(sd, (void *)&svr, sizeof(svr)) == -1) {
+			ret = errno;
+			if (ret != EINTR)
+				goto _close;
+		} else
+			break;	//connect ok
 	}
 
 	htp_socket->socket = sd;
@@ -56,7 +60,7 @@ static int safe_read(SOCKET sd, void *buf, int len) {
 		if (n == -1){
 			err = errno;
 			if (err == EINTR) {//被中断
-				fprintf(stderr, "recv recv sig.\n");
+				//fprintf(stderr, "recv recv sig.\n");
 				continue;
 			} else if (err == ECONNREFUSED) //连接断开
 				return 0;
@@ -195,21 +199,22 @@ bool htp_recv(htp_socket_t *htp_socket, htp_header_t *htp_header) {
 
 	//协议头不对
 	if (htp_header_check(h) != 0) {
-		goto _clean_sock_buf;
+		//goto _clean_sock_buf;
 	}
 
-	switch (h->opcode) {
-		case HTP_OPCODE_WRITEDATA:
+	//switch (h->opcode) {
+	//	case HTP_OPCODE_WRITEDATA:
 			data_buf = malloc(h->len);
 			if (data_buf == NULL)
 				goto _clean_sock_buf;
 			s->buf = data_buf;
-			s->len = h->len;
+			s->len = h->len % 1024;
 			//接收数据区域
 			//BUGS: s->len为UINT32, 而参赛要求是INT32
-			if (read_socket(s->socket, s->buf, s->len, 100) != s->len) {
+			if (read_socket(s->socket, s->buf, s->len, 2000) != s->len) {
 				goto _clean_data_buf;
 			}
+	#if 0
 			break;
 		case HTP_OPCODE_KICKOFF:
 		case HTP_OPCODE_CANCAL:
@@ -222,6 +227,7 @@ bool htp_recv(htp_socket_t *htp_socket, htp_header_t *htp_header) {
 			goto _clean_sock_buf;
 			break;
 	}
+	#endif
 
 	return true;
 
