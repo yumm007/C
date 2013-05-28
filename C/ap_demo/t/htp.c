@@ -28,9 +28,10 @@ INT32 htp_open(htp_socket_t *htp_socket) {
 	svr.sin_addr.s_addr = inet_addr(htp_socket->ip_addr);
 	svr.sin_port = htons(htp_socket->port);
 
-	if (connect(sd, (void *)&svr, sizeof(svr)) == -1) {
+	while (connect(sd, (void *)&svr, sizeof(svr)) == -1) {
 		ret = errno;
-		goto _close;
+		if (ret != EINTR)
+			goto _close;
 	}
 
 	htp_socket->socket = sd;
@@ -48,7 +49,7 @@ static int safe_read(SOCKET sd, void *buf, int len) {
 	int n, i, err;
 
 	for (i = 0; i < 3; i++) {
-		n = recv(sd, buf, len, 0);
+		n = recvfrom(sd, buf, len, 0, NULL, NULL);
 		if (n >= 0)
 			return n;
 		//read失败
@@ -97,7 +98,6 @@ INT32 read_socket(SOCKET socket, void* dst, INT32 len, UINT32 timeout) {
 				return n;
 			//继续收
 		} else if (ret == -1 && errno == EINTR) { //select interrupt
-			fprintf(stderr, "select recv sig.\n");
 			continue;
 		} else if (ret == 0 && n > 0) {	//时间耗尽且收到过数据
 			return n;

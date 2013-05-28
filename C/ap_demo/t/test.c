@@ -5,7 +5,7 @@
 #include <unistd.h>
 
 static void sig_alarm(int signo) {
-	alarm(1);
+	//alarm(1);
 }
 
 static int reg_sig(void) {
@@ -39,6 +39,10 @@ int main(void) {
 	char buf[1024];
 	int n;
 	int err_flag = 1;
+	struct itimerval tim = {
+		.it_interval = {0, 20},
+		.it_value = {0, 20},
+	};
 
 	htp_socket_t s = {
 		.ip_addr = "127.0.0.1",
@@ -46,7 +50,8 @@ int main(void) {
 	};
 	
 	reg_sig();
-	alarm(1);
+	//alarm(1);
+	setitimer(ITIMER_REAL, &tim, NULL);
 
 	while (1) {
 		if (err_flag == 1 && htp_open(&s) != 0) {
