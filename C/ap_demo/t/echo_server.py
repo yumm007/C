@@ -1,6 +1,7 @@
 import socket
 import time
 import threading
+import struct
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1) 
@@ -13,7 +14,7 @@ def do_recver(conn):
 	while True:
 		try:
 			data = conn.recv(1024)
-			print('recved bytes ', len(data), ':', data)
+			print('recved bytes ', len(data), ':')
 		except:
 			break
 
@@ -26,7 +27,8 @@ while True:
 	t.start()
 	while True:
 		try:
-			data = 'abcdefg'
+			#data = struct.pack("HH10sHHHHIIHH", 16, 16, 'aa', 16, 16, 16, 16, 16, 16, 16, 16)
+			data = "abcdefg1234567"
 			conn.send(data)
 			time.sleep(0.01);
 		except:

@@ -77,7 +77,7 @@ int main(void) {
 				printf("htp_send failed %d\n", n);
 				status = HTP_CLOSE;
 			} else {
-				printf("htp_send %d bytes\n", s.len);
+				printf("htp_send %u bytes\n", (int)sizeof(h) + s.len);
 				status = HTP_RECV;
 			}
 			n++;
