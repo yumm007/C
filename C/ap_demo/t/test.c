@@ -36,8 +36,9 @@ static int reg_sig(void) {
 
 int main(void) {
 	//htp_header_t h;
-	char buf[1024*10];
+	char buf[1024];
 	int n;
+	int err_flag = 1;
 
 	htp_socket_t s = {
 		.ip_addr = "127.0.0.1",
@@ -47,15 +48,20 @@ int main(void) {
 	reg_sig();
 	alarm(1);
 
-	if (htp_open(&s) != 0) {
-		fprintf(stderr, "htp_open error.\n");
-		return -1;
-	}
 	while (1) {
-		n = read_socket(s.socket, buf, sizeof(buf), 1000*20);
-		printf("read_socket return %d: %s\n", n, buf);
+		if (err_flag == 1 && htp_open(&s) != 0) {
+			fprintf(stderr, "htp_open error.\n");
+			return -1;
+		}
+		n = read_socket(s.socket, buf, sizeof(buf), 1000*2);
+		if (n != sizeof(buf)) {
+			fprintf(stderr, "read 1000*20, ret = %d\n", n);
+			err_flag = 1;
+			htp_close(&s);
+		} else {
+			printf("read_socket return %d\n", n);
+			err_flag = 0;
+		}
 	}
-	htp_close(&s);
-
 	return 0;
 }

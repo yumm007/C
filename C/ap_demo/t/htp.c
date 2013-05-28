@@ -49,7 +49,7 @@ static int safe_read(SOCKET sd, void *buf, int len) {
 
 	for (i = 0; i < 3; i++) {
 		n = recv(sd, buf, len, 0);
-		if (n > 0)
+		if (n >= 0)
 			return n;
 		//read ß∞‹
 		if (n == -1){
