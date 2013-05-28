@@ -232,6 +232,9 @@ bool htp_recv(htp_socket_t *htp_socket, htp_header_t *htp_header) {
 	return true;
 
 _clean_data_buf:
+	//读完剩余的错误数据
+	while (read_socket(s->socket, s->buf, s->len, 1) > 0)
+		;
 	free(data_buf);
 
 _clean_sock_buf:
