@@ -23,17 +23,4 @@ typedef uint32_t UINT32;
 
 typedef int SOCKET;
 
-enum {
-   HTP_OPCODE_WRITEDATA,
-   HTP_OPCODE_KICKOFF,
-   HTP_OPCODE_CANCAL,
-   HTP_OPCODE_PING,
-   HTP_OPCODE_ACK,
-   HTP_OPCODE_NAK,
-
-   HTP_OPCODE_MAX,
-};
-
-
-
 #endif
