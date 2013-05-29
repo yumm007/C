@@ -5,7 +5,7 @@ import struct
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1) 
-server_addr = ('127.0.0.1', 10001)
+server_addr = ('192.168.1.200', 10001)
 sock.bind(server_addr)
 n = 0
 
