@@ -1,12 +1,12 @@
 // htp.cpp: 主项目文件。
 
-#include "stdafx.h"
+//#include "stdafx.h"
 
 //for windows header
-#include "windows_header.h"
+//#include "windows_header.h"
 
 //for linux header
-//#include "linux_header.h"
+#include "linux_header.h"
 
 #include "htp.h"
 
@@ -27,7 +27,7 @@ INT32 htp_open(htp_socket_t *htp_socket) {
 	svr.sin_port = htons(htp_socket->port);
 
 	for (i = 0; i < 100; i++) {
-		if (connect(sd, (const sockaddr  *)&svr, sizeof(svr)) == -1) {
+		if (connect(sd, (void *)&svr, sizeof(svr)) == -1) {
 			ret = errno;
 			if (ret != EINTR)
 				goto _close;
@@ -42,7 +42,7 @@ INT32 htp_open(htp_socket_t *htp_socket) {
 	return 0;
 
 _close:
-	closesocket(sd);
+	close(sd);
 _ret:
 	return ret;
 }
@@ -59,7 +59,7 @@ static int safe_read(SOCKET sd, void *buf, int len) {
 			err = errno;
 			if (err == EINTR) {//被中断
 				continue;
-			} else if (err == WSAESHUTDOWN ) //连接断开
+			} else if (err == ECONNREFUSED ) //连接断开
 				return 0;
 		} else
 			return -1;	//recv失败, errno返回其他错误
@@ -73,19 +73,19 @@ INT32 read_socket(SOCKET socket, void* dst, INT32 len, UINT32 timeout) {
 	fd_set rfds;
 	int n = 0, n1, ret;
 
-	double start_tim;
-	long els_tim; 
+	//double start_tim;
+	//long els_tim; 
 
 	for (;;) {
 		FD_ZERO(&rfds);
 		FD_SET(socket, &rfds);
 
-		start_tim = GetTickCount();
+		//start_tim = GetTickCount();
 		ret = select(socket+1, &rfds, NULL, NULL, &tim);
 
 		//减去消逝的时间
-		els_tim = (long)(GetTickCount() - start_tim);
-		tim.tv_usec -= els_tim;
+		//els_tim = (long)(GetTickCount() - start_tim);
+		//tim.tv_usec -= els_tim;
 
 		if (ret > 0) {	// read ready
 			n1 = safe_read(socket, (char *)dst + n, len - n);
@@ -210,7 +210,7 @@ _clean_sock_buf:
 
 
 bool htp_close(htp_socket_t *htp_socket) {
-	return closesocket(htp_socket->socket) == 0 ? true : false;
+	return close(htp_socket->socket) == 0 ? true : false;
 }
 
 bool htp_ass_header(htp_header_t *htp_header, UINT16 opcode, UINT16 para , UINT32 len ) {
@@ -219,7 +219,7 @@ bool htp_ass_header(htp_header_t *htp_header, UINT16 opcode, UINT16 para , UINT3
 
    h->version = HTP_VERSION;
    h->version_s = ~h->version;
-   strcpy_s((char *)h->vsrt, sizeof(h->vsrt), HTP_VERSION_S);
+   strncpy((char *)h->vsrt, HTP_VERSION_S, sizeof(h->vsrt));
    
    h->opcode = opcode;
    h->opcode_s = ~h->opcode;
@@ -230,7 +230,7 @@ bool htp_ass_header(htp_header_t *htp_header, UINT16 opcode, UINT16 para , UINT3
    h->len = len;
    h->len_s = ~h->para_s;
 
-   return TRUE;
+   return true;
 }
 
 

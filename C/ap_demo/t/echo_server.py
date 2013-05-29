@@ -2,6 +2,7 @@ import socket
 import time
 import threading
 import struct
+import random
 
 
 def R16(n):
@@ -11,8 +12,10 @@ def R32(n):
 	return (~n) & 0xFFFFFFFF
 
 def do_writedata():
-	return struct.pack("HH8sHHHHIIHH570s", 16, R16(16), 
-							'16', 2, R16(2), 1, R16(1), 570, R32(570), 0x55, 0x55, 'abcd')
+	n = int(random.random() * 1000)
+	f = "HH8sHHHHIIHH" + str(n) + "s"
+	return struct.pack(f, 16, R16(16), 
+							'16', 2, R16(2), 1, R16(1), n, R32(n), 0x55, 0x55, 'abcd')
 
 def do_writecmd(cmd, argv):
 	return struct.pack("HH8sHHHHIIHH", 16, R16(16), 
@@ -43,7 +46,8 @@ while True:
 	t.start()
 	while True:
 		try:
-
+			if n == 200:
+				conn.close()
 			if flag == True:
 				data = do_writedata()
 			else:

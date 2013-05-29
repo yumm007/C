@@ -1,6 +1,6 @@
-#include "stdafx.h"
+//#include "stdafx.h"
 
-#include "windows_header.h"
+#include "linux_header.h"
 #include "htp.h"
 #include <signal.h>
 
@@ -10,7 +10,7 @@ static void sig_alarm(int signo) {
 }
 
 
-#if 0 //不支持windows
+#if 1 //不支持windows
 static int reg_sig(void) {
 	struct sigaction old_act;
 	sigset_t old_mask, blc_alr_mask;
@@ -46,11 +46,11 @@ int htp_test(void) {
 
 	htp_socket_t s;
 
-	strcpy_s(s.ip_addr,sizeof(s.ip_addr) ,"192.168.1.118");
+	strncpy(s.ip_addr, "192.168.1.118", sizeof(s.ip_addr));
 	s.port = 10001;
 	
 
-#if 0 //不支持windows
+#if 1 //不支持windows
 	struct itimerval tim = {
 		.it_interval = {0, 20},
 		.it_value = {0, 20},
@@ -103,16 +103,10 @@ int htp_test(void) {
 	return 0;
 }
 
-using namespace System;
 
-int main(array<System::String ^> ^args)
+int main(void)
 {
-	WSADATA wsd;
-	WSAStartup(MAKEWORD(2,2), &wsd);
-    Console::WriteLine(L"Hello World");
-
 	htp_test();
 
-	WSACleanup();
     return 0;
 }

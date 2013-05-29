@@ -158,7 +158,7 @@ bool htp_close(htp_socket_t *htp_socket);
  * 返回：TRUE  --> 关闭成功
  *		 FALSE --> 关闭失败
  */
-bool htp_ass_header(htp_header_t *htp_header, UINT16 opcode, UINT16 para = 0, UINT32 len = 0);
+bool htp_ass_header(htp_header_t *htp_header, UINT16 opcode, UINT16 para, UINT32 len);
 
 
 #endif
