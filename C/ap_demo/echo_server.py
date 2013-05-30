@@ -24,32 +24,35 @@ def do_writecmd(cmd, argv):
 
 def do_recver(conn):
 	print("thread running")
+	tf = "tempfile"
 	while True:
 		try:
-			f = open("tempfile", 'wb');
+			f = open(tf, 'wb');
 			header = conn.recv(32)
 			f.write(header)
-			lenth = do_check_data(header)
+			lenth = do_check_header(header)
 			while lenth > 0:
 				body = conn.recv(lenth)
 				lenth -= len(body)
 				f.write(body)
 			f.close()
-			f = open("tempfile", 'rb');
+			f = open(tf, 'rb');
 			body = f.read()
-			print('recved bytes ',lenth, ':', len(body))
+			print('recved bytes ', len(body))
 			f.close()
-			os.remove("tempfile")
+			os.remove(tf)
 		except:
-			os.remove("tempfile")
+			os.remove(tf)
 			break
 
-def do_check_data(data):
+def do_check_header(data):
 	v, v_s, v_str, op, op_s, para, para_s, lenth, lenth_s, rev1, rev2 = \
 		struct.unpack("HH8sHHHHIIHH", data)
-	print(v, v_s, v_str, op, op_s, para, para_s, lenth, lenth_s, rev1, rev2)
-	return lenth
-
+	#print(v, v_s, v_str, op, op_s, para, para_s, lenth, lenth_s, rev1, rev2)
+	if R16(v) != v_s or R16(op) != op_s or R16(para) != para_s:
+		return 0
+	else: 
+		return lenth
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1) 

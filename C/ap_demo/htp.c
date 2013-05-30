@@ -228,7 +228,7 @@ bool htp_ass_header(htp_header_t *htp_header, UINT16 opcode, UINT16 para , UINT3
    h->para_s = ~h->para;
 
    h->len = len;
-   h->len_s = ~h->para_s;
+   h->len_s = ~h->len;
 
    return true;
 }
