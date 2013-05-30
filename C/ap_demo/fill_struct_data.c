@@ -49,20 +49,3 @@ int fill_write_data(struct HS_PKT_OP_WRITEDATA_T *w, int buf_len, const struct d
 	return ((char *)&(w->sleep[w->sleep_esl_num]) - (char *)w + n);
 }
 
-int fill_header(struct HS_PKT_HEADER_T *h) {
-
-	h->version = 0x3;
-	h->version_s = ~h->version;
-	strncpy((char *)h->version_str, "AP_V3", sizeof(h->version_str));
-	
-	h->opcode = HS_OPCODE_WRITEDATA;
-	h->opcode_s = ~h->opcode;
-
-	h->para = 0x3;
-	h->para_s = ~h->para;
-
-	h->len = 100;
-	h->len_s = ~h->para_s;
-
-	return sizeof(*h);
-}

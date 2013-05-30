@@ -5,6 +5,7 @@
 
 /** opcode ±àºÅ */
 enum {
+	HS_OPCODE_MIN,
 	HS_OPCODE_WRITEDATA,
 	HS_OPCODE_KICKOFF,
 	HS_OPCODE_CANCAL,
@@ -14,6 +15,27 @@ enum {
 
 	HS_OPCODE_MAX,
 };
+
+#define CTRL_NORMAL_UPDATA		0x01
+#define CTRL_NORMAL_NETLINK		0x02
+#define CTRL_NORMAL_QUERY		0x03
+
+//2.0´çµãÕó¼ÛÇ©µÄ¸÷ÖÖÊý¾Ý
+#define CTRL_DOT20_UPDATA		0x04
+#define CTRL_DOT20_NETLINK		0x05
+#define CTRL_DOT20_QUERY		0x06
+
+#define CTRL_DOT24_UPDATA		0x07
+#define CTRL_DOT24_NETLINK		0x08
+#define CTRL_DOT24_QUERY		0x09
+
+#define CTRL_DOT29_UPDATA		0x0A
+#define CTRL_DOT29_NETLINK		0x0B
+#define CTRL_DOT29_QUERY		0x0C
+
+#define CTRL_DOT43_UPDATA		0x0D
+#define CTRL_DOT43_NETLINK		0x0E
+#define CTRL_DOT43_QUERY		0x0F
 
 #pragma pack(1)
 /** ÍøÂçÊý¾Ý°ü¸ñÊ½  */
@@ -88,12 +110,12 @@ typedef struct HS_PKT_T {
 #define PRODUCT_NAME_MAX_LEN	128
 #define PORDUCT_ORIGIN_MAX_LEN	24
 struct dot_info_t {
-   int type;    //¿¿¿¿¿2.0¿2.9¿¿4.3¿
+   int type;    //¿¿¿¿?2.0?2.9¿¿4.3?
    uint32_t dot_id;   //¿¿¿ID
 
    int product_id;   //¿¿ID
    float price;   //¿¿
-   char name[PRODUCT_NAME_MAX_LEN];  //¿¿¿
+   char name[PRODUCT_NAME_MAX_LEN];  //¿¿?
    char origin[PORDUCT_ORIGIN_MAX_LEN];   //¿¿   
    //¿¿¿¿¿¿
 };

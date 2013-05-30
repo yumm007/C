@@ -3,13 +3,15 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
 #include <errno.h>
 #include <stdlib.h>
 
-#include <arpa/inet.h>
-
+#include "linux_header.h"
+#include "htp.h"
 #include "datatype.h"
 
+#if 0
 int socket_open(const char *addr, int port) {
 	int sd = -1;
 	struct sockaddr_in svr;
@@ -60,12 +62,13 @@ int socket_write(int sd, uint8_t *data, int len) {
 	//write_dump((void *)data, stderr);
 	return n;
 }
+#endif
 
 #if 0
 static const struct dot_info_t data_ids[] = { 
-   {20, 0x56780001, 11111111, 7.9, "鐑熷彴鑻规灉", "灞变笢"},
-   {20, 0x56780001, 11111111, 7.9, "鐑熷彴鑻规灉", "灞变笢"},
-   {29, 0x56780002, 11111112, 3.2, "杩涘彛棣欒晧", "瓒婂崡"},
+   {20, 0x56780001, 11111111, 7.9, "烟台苹果", "山东"},
+   {20, 0x56780001, 11111111, 7.9, "烟台苹果", "山东"},
+   {29, 0x56780002, 11111112, 3.2, "进口香蕉", "越南"},
 };
 
 static const uint32_t sleep_ids[] = {0x56780003, 0x56780004};
@@ -114,45 +117,60 @@ static int make_rand_dot_info(struct dot_info_t **data_ids, uint32_t **sleep_ids
 }
 
 int main(void) {
-	int ret = 0, sd, len, data_n, sleep_n, n;
+	int ret = 0, data_n, sleep_n, n;
 	char bufs[1024*1024];
 	HS_PKT_T *pkt =(void *)bufs;
 
 	struct dot_info_t *data_ids = NULL;
 	uint32_t *sleep_ids = NULL;
 
-	if ((sd = socket_open("127.0.0.1", 10001)) == -1)
+	htp_socket_t s = {
+		.ip_addr = "127.0.0.1",
+		.port = 10001
+	};
+
+	htp_header_t *h = (void *)bufs;
+
+	if (htp_open(&s) != 0) {
+		fprintf(stderr, "htp_open failed.\n");
 		return -1;
+	}
 	
 	while (1) {
-		len = fill_header(&pkt->header);
+		//生成随机的测试数据
 		n = make_rand_dot_info(&data_ids, &sleep_ids);
 		if (n <= 0) {
 			ret = -1;
 			break;
 		}
-
 		data_n = n;
 		sleep_n = n;
-		n = fill_write_data(&pkt->buf.write, sizeof(bufs) - len, data_ids, data_n, sleep_ids, sleep_n);
-		if (n > 0) {
-			socket_write(sd, (void *)pkt, len + n);
-			fprintf(stderr, "send %d + %d \n", len, n);
-			pkt->header.len = n;
-			pkt->header.len_s = ~n;
-			//write_dump((void *)pkt, stderr);
-		} else {
+		//填写内容区
+		n = fill_write_data(&pkt->buf.write, sizeof(bufs) - sizeof(htp_header_t), data_ids, data_n, sleep_ids, sleep_n);
+		if (n <= 0) {
 			fprintf(stdout, "fill_write_data() failed.\n");
 			ret = -1;
 			break;
 		}
+		//将要发送的内容区地址存入socket->buf中,供htp_send用
+		s.buf = (void *)(h+1);
+		s.len = n;
 
+		//填写header
+		//len = fill_header(&pkt->header);
+		htp_ass_header(h, HS_OPCODE_WRITEDATA, 2, n);
+		if (htp_send(&s, h) == false) {
+			fprintf(stderr, "htp_send failed.\n");
+			break;
+		}
+
+		fprintf(stderr, "send %d esl data, total %d\n", data_n, sizeof(*h) + s.len);
 		//fprintf(stderr, "free %p\n", data_ids);
 		//fprintf(stderr, "free %p\n", sleep_ids);
 		//free(data_ids);
 		//free(sleep_ids);
 	}
 
-	close(sd);
+	htp_close(&s);
 	return ret;
 }

@@ -3,6 +3,7 @@ import time
 import threading
 import struct
 import random
+import os
 
 
 def R16(n):
@@ -25,10 +26,30 @@ def do_recver(conn):
 	print("thread running")
 	while True:
 		try:
-			data = conn.recv(1024)
-			print('recved bytes ', len(data), ':')
+			f = open("tempfile", 'wb');
+			header = conn.recv(32)
+			f.write(header)
+			lenth = do_check_data(header)
+			while lenth > 0:
+				body = conn.recv(lenth)
+				lenth -= len(body)
+				f.write(body)
+			f.close()
+			f = open("tempfile", 'rb');
+			body = f.read()
+			print('recved bytes ',lenth, ':', len(body))
+			f.close()
+			os.remove("tempfile")
 		except:
+			os.remove("tempfile")
 			break
+
+def do_check_data(data):
+	v, v_s, v_str, op, op_s, para, para_s, lenth, lenth_s, rev1, rev2 = \
+		struct.unpack("HH8sHHHHIIHH", data)
+	print(v, v_s, v_str, op, op_s, para, para_s, lenth, lenth_s, rev1, rev2)
+	return lenth
+
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1) 
