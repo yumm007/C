@@ -12,59 +12,6 @@
 #include "datatype.h"
 
 #if 0
-int socket_open(const char *addr, int port) {
-	int sd = -1;
-	struct sockaddr_in svr;
-
-	if ((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-		perror("socket:");
-		goto _exit;
-	} 
-
-	bzero(&svr, sizeof(svr));
-	svr.sin_family = AF_INET;
-	svr.sin_addr.s_addr = inet_addr(addr);
-	svr.sin_port = htons(port);
-
-	if (connect(sd, (void *)&svr, sizeof(svr)) == -1) {
-		perror("connect:");
-		goto _close;
-	}
-	
-	return sd;
-
-_close:
-	close(sd);
-	sd = -1;
-_exit:
-	return sd;
-}
-
-int socket_write(int sd, uint8_t *data, int len) {
-	int n, err;
-	struct timeval tim = {3, 0};
-
-	//set send timeout
-	setsockopt(sd, SOL_SOCKET, SO_SNDTIMEO, &tim, sizeof(tim));
-	while (len > 0) {
-		n = send(sd, data, len, 0);
-		err = errno;
-		if (n > 0 && (err == EAGAIN || err == EWOULDBLOCK)) {
-			//timeout
-			data += n;
-			len -= n;
-		} else if (err == EINTR) // intterupt
-			continue;
-		else 
-			break; //other err
-	}
-
-	//write_dump((void *)data, stderr);
-	return n;
-}
-#endif
-
-#if 0
 static const struct dot_info_t data_ids[] = { 
    {20, 0x56780001, 11111111, 7.9, "烟台苹果", "山东"},
    {20, 0x56780001, 11111111, 7.9, "烟台苹果", "山东"},
@@ -157,16 +104,29 @@ int main(void) {
 		s.len = n;
 
 		//填写header
-		//len = fill_header(&pkt->header);
 		htp_ass_header(h, HS_OPCODE_WRITEDATA, 2, n);
 		if (htp_send(&s, h) == false) {
 			fprintf(stderr, "htp_send failed.\n");
 			break;
 		}
-
 		fprintf(stderr, "send %d esl data, total %d\n", data_n, sizeof(*h) + s.len);
-		//fprintf(stderr, "free %p\n", data_ids);
-		//fprintf(stderr, "free %p\n", sleep_ids);
+		//等待ACK
+		if (htp_recv(&s, h) == false) {
+			fprintf(stderr, "htp_recv failed.\n");
+			break;
+		}
+		switch (h->opcode) {
+			case HS_OPCODE_ACK:
+				fprintf(stderr, "recved ack\n");
+				break;
+			case HS_OPCODE_NACK:
+				fprintf(stderr, "recved nack\n");
+				break;
+			default:
+				fprintf(stderr, "recved unknown opcode : %d\n", h->opcode);
+				break;
+
+		}
 		//free(data_ids);
 		//free(sleep_ids);
 	}
