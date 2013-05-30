@@ -37,8 +37,9 @@ def do_recver(conn):
 				f.write(body)
 			f.close()
 			f = open(tf, 'rb');
-			body = f.read()
-			print('recved bytes ', len(body))
+			data = f.read()
+			esl_num = do_check_body(data)
+			print 'recved %d data, total %d' % (esl_num, len(data))
 			f.close()
 			os.remove(tf)
 		except:
@@ -47,12 +48,24 @@ def do_recver(conn):
 
 def do_check_header(data):
 	v, v_s, v_str, op, op_s, para, para_s, lenth, lenth_s, rev1, rev2 = \
-		struct.unpack("HH8sHHHHIIHH", data)
+		struct.unpack("=HH8sHHHHIIHH", data)
 	#print(v, v_s, v_str, op, op_s, para, para_s, lenth, lenth_s, rev1, rev2)
 	if R16(v) != v_s or R16(op) != op_s or R16(para) != para_s:
 		return 0
 	else: 
 		return lenth
+
+def do_check_body(data):
+	if len(data) <= 32:
+		return 0
+	try:
+		ctrl, para, powermode, wkup_id, rf_ch, \
+			data_esl_num, sleep_esl_num = struct.unpack("=BBBIBHH", data[32:44])
+		#print(ctrl, para, powermode, wkup_id, rf_ch, data_esl_num, sleep_esl_num)
+		return data_esl_num
+	except:
+		print("do_check_body failed")
+		return 0
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1) 
