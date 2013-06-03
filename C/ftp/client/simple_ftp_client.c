@@ -2,6 +2,7 @@
 //每个功能函数都将发起一次ftp的查询
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdint.h>
@@ -33,6 +34,10 @@ typedef struct ftp_t {
 static int sock_write(int sd, const uint8_t *data, int len) {
 	int n;
 	n = send(sd, data, len, 0);
+	if (n != len) {
+		fprintf(stderr, "send failed.\n");
+		exit(1);
+	}
 	if (n == -1)
 		perror("sock_write:");
 	return n;
@@ -99,10 +104,16 @@ static int ftp_cmd_tx(ftp_t *ftp) {
 static int tcp_connect(const char *serv_addr, int port) {
 	int sd, ret = -1;
 	struct sockaddr_in addr;
+	struct linger so_linger;
 	//建立命令通道
    if ((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
       goto _ret;
    }   
+
+	so_linger.l_onoff = 1;
+	so_linger.l_linger = 300;
+	if (setsockopt(sd, SOL_SOCKET, SO_LINGER, &so_linger, sizeof(so_linger)) == -1)
+		goto _close_sd;
 	
    memset(&addr, 0, sizeof(addr));
    addr.sin_family = AF_INET;
@@ -110,11 +121,11 @@ static int tcp_connect(const char *serv_addr, int port) {
    addr.sin_port = htons(port);
 
 	if (connect(sd, (void *)&addr, sizeof(addr)) == -1)
-		goto _connect_err;
+		goto _close_sd;
 	
 	return sd;
 
-_connect_err:
+_close_sd:
 	close(sd);
 _ret:
 	return ret;
@@ -161,8 +172,8 @@ _ret:
 }
 
 static int ftp_disconnect(ftp_t *ftp) {
-	close(ftp->cmd_sd);
 	close(ftp->data_sd);
+	close(ftp->cmd_sd);
 	return 0;
 }
 
@@ -248,39 +259,38 @@ _ret:
 	return ret;
 }
 
+static void rand_file(uint8_t *buf, int len) {
+	int i;
+	srand(getpid());
+	for (i = 0; i < len; i++)
+		buf[i] = rand() % 256;
+}
+
 bool test(const char *TEST_FILE) {
-	char buf[1024];
+	uint8_t buf[10240], ran[10240];
 	ftp_t ftp;
 
-	if (ftp_file_put(&ftp, TEST_FILE, (uint8_t*)"aaa111222bbb\n", 13) == -1)
+	rand_file(ran, 10240);
+	memset(buf, 0, sizeof(buf));
+
+	if (ftp_file_put(&ftp, TEST_FILE, ran, sizeof(ran)) == -1)
 		return false;
+#if 0
 	if (ftp_file_exist(&ftp, TEST_FILE) == -1)
 		return false;
-	if (ftp_file_get(&ftp, TEST_FILE, (uint8_t*)buf) == -1)
+	if (ftp_file_get(&ftp, TEST_FILE, buf) == -1)
 		return false;
-	if (memcmp(buf, "aaa111222bbb\n", strlen("aaa111222bbb\n")) != 0)
+	if (memcmp(buf, ran, sizeof(ran)) != 0)
 		return false;
 	if (ftp_file_del(&ftp, TEST_FILE) == -1)
 		return false;
-	
+#endif
 	return true;
 }
 
 int main(int arg, char **argv) {
 #if 0
-	ftp_t ftp;
-	char buf[1024];
-
-	ftp_file_exist(&ftp, "test.txt");
-	ftp_file_put(&ftp, "remote.file", (uint8_t*)"aaa111222bbb\n", 13);
-	memset(buf, 0, sizeof(buf));
-	if (ftp_file_get(&ftp, "remote.file", (uint8_t *)buf) == -1) {
-		printf("ret return -1.\n");
-	}
-	printf("get: %s", buf);
-	ftp_file_del(&ftp, "remote.file");
-
-	return 0;
+	test("file1");
 #else
 	int i, ok;
 	bool failed = false;
@@ -288,9 +298,9 @@ int main(int arg, char **argv) {
 	while (!failed) {
 		for (i = 0, ok = 0; i < 100 && test(argv[1]); i++)
 			ok++;
-		failed = ok < i ? true : false;
+		failed = ok < 100 ? true : false;
 		printf("test %s\n", failed ? "FAILED" : "pass");
 	}
-	return 0;
 #endif
+	return 0;
 }
