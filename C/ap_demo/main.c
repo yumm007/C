@@ -87,6 +87,7 @@ int main(void) {
 		//生成随机的测试数据
 		n = make_rand_dot_info(&data_ids, &sleep_ids);
 		if (n <= 0) {
+			fprintf(stderr, "make rand failed.\n");
 			ret = -1;
 			break;
 		}

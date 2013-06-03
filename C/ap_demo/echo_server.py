@@ -21,9 +21,9 @@ def do_writedata():
 def do_writecmd(cmd, argv):
 	return struct.pack("HH8sHHHHIIHH", 16, R16(16), '16', \
 								cmd, R16(cmd), argv, R16(argv), 0, R32(0), 0x55, 0x55)
-
 def do_recver(conn):
 	tf = "tempfile"
+	print("create file", tf)
 	f = open(tf, 'wb');
 	ret = True
 	header = conn.recv(32)
@@ -37,9 +37,9 @@ def do_recver(conn):
 	f = open(tf, 'rb');
 	data = f.read()
 	esl_num = do_check_body(data)
-	print 'recved %d data, total %d' % (esl_num, len(data))
+	print 'recved %d esl data, total %d' % (esl_num, len(data))
 	f.close()
-	os.remove(tf)
+	#os.remove(tf)
 	return ret
 
 def do_check_header(data):

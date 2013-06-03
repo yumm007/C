@@ -134,6 +134,16 @@ bool htp_send(htp_socket_t *htp_socket, htp_header_t *htp_header) {
 	if (s->len != 0 && write_socket(s->socket, s->buf, s->len) <= 0)
 		return false;
 	
+	static int n = 0;
+	n++;
+	char buf[10];
+
+	sprintf(buf, "file%d", n);
+	FILE *fp = fopen(buf, "wb");
+	fwrite(h, 1, sizeof(htp_header_t), fp);
+	fwrite(s->buf, 1, s->len, fp);
+	fclose(fp);
+
 	return true;
 }
 
