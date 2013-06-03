@@ -34,12 +34,12 @@ typedef struct ftp_t {
 static int sock_write(int sd, const uint8_t *data, int len) {
 	int n;
 	n = send(sd, data, len, 0);
-	if (n >0 && n < len) {
+	if (n > 0 && n < len) {
 		fprintf(stderr, "send failed.\n");
 		fflush(NULL);
 		exit(1);
 	}
-	if (n == -1) {
+	if (n <= 0) {
 		perror("sock_write:");
 		fflush(NULL);
 		exit(1);
@@ -300,15 +300,14 @@ bool test(const char *TEST_FILE) {
 }
 
 int main(int arg, char **argv) {
-	int i, ok, n = 0;
-	bool failed = false;
+	int i, n = 0;
+	bool ok = true;
 	srand(getpid());
 	while (1) {
-		for (i = 0, ok = 0; i < 100 && test(argv[1]); i++)
-			ok++;
-		failed = ok < 100 ? true : false;
-		if (failed)
-			printf("test %d:\t%s\n", n++, failed ? "FAILED" : "pass");
+		for (i = 0; i < 100 && ok; i++)
+			ok = test(argv[1]);
+		if (!ok)
+			printf("test %d:\t%s\n", n++, "FAILED");
 	}
 	return 0;
 }
