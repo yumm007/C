@@ -303,7 +303,7 @@ int main(int arg, char **argv) {
 	int i, n = 0;
 	bool ok = true;
 	srand(getpid());
-	while (1) {
+	while (ok) {
 		for (i = 0; i < 100 && ok; i++)
 			ok = test(argv[1]);
 		if (!ok)
