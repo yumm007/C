@@ -11,6 +11,7 @@
 #include <sys/select.h>
 #include <unistd.h>
 #include <errno.h>
+#include <stdbool.h>
 
 #define BUFSIZE		256
 #define FTP_USER		"ftp"
@@ -30,21 +31,48 @@ typedef struct ftp_t {
 ****************************************************/
 
 static int sock_write(int sd, const uint8_t *data, int len) {
-	return send(sd, data, len, 0);
+	int n;
+	n = send(sd, data, len, 0);
+	if (n == -1)
+		perror("sock_write:");
+	return n;
 }
 
 //返回实际读到的字节数，返回0表示连接断开，返回-1表示错误
-static int sock_read(int sd, uint8_t *buf, int len) {
+static int sock_read_once(int sd, uint8_t *buf, int len) {
 	struct timeval tim = {2, 0};
 	fd_set rfds;
+	int n;
 
 	FD_ZERO(&rfds);
 	FD_SET(sd, &rfds);
 	
-	if (select(sd +1, &rfds, NULL, NULL, &tim) > 0)
-		return recv(sd, buf, len, 0);
-	return -1;
+	if (select(sd +1, &rfds, NULL, NULL, &tim) > 0) {
+		n = recv(sd, buf, len, 0);
+		if (n == -1)
+			perror("read_once:");
+	}
+	return n;
 }
+
+//阻塞读到指定长度的数据，返回0表示连接断开，返回-1表示错误
+static int sock_read_wait(int sd, uint8_t *buf, int len) {
+	int nc = 0, n;
+	while (nc <= len) {
+		n = recv(sd, buf + nc, len - nc, 0);
+		if (n == 0)
+			return nc;
+		if (n == -1 && errno == EINTR)
+			continue;
+		else if (n == -1){
+			perror("sock_read_wait:");
+			break;
+		}
+		nc += n;
+	}
+	return nc;
+}
+
 
 //ftp->cmd_buf中的命令发出，将反馈值存在cmd_buf中, 如果反馈值包括错误
 //则返回-1
@@ -57,7 +85,7 @@ static int ftp_cmd_tx(ftp_t *ftp) {
 	if (sock_write(ftp->cmd_sd, (uint8_t *)ftp->cmd_buf, n) != n)
 		return -1;
 	memset(ftp->cmd_buf, 0, BUFSIZE);
-	if (sock_read(ftp->cmd_sd, (uint8_t *)ftp->cmd_buf, BUFSIZE) <= 0)
+	if (sock_read_once(ftp->cmd_sd, (uint8_t *)ftp->cmd_buf, BUFSIZE) <= 0)
 		return -1;
 
 	fprintf(stderr, "<== %s", ftp->cmd_buf);
@@ -101,7 +129,7 @@ static int ftp_connect(ftp_t *ftp) {
 	if ((ftp->cmd_sd = tcp_connect(FTP_SERVER, FTP_PORT)) == -1)
 		goto _ret;
 
-	if (sock_read(ftp->cmd_sd, (uint8_t *)ftp->cmd_buf, BUFSIZE) <= 0)
+	if (sock_read_once(ftp->cmd_sd, (uint8_t *)ftp->cmd_buf, BUFSIZE) <= 0)
 		goto _close_cmd_fd;
 	fprintf(stderr, "<== %s", ftp->cmd_buf);
 	
@@ -157,7 +185,6 @@ static int ftp_file_exist(ftp_t *ftp, const char *file_name) {
 //读取ftp文件到buf中
 static int ftp_file_get(ftp_t *ftp, const char *file_name, uint8_t *buf) {
 	int ret = -1, ret_code = 0, file_size = 0;
-
 	if (ftp_connect(ftp) != 0)
 		return -1;
 	snprintf(ftp->cmd_buf, BUFSIZE, "SIZE %s\r\n", file_name);
@@ -172,7 +199,7 @@ static int ftp_file_get(ftp_t *ftp, const char *file_name, uint8_t *buf) {
 		goto _ret;
 
 	//通过data socket读取数据
-	if (sock_read(ftp->data_sd, buf, file_size) < file_size) {
+	if (sock_read_wait(ftp->data_sd, buf, file_size) < file_size) {
 		ret = -1;
 		goto _ret;
 	}
@@ -206,18 +233,64 @@ _ret:
 	return ret;
 }
 
-int main(void) {
+static int ftp_file_del(ftp_t *ftp, const char *file_name) {
+	int ret = -1;
+	if (ftp_connect(ftp) != 0)
+		return -1;
+	//发送删除命令
+	snprintf(ftp->cmd_buf, BUFSIZE, "DELE %s\r\n", file_name);
+	if ((ret = ftp_cmd_tx(ftp)) == -1) 
+		goto _ret;
+
+	ret = 0;
+_ret:
+	ftp_disconnect(ftp);
+	return ret;
+}
+
+bool test(const char *TEST_FILE) {
+	char buf[1024];
+	ftp_t ftp;
+
+	if (ftp_file_put(&ftp, TEST_FILE, (uint8_t*)"aaa111222bbb\n", 13) == -1)
+		return false;
+	if (ftp_file_exist(&ftp, TEST_FILE) == -1)
+		return false;
+	if (ftp_file_get(&ftp, TEST_FILE, (uint8_t*)buf) == -1)
+		return false;
+	if (memcmp(buf, "aaa111222bbb\n", strlen("aaa111222bbb\n")) != 0)
+		return false;
+	if (ftp_file_del(&ftp, TEST_FILE) == -1)
+		return false;
+	
+	return true;
+}
+
+int main(int arg, char **argv) {
+#if 0
 	ftp_t ftp;
 	char buf[1024];
 
+	ftp_file_exist(&ftp, "test.txt");
 	ftp_file_put(&ftp, "remote.file", (uint8_t*)"aaa111222bbb\n", 13);
 	memset(buf, 0, sizeof(buf));
 	if (ftp_file_get(&ftp, "remote.file", (uint8_t *)buf) == -1) {
 		printf("ret return -1.\n");
 	}
 	printf("get: %s", buf);
+	ftp_file_del(&ftp, "remote.file");
 
-	fflush(NULL);
 	return 0;
+#else
+	int i, ok;
+	bool failed = false;
+	//struct timeval tim;
+	while (!failed) {
+		for (i = 0, ok = 0; i < 100 && test(argv[1]); i++)
+			ok++;
+		failed = ok < i ? true : false;
+		printf("test %s\n", failed ? "FAILED" : "pass");
+	}
+	return 0;
+#endif
 }
-
