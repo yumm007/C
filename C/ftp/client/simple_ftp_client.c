@@ -273,18 +273,26 @@ bool test(const char *TEST_FILE) {
 	rand_file(ran, 10240);
 	memset(buf, 0, sizeof(buf));
 
-	if (ftp_file_put(&ftp, TEST_FILE, ran, sizeof(ran)) == -1)
+	if (ftp_file_put(&ftp, TEST_FILE, ran, sizeof(ran)) == -1) {
+		printf("ftp_file_put failed\n");
 		return false;
-#if 0
-	if (ftp_file_exist(&ftp, TEST_FILE) == -1)
+	}
+	if (ftp_file_exist(&ftp, TEST_FILE) == -1) {
+		printf("ftp_file_exist failed\n");
 		return false;
-	if (ftp_file_get(&ftp, TEST_FILE, buf) == -1)
+	}
+	if (ftp_file_get(&ftp, TEST_FILE, buf) == -1) {
+		printf("ftp_file_get failed\n");
 		return false;
-	if (memcmp(buf, ran, sizeof(ran)) != 0)
+	}
+	if (memcmp(buf, ran, sizeof(ran)) != 0) {
+		printf("memcmp failed\n");
 		return false;
-	if (ftp_file_del(&ftp, TEST_FILE) == -1)
+	}
+	if (ftp_file_del(&ftp, TEST_FILE) == -1){
+		printf("ftp_file_del failed\n");
 		return false;
-#endif
+	}
 	return true;
 }
 
@@ -292,14 +300,14 @@ int main(int arg, char **argv) {
 #if 0
 	test("file1");
 #else
-	int i, ok;
+	int i, ok, n = 0;
 	bool failed = false;
 	//struct timeval tim;
 	while (!failed) {
 		for (i = 0, ok = 0; i < 100 && test(argv[1]); i++)
 			ok++;
 		failed = ok < 100 ? true : false;
-		printf("test %s\n", failed ? "FAILED" : "pass");
+		printf("test %d:\t%s\n", n++, failed ? "FAILED" : "pass");
 	}
 #endif
 	return 0;
