@@ -15,9 +15,9 @@
 #include <stdbool.h>
 
 #define BUFSIZE		256
-#define FTP_USER		"ftp"
-#define FTP_PASS		"ftp"
-#define FTP_SERVER	"192.168.1.200"
+#define FTP_USER		"yu"
+#define FTP_PASS		"yu"
+#define FTP_SERVER	"192.168.1.101"
 #define FTP_PORT		21
 #define FTP_CLIENT_ID	1
 
@@ -34,12 +34,16 @@ typedef struct ftp_t {
 static int sock_write(int sd, const uint8_t *data, int len) {
 	int n;
 	n = send(sd, data, len, 0);
-	if (n != len) {
+	if (n >0 && n < len) {
 		fprintf(stderr, "send failed.\n");
+		fflush(NULL);
 		exit(1);
 	}
-	if (n == -1)
+	if (n == -1) {
 		perror("sock_write:");
+		fflush(NULL);
+		exit(1);
+	}
 	return n;
 }
 
@@ -261,7 +265,6 @@ _ret:
 
 static void rand_file(uint8_t *buf, int len) {
 	int i;
-	srand(getpid());
 	for (i = 0; i < len; i++)
 		buf[i] = rand() % 256;
 }
@@ -274,41 +277,38 @@ bool test(const char *TEST_FILE) {
 	memset(buf, 0, sizeof(buf));
 
 	if (ftp_file_put(&ftp, TEST_FILE, ran, sizeof(ran)) == -1) {
-		printf("ftp_file_put failed\n");
+		fprintf(stderr, "ftp_file_put failed\n");
 		return false;
 	}
 	if (ftp_file_exist(&ftp, TEST_FILE) == -1) {
-		printf("ftp_file_exist failed\n");
+		fprintf(stderr, "ftp_file_exist failed\n");
 		return false;
 	}
 	if (ftp_file_get(&ftp, TEST_FILE, buf) == -1) {
-		printf("ftp_file_get failed\n");
+		fprintf(stderr, "ftp_file_get failed\n");
 		return false;
 	}
 	if (memcmp(buf, ran, sizeof(ran)) != 0) {
-		printf("memcmp failed\n");
+		fprintf(stderr, "memcmp failed\n");
 		return false;
 	}
 	if (ftp_file_del(&ftp, TEST_FILE) == -1){
-		printf("ftp_file_del failed\n");
+		fprintf(stderr, "ftp_file_del failed\n");
 		return false;
 	}
 	return true;
 }
 
 int main(int arg, char **argv) {
-#if 0
-	test("file1");
-#else
 	int i, ok, n = 0;
 	bool failed = false;
-	//struct timeval tim;
-	while (!failed) {
+	srand(getpid());
+	while (1) {
 		for (i = 0, ok = 0; i < 100 && test(argv[1]); i++)
 			ok++;
 		failed = ok < 100 ? true : false;
-		printf("test %d:\t%s\n", n++, failed ? "FAILED" : "pass");
+		if (failed)
+			printf("test %d:\t%s\n", n++, failed ? "FAILED" : "pass");
 	}
-#endif
 	return 0;
 }
