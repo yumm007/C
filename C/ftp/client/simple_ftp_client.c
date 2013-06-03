@@ -10,6 +10,7 @@
 #include <sys/time.h>
 #include <sys/select.h>
 #include <unistd.h>
+#include <errno.h>
 
 #define BUFSIZE		256
 #define FTP_USER		"ftp"
@@ -39,7 +40,7 @@ static int sock_read(int sd, uint8_t *buf, int len) {
 
 	FD_ZERO(&rfds);
 	FD_SET(sd, &rfds);
-
+	
 	if (select(sd +1, &rfds, NULL, NULL, &tim) > 0)
 		return recv(sd, buf, len, 0);
 	return -1;
@@ -49,6 +50,7 @@ static int sock_read(int sd, uint8_t *buf, int len) {
 //则返回-1
 static int ftp_cmd_tx(ftp_t *ftp) {
 	int n = strlen(ftp->cmd_buf);
+	int ret_code = 500;
 
 	fprintf(stderr, "==> %s", ftp->cmd_buf);
 
@@ -59,7 +61,9 @@ static int ftp_cmd_tx(ftp_t *ftp) {
 		return -1;
 
 	fprintf(stderr, "<== %s", ftp->cmd_buf);
-	if (strstr(ftp->cmd_buf, "Failed") != NULL)
+	sscanf(ftp->cmd_buf, "%d ", &ret_code);
+	//if (strstr(ftp->cmd_buf, "Failed") != NULL)
+	if (ret_code >= 400)	//400以上都是错误返回值
 		return -1;
 	return 0;
 }
@@ -152,14 +156,15 @@ static int ftp_file_exist(ftp_t *ftp, const char *file_name) {
 
 //读取ftp文件到buf中
 static int ftp_file_get(ftp_t *ftp, const char *file_name, uint8_t *buf) {
-	int ret = -1, file_size, ret_code;
+	int ret = -1, ret_code = 0, file_size = 0;
+
 	if (ftp_connect(ftp) != 0)
 		return -1;
 	snprintf(ftp->cmd_buf, BUFSIZE, "SIZE %s\r\n", file_name);
 	if ((ret = ftp_cmd_tx(ftp)) == -1) 
 		goto _ret;
 	//获得文件大小
-	file_size = sscanf(ftp->cmd_buf, "%d %d", &ret_code, &file_size);
+	sscanf(ftp->cmd_buf, "%d %d", &ret_code, &file_size);
 
 	//发送获取文件命令
 	snprintf(ftp->cmd_buf, BUFSIZE, "RETR %s\r\n", file_name);
@@ -201,13 +206,16 @@ _ret:
 	return ret;
 }
 
-
-
 int main(void) {
 	ftp_t ftp;
+	char buf[1024];
 
-	//ftp_file_exist(&ftp, "test.txt");
-	ftp_file_put(&ftp, "remote.file", "aaa111222bbb\n", 13);
+	ftp_file_put(&ftp, "remote.file", (uint8_t*)"aaa111222bbb\n", 13);
+	memset(buf, 0, sizeof(buf));
+	if (ftp_file_get(&ftp, "remote.file", (uint8_t *)buf) == -1) {
+		printf("ret return -1.\n");
+	}
+	printf("get: %s", buf);
 
 	fflush(NULL);
 	return 0;
