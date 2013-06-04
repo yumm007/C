@@ -15,9 +15,9 @@
 #include <stdbool.h>
 
 #define BUFSIZE		256
-#define FTP_USER		"yu"
-#define FTP_PASS		"yu"
-#define FTP_SERVER	"192.168.1.101"
+#define FTP_USER		"ftp"
+#define FTP_PASS		"ftp"
+#define FTP_SERVER	"192.168.1.200"
 #define FTP_PORT		21
 #define FTP_CLIENT_ID	1
 
@@ -33,6 +33,18 @@ typedef struct ftp_t {
 
 static int sock_write(int sd, const uint8_t *data, int len) {
 	int n;
+#if 1
+	for(;;) {
+		n = send(sd, data, len, 0);
+		if (n == len)
+			break;
+		else if (n < len && errno == EINTR)
+			continue;
+		else
+			break;
+	}
+
+#else
 	n = send(sd, data, len, 0);
 	if (n > 0 && n < len) {
 		fprintf(stderr, "send failed.\n");
@@ -44,6 +56,7 @@ static int sock_write(int sd, const uint8_t *data, int len) {
 		fflush(NULL);
 		exit(1);
 	}
+#endif
 	return n;
 }
 
@@ -186,20 +199,10 @@ static int ftp_disconnect(ftp_t *ftp) {
 	ftp 功能区代码: 检查文件/ 读文件 /写文件
 *********************************************/
 
-//检查文件是否存在
-static int ftp_file_exist(ftp_t *ftp, const char *file_name) {
-	int ret = -1;
-	if (ftp_connect(ftp) != 0)
-		return -1;
-	snprintf(ftp->cmd_buf, BUFSIZE, "RETR %s\r\n", file_name);
-	ret = ftp_cmd_tx(ftp);
-	ftp_disconnect(ftp);
-	return ret;
-}
-
-//读取ftp文件到buf中
-static int ftp_file_get(ftp_t *ftp, const char *file_name, uint8_t *buf) {
+//检查文件大小，文件不存在则返回-1
+static int ftp_file_size(ftp_t *ftp, const char *file_name) {
 	int ret = -1, ret_code = 0, file_size = 0;
+
 	if (ftp_connect(ftp) != 0)
 		return -1;
 	snprintf(ftp->cmd_buf, BUFSIZE, "SIZE %s\r\n", file_name);
@@ -207,6 +210,19 @@ static int ftp_file_get(ftp_t *ftp, const char *file_name, uint8_t *buf) {
 		goto _ret;
 	//获得文件大小
 	sscanf(ftp->cmd_buf, "%d %d", &ret_code, &file_size);
+	ret = file_size;
+_ret:
+	ftp_disconnect(ftp);
+	return ret;
+}
+
+//读取ftp文件到buf中
+static int ftp_file_get(ftp_t *ftp, const char *file_name, uint8_t *buf) {
+	int ret = -1, file_size = 0;
+
+	//文件不存在或者连接失败
+	if ((file_size = ftp_file_size(ftp, file_name)) == -1 || ftp_connect(ftp) != 0)
+		return -1;
 
 	//发送获取文件命令
 	snprintf(ftp->cmd_buf, BUFSIZE, "RETR %s\r\n", file_name);
@@ -226,7 +242,7 @@ _ret:
 }
 
 //上传buf内容到ftp的文件中
-static int ftp_file_put(ftp_t *ftp, const char *file_name, const uint8_t *buf, int buf_len) {
+static int _ftp_file_put(ftp_t *ftp, const char *file_name, const uint8_t *buf, int buf_len) {
 	int ret = -1;
 	if (ftp_connect(ftp) != 0)
 		return -1;
@@ -237,14 +253,31 @@ static int ftp_file_put(ftp_t *ftp, const char *file_name, const uint8_t *buf, i
 		goto _ret;
 		
 	//通过data socket发送数据
-	if (sock_write(ftp->data_sd, buf, buf_len) < buf_len) {
-		ret = -1;
+	if (sock_write(ftp->data_sd, buf, buf_len) < buf_len)
 		goto _ret;
-	}
 
 	ret = 0;
 _ret:
 	ftp_disconnect(ftp);
+	return ret;
+}
+
+//上传文件后检查文件大小，如果不对则重传三次
+static int ftp_file_put(ftp_t *ftp, const char *file_name, const uint8_t *buf, int buf_len) {
+	int i, rty_times = 3, ret;
+
+	for (i = 0; i < rty_times; i++) {
+		if (_ftp_file_put(ftp, file_name, buf, buf_len) == 0 \
+			 && ftp_file_size(ftp, file_name) == buf_len)
+		{
+			ret = 0;
+			break;	 
+		} else {
+			ret = -1;
+			printf("ftp_file_put failed.\n");
+		}
+	}
+
 	return ret;
 }
 
@@ -280,7 +313,7 @@ bool test(const char *TEST_FILE) {
 		fprintf(stderr, "ftp_file_put failed\n");
 		return false;
 	}
-	if (ftp_file_exist(&ftp, TEST_FILE) == -1) {
+	if (ftp_file_size(&ftp, TEST_FILE) != sizeof(ran)) {
 		fprintf(stderr, "ftp_file_exist failed\n");
 		return false;
 	}
