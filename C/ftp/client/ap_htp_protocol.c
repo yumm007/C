@@ -1,5 +1,10 @@
 #include "simple_ftp_client.h"
 
+int htp_recv_start(void) {
+
+	return 0;
+}
+
 int htp_recv_job(uint8_t *buf, int len) {
 	//如果JOB文件不存在或者buf空间不够则退出
 	if (ftp_file_get(FILE_JOB_NAME, buf, len) == -1)
@@ -37,6 +42,9 @@ int main(void) {
 	//端口连接，开始工作
 	int len;
 	uint8_t buf[1024], ack[256] = {0};
+
+	if (htp_recv_start() != 0)
+		return -1;
 
 	if ((len = htp_recv_job(buf, sizeof(buf))) > 0 \
 		 && htp_recv_kickoff() == 0)
