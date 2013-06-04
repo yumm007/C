@@ -75,7 +75,7 @@
 #define CMD_TFR             0xE0    //1110,xxxx TX FIFO reset
 #define CMD_RFR             0xF0    //1111,xxxx RX FIFO reset
 
-#define AP_RF_ADD			{192,168,44,1}
+#define AP_RF_ADD			{0xA2, 0x3, 0x2, 0x1}
 #define AP_RF_CHN			0
 
 #define RF_RCV_TM			100
