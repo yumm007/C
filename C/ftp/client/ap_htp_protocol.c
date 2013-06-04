@@ -1,21 +1,15 @@
 #include "simple_ftp_client.h"
 
 int htp_recv_job(uint8_t *buf, int len) {
-	int i, nr;
-	
 	//如果JOB文件不存在或者buf空间不够则退出
-	if ((nr = ftp_file_get(FILE_JOB_NAME, buf, len)) == -1)
+	if (ftp_file_get(FILE_JOB_NAME, buf, len) == -1)
 		return -1;
-	//上传状态文件，告知已经接收完数据, 最多上传3次
-	for (i = 0; i < TRY_TIMES; i++)
-		if (ftp_file_put(FILE_JOB_RCVED, (uint8_t *)" ", 1) == 0)
-			break;
-	return i < TRY_TIMES ? nr : -1;
+	//上传状态文件，告知已经接收完数据
+	return ftp_file_put(FILE_JOB_RCVED, (uint8_t *)" ", 1);
 }
 
 int htp_recv_kickoff(void) {
 	int i;
-
 	//等待KICKOFF通知, 最多等WAIT_SEC秒
 	for (i = 0; i < WAIT_SEC * 100; i++) {
 		if (ftp_file_size(FILE_KICKOFF) >= 0)
@@ -25,15 +19,9 @@ int htp_recv_kickoff(void) {
 }
 
 int htp_send_ack(const uint8_t *ack, int len) {
-	int i;
-
-	//上传ACK文件，告知已经接收完数据, 最多上传3次
-	for (i = 0; i < TRY_TIMES; i++)
-		if (ftp_file_put(FILE_ACK, ack, len) >= 0)
-			break;
-	return i < TRY_TIMES ? 0 : -1;
+	//上传ACK文件，告知已经接收完数据
+	return ftp_file_put(FILE_ACK, ack, len);
 }
-
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -58,6 +46,5 @@ int main(void) {
 		htp_send_ack(ack, len);
 	}
 	
-
 	return 0;
 }

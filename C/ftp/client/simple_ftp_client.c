@@ -279,7 +279,7 @@ int ftp_file_put(const char *file_name, const uint8_t *buf, int buf_len) {
 		if (_ftp_file_put(file_name, buf, buf_len) == 0 \
 			 && ftp_file_size(file_name) == buf_len)
 		{
-			ret = 0;
+			ret = buf_len;
 			break;	 
 		} else {
 			ret = -1;
