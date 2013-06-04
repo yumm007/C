@@ -168,6 +168,10 @@ static int ftp_connect(ftp_t *ftp) {
 	snprintf(ftp->cmd_buf, BUFSIZE, "PASS %s\r\n", FTP_PASS);
 	if (ftp_cmd_tx(ftp) == -1)
 		goto _close_cmd_fd;
+	//设置二进制格式
+	snprintf(ftp->cmd_buf, BUFSIZE, "TYPE I\r\n");
+	if (ftp_cmd_tx(ftp) == -1)
+		goto _close_cmd_fd;
 	//获取数据通道端口
 	snprintf(ftp->cmd_buf, BUFSIZE, "PASV \r\n");
 	if (ftp_cmd_tx(ftp) == -1)
@@ -190,6 +194,8 @@ _ret:
 
 static int ftp_disconnect(ftp_t *ftp) {
 	close(ftp->data_sd);
+	snprintf(ftp->cmd_buf, BUFSIZE, "QUIT \r\n");
+	ftp_cmd_tx(ftp);
 	close(ftp->cmd_sd);
 	return 0;
 }
@@ -302,11 +308,12 @@ static void rand_file(uint8_t *buf, int len) {
 		buf[i] = rand() % 256;
 }
 
+#define SEND_SIZE	512
 bool test(const char *TEST_FILE) {
-	uint8_t buf[10240], ran[10240];
+	uint8_t buf[SEND_SIZE], ran[SEND_SIZE];
 	ftp_t ftp;
 
-	rand_file(ran, 10240);
+	rand_file(ran, SEND_SIZE);
 	memset(buf, 0, sizeof(buf));
 
 	if (ftp_file_put(&ftp, TEST_FILE, ran, sizeof(ran)) == -1) {
