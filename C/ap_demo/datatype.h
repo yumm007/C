@@ -120,13 +120,28 @@ struct dot_info_t {
    //靠靠靠
 };
 
+#define AP_NAME_MAX_LEN	256
+#define PKT_MAX_SIZE	4*1024*1024	//4M
+
+struct AP_TASK_T {
+	char ap_name[AP_NAME_MAX_LEN];
+	int data_len;	//ack_flag等于1表示收到基站的ACK，ACK值写入到data.ack中
+	union {
+		HS_PKT_T tosend;
+		HS_PKT_T ack;
+		uint8_t _buf[PKT_MAX_SIZE];
+	} data;
+};
+
 #pragma pack()
 
 int fill_header_data(struct HS_PKT_HEADER_T *header, int op_code, int para, int data_len);
-int fill_write_data(struct HS_PKT_OP_WRITEDATA_T *buf, int buf_len, const struct dot_info_t * data_ids, int data_n, \
-                    const uint32_t *sleep_ids, int sleep_n);
+int fill_write_data(struct HS_PKT_OP_WRITEDATA_T *buf, int buf_len, \
+							const struct dot_info_t * data_ids, int data_n, \
+                    	const uint32_t *sleep_ids, int sleep_n);
 void write_dump(const HS_PKT_T *pkg, FILE *fp);
 void esl_data_dump(const struct dot_info_t *info, FILE *fp, int len);
 int lcd_display(const struct dot_info_t *info, uint8_t *out_buf, int out_len);
+int assign_ap_task(struct AP_TASK_T *task, int task_n);
 
 #endif

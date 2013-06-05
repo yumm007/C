@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <sys/select.h>
 #include <sys/time.h>
+
+#include "datatype.h"
+
 #include "simple_ftp_client.h"
 
 #define NAME_BUF_LEN	256
@@ -74,42 +77,43 @@ int htp_check_ack_ready(const char *ap_list[], int n) {
 	return -1;
 }
 
-static void del_all_ftp_file(void) {
+//取得各个AP的ACK内容
+static int htp_dump_ret(struct AP_TASK_T *task, int task_n) {
+
+	return 0;
 }
 
-int assign_ap_task(const char *ap_list[], const uint8_t *data[], int len[]) {
+static void del_all_ftp_file(const char *ap_list[], int n) {
+}
+
+int assign_ap_task(struct AP_TASK_T *task, int task_n) {
 	//监听端口，获得连接
 	//端口连接，开始工作
-	int i, ret = -1, n;
-	int count = 0;
-
-	del_all_ftp_file();
+	int i, ret = -1, n = task_n;
+	const char *ap_list[task_n];
 
 	//获得ap list数目
-	for (i = 0, n = 0; ap_list[i] != NULL; i++)
-		n++;
+	for (i = 0; i < n; i++)
+		ap_list[i] = task[i].ap_name;
 
-	while (1) {
-		//上传任务文件
-		for (i = 0; i < n; i++)
-			if (htp_send_job(ap_list[i], data[i], len[i]) == -1)
-				goto _err;
-		//发起连接成功 + 等待AP接收完任务成功 + 发送kickoff成功 + 等待ACK成功
-		if (htp_send_start(ap_list, n) == 0 \
-			&& htp_check_job_rcved(ap_list, n) == 0 \
-			&& htp_send_kickoff(ap_list, n) != -1 \
-			&& htp_check_ack_ready(ap_list, n) == 0)
-		{
-			//任务完成，检测结果
-			ret = 0;
-			count++;
-			printf("task %d ok\n", count);
-			del_all_ftp_file();
-		} else {
-			printf("task %d failed\n", count);
-			break; //出现错误，退出
-		}
+	//上传任务文件
+	for (i = 0; i < n; i++)
+		if (htp_send_job(task[i].ap_name, (uint8_t *)&task[i].data.tosend, \
+			task[i].data_len) == -1)
+			goto _err;
+	//发起连接成功 + 等待AP接收完任务成功 + 发送kickoff成功 + 等待ACK成功 + 读取ACK成功
+	if (htp_send_start(ap_list, n) == 0 \
+		&& htp_check_job_rcved(ap_list, n) == 0 \
+		&& htp_send_kickoff(ap_list, n) != -1 \
+		&& htp_check_ack_ready(ap_list, n) == 0\
+		&& htp_dump_ret(task, task_n) == 0)
+	{
+		//任务完成，检测结果
+		ret = 0;
 	}
+	printf("task %s\n", ret == 0 ? "ok" : "failed");
+
 _err:
+	del_all_ftp_file(ap_list, n);
 	return ret;
 }

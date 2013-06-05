@@ -63,15 +63,13 @@ static int make_rand_dot_info(struct dot_info_t **data_ids, uint32_t **sleep_ids
 
 int main(void) {
 	int ret = 0, data_n, sleep_n, n;
-	char bufs[1024*1024];
-	HS_PKT_T *pkt =(void *)bufs;
+	struct AP_TASK_T ap_task = {
+		.ap_name = "192.168.1.100",
+	};
 
 	struct dot_info_t *data_ids = NULL;
 	uint32_t *sleep_ids = NULL;
-
-	char *ap_list[] = {"192.168.1.100", NULL};
-	uint8_t *ap_data[] = {(uint8_t *)"192.168.1.100", NULL};
-	int ap_len[] = {sizeof("192.168.1.100"), 0};
+	HS_PKT_T *pkt = &ap_task.data.tosend;
 
 	while (1) {
 		//生成随机的测试数据
@@ -84,7 +82,7 @@ int main(void) {
 		data_n = n;
 		sleep_n = n;
 		//填写内容区
-		n = fill_write_data(&pkt->buf.write, sizeof(bufs) - sizeof(pkt->header),\
+		n = fill_write_data(&pkt->buf.write, sizeof(ap_task.data) - sizeof(pkt->header),\
 								data_ids, data_n, sleep_ids, sleep_n);
 		if (n <= 0) {
 			fprintf(stdout, "fill_write_data() failed.\n");
@@ -92,14 +90,13 @@ int main(void) {
 			break;
 		}
 		//填写header
-		fill_header_data(&pkt->header, 1, 0, n);
+		n = fill_header_data(&pkt->header, 1, 0, n);
 
 		//开始任务
-		assign_ap_task(ap_list, ap_data, ap_len);
+		ap_task.data_len = n;
+		assign_ap_task(&ap_task, 1);
 		
-		//读取ACK
-
-		//清楚ftp文件区
+		//分析ACK
 
 		free(data_ids);
 		free(sleep_ids);
