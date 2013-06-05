@@ -1,0 +1,15 @@
+Program(
+'bin/test', 
+['src/ascii2dot/ascii2dot.c', 
+'src/ascii2dot/dot_protocal_pack.c', 
+'src/htp/fill_struct_data.c', 
+'src/htp/pc_htp_protocol.c', 
+'src/htp/simple_ftp_client.c', 
+'test/main.c',
+],
+CPPPATH='inc',
+CCFLAGS = '-Wall'
+) 
+
+
+
