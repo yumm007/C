@@ -307,7 +307,7 @@ _ret:
 	return ret;
 }
 
-#if 1
+#if 0
 static void rand_file(uint8_t *buf, int len) {
 	int i;
 	for (i = 0; i < len; i++)

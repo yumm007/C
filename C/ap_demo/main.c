@@ -8,7 +8,6 @@
 #include <stdlib.h>
 
 #include "linux_header.h"
-#include "htp.h"
 #include "datatype.h"
 
 #if 0
@@ -37,15 +36,14 @@ static int make_rand_dot_info(struct dot_info_t **data_ids, uint32_t **sleep_ids
 	if (seed == 0) {
 		srand((int) getpid());
 		seed = 1;
-		if ((*data_ids = malloc(sizeof(struct dot_info_t) * 25)) == NULL \
-			|| (*sleep_ids = malloc(sizeof(uint32_t) * 25)) == NULL) 
-		{
-			fprintf(stderr, "err free %p\n", *data_ids);
-			fprintf(stderr, "err free %p\n", *sleep_ids);
-			free(*data_ids);
-			free(*sleep_ids);
-			return -1;
-		}
+	}
+
+	if ((*data_ids = malloc(sizeof(struct dot_info_t) * 25)) == NULL \
+		|| (*sleep_ids = malloc(sizeof(uint32_t) * 25)) == NULL) 
+	{
+		free(*data_ids);
+		free(*sleep_ids);
+		return -1;
 	}
 	
 	n = rand() % 20 + 1;
@@ -71,18 +69,10 @@ int main(void) {
 	struct dot_info_t *data_ids = NULL;
 	uint32_t *sleep_ids = NULL;
 
-	htp_socket_t s = {
-		.ip_addr = "127.0.0.1",
-		.port = 10001
-	};
+	char *ap_list[] = {"192.168.1.100", NULL};
+	uint8_t *ap_data[] = {(uint8_t *)"192.168.1.100", NULL};
+	int ap_len[] = {sizeof("192.168.1.100"), 0};
 
-	htp_header_t *h = (void *)bufs;
-
-	if (htp_open(&s) != 0) {
-		fprintf(stderr, "htp_open failed.\n");
-		return -1;
-	}
-	
 	while (1) {
 		//生成随机的测试数据
 		n = make_rand_dot_info(&data_ids, &sleep_ids);
@@ -94,44 +84,26 @@ int main(void) {
 		data_n = n;
 		sleep_n = n;
 		//填写内容区
-		n = fill_write_data(&pkt->buf.write, sizeof(bufs) - sizeof(htp_header_t), data_ids, data_n, sleep_ids, sleep_n);
+		n = fill_write_data(&pkt->buf.write, sizeof(bufs) - sizeof(pkt->header),\
+								data_ids, data_n, sleep_ids, sleep_n);
 		if (n <= 0) {
 			fprintf(stdout, "fill_write_data() failed.\n");
 			ret = -1;
 			break;
 		}
-		//将要发送的内容区地址存入socket->buf中,供htp_send用
-		s.buf = (void *)(h+1);
-		s.len = n;
-
 		//填写header
-		htp_ass_header(h, HS_OPCODE_WRITEDATA, 2, n);
-		if (htp_send(&s, h) == false) {
-			fprintf(stderr, "htp_send failed.\n");
-			break;
-		}
-		fprintf(stderr, "send %d esl data, total %d\n", data_n, sizeof(*h) + s.len);
-		//等待ACK
-		if (htp_recv(&s, h) == false) {
-			fprintf(stderr, "htp_recv failed.\n");
-			break;
-		}
-		switch (h->opcode) {
-			case HS_OPCODE_ACK:
-				fprintf(stderr, "recved ack\n");
-				break;
-			case HS_OPCODE_NACK:
-				fprintf(stderr, "recved nack\n");
-				break;
-			default:
-				fprintf(stderr, "recved unknown opcode : %d\n", h->opcode);
-				break;
+		fill_header_data(&pkt->header, 1, 0, n);
 
-		}
-		//free(data_ids);
-		//free(sleep_ids);
+		//开始任务
+		assign_ap_task(ap_list, ap_data, ap_len);
+		
+		//读取ACK
+
+		//清楚ftp文件区
+
+		free(data_ids);
+		free(sleep_ids);
 	}
 
-	htp_close(&s);
 	return ret;
 }

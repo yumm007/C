@@ -49,3 +49,7 @@ int fill_write_data(struct HS_PKT_OP_WRITEDATA_T *w, int buf_len, const struct d
 	return ((char *)&(w->sleep[w->sleep_esl_num]) - (char *)w + n);
 }
 
+int fill_header_data(struct HS_PKT_HEADER_T *h, int op_code, int para, int data_len) {
+	
+	return sizeof(*h) + data_len;
+}

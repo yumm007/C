@@ -122,7 +122,7 @@ struct dot_info_t {
 
 #pragma pack()
 
-int fill_header(struct HS_PKT_HEADER_T *header);
+int fill_header_data(struct HS_PKT_HEADER_T *header, int op_code, int para, int data_len);
 int fill_write_data(struct HS_PKT_OP_WRITEDATA_T *buf, int buf_len, const struct dot_info_t * data_ids, int data_n, \
                     const uint32_t *sleep_ids, int sleep_n);
 void write_dump(const HS_PKT_T *pkg, FILE *fp);
