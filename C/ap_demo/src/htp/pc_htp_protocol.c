@@ -106,17 +106,21 @@ static int htp_dump_ret(struct AP_TASK_T *task, int task_n) {
 
 static void del_all_ftp_file(const char *ap_list[], int n) {
 	int i;
-	char buf[NAME_BUF_LEN];
+	char buf[NAME_BUF_LEN], dir[NAME_BUF_LEN];
+	static int dir_id = 0;
+
+	dir_id++;
+	snprintf(dir, NAME_BUF_LEN, "bak_%d", dir_id);
 
 	for (i = 0; i < n; i++) {
 		snprintf(buf, NAME_BUF_LEN, "%s_%s", ap_list[i], FILE_JOB_NAME);
-		ftp_file_del(buf);
+		ftp_file_bak(buf, dir);
 		snprintf(buf, NAME_BUF_LEN, "%s_%s", ap_list[i], FILE_JOB_RCVED);
-		ftp_file_del(buf);
+		ftp_file_bak(buf, dir);
 		snprintf(buf, NAME_BUF_LEN, "%s_%s", ap_list[i], FILE_ACK);
-		ftp_file_del(buf);
+		ftp_file_bak(buf, dir);
 	}
-	ftp_file_del(FILE_KICKOFF);
+	ftp_file_bak(FILE_KICKOFF, dir);
 }
 
 int assign_ap_task(struct AP_TASK_T *task, int task_n) {
@@ -144,9 +148,8 @@ int assign_ap_task(struct AP_TASK_T *task, int task_n) {
 		//任务完成，检测结果
 		ret = 0;
 	}
-	printf("task %s\n", ret == 0 ? "ok" : "failed");
 
 _err:
-	//del_all_ftp_file(ap_list, n);
+	del_all_ftp_file(ap_list, n);
 	return ret;
 }

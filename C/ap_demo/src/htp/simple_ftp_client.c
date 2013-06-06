@@ -307,6 +307,27 @@ _ret:
 	return ret;
 }
 
+int ftp_file_bak(const char *file_name, const char *dir_name) {
+	ftp_t ftp;
+	if (ftp_connect(&ftp) != 0)
+		return -1;
+	snprintf(ftp.cmd_buf, BUFSIZE, "MKD %s\r\n", "bak");
+	ftp_cmd_tx(&ftp);
+	snprintf(ftp.cmd_buf, BUFSIZE, "MKD bak/%s\r\n", dir_name);
+	ftp_cmd_tx(&ftp);
+	snprintf(ftp.cmd_buf, BUFSIZE, "RNFR %s\r\n", file_name);
+	ftp_cmd_tx(&ftp);
+	snprintf(ftp.cmd_buf, BUFSIZE, "RNTO bak/%s/%s\r\n", dir_name, file_name);
+	ftp_cmd_tx(&ftp);
+	//snprintf(ftp.cmd_buf, BUFSIZE, "DELE %s\r\n", file_name);
+	//ftp_cmd_tx(&ftp);
+
+	ftp_disconnect(&ftp);
+
+	return 0;
+}
+
+
 #if 0
 static void rand_file(uint8_t *buf, int len) {
 	int i;

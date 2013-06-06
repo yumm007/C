@@ -71,6 +71,8 @@ int main(void) {
 	uint32_t *sleep_ids = NULL;
 	HS_PKT_T *pkt = &ap_task.data.tosend;
 
+	int ok = 0;
+
 	while (1) 
 	{
 		//生成随机的测试数据
@@ -95,14 +97,13 @@ int main(void) {
 		write_dump(pkt, stderr);
 		//开始任务
 		ap_task.data_len = n;
-		assign_ap_task(&ap_task, 1);
+		ret = assign_ap_task(&ap_task, 1);
+		printf("task %d %s\n", ok++, ret == 0 ? "ok" : "failed");
 		
 		//分析ACK
 
 		free(data_ids);
 		free(sleep_ids);
-
-		break;
 	}
 
 	return ret;

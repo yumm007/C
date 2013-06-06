@@ -22,5 +22,6 @@ int ftp_file_put(const char *file_name, const uint8_t *buf, int buf_len);
 int ftp_file_size(const char *file_name);
 //删除指定文件
 int ftp_file_del(const char *file_name);
+int ftp_file_bak(const char *file_name, const char *dir_name);
 
 #endif
