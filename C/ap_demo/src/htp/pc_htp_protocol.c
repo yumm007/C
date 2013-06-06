@@ -147,6 +147,6 @@ int assign_ap_task(struct AP_TASK_T *task, int task_n) {
 	printf("task %s\n", ret == 0 ? "ok" : "failed");
 
 _err:
-	del_all_ftp_file(ap_list, n);
+	//del_all_ftp_file(ap_list, n);
 	return ret;
 }

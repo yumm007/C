@@ -13,4 +13,12 @@ CCFLAGS = '-Wall'
 ) 
 
 
-
+Program(
+'bin/ap',
+[
+'src/htp/simple_ftp_client.c',
+'src/htp/ap_htp_protocol.c',
+],
+CPPPATH='inc',
+CCFLAGS = '-Wall'
+)
