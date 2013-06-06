@@ -16,7 +16,7 @@ static int fill_write_data_data_sleep(const struct dot_info_t * info,\
 			return -1;
 		n += d->len;
 		len -= d->len;
-		//esl_data_dump(info, stderr, d->len);
+		esl_data_dump(info, stderr, d->len);
       d = (void *)((char *)d + d->len);
    }
 
@@ -32,9 +32,9 @@ static int fill_write_data_data_sleep(const struct dot_info_t * info,\
 int fill_write_data(struct HS_PKT_OP_WRITEDATA_T *w, int buf_len, const struct dot_info_t * data_ids, int data_n, \
 							const uint32_t *sleep_ids, int sleep_n) {
 	int n;
-	w->ctrl = 0x1;
-	w->para = 0x1;
-	w->powermode = 0x1;
+	w->ctrl = CTRL_DOT20_UPDATA;
+	w->para = 0x0;
+	w->powermode = 0x0;
 
 	w->wakeup_id = 0x56000000;
 	w->rf_ch = 0;
@@ -50,6 +50,19 @@ int fill_write_data(struct HS_PKT_OP_WRITEDATA_T *w, int buf_len, const struct d
 }
 
 int fill_header_data(struct HS_PKT_HEADER_T *h, int op_code, int para, int data_len) {
+	h->version = 16;
+	h->version_s = ~h->version;
+	strncpy((char *)h->version_str, "V16", sizeof(h->version_str));
+
+	h->opcode = op_code; 
+	h->opcode_s = ~h->opcode;
+
+	h->para = para;
+	h->para_s = ~h->para;
+
+	h->len = data_len;
+	h->len_s = ~h->len;
 	
 	return sizeof(*h) + data_len;
 }
+

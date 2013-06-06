@@ -71,7 +71,8 @@ int main(void) {
 	uint32_t *sleep_ids = NULL;
 	HS_PKT_T *pkt = &ap_task.data.tosend;
 
-	while (1) {
+	while (1) 
+	{
 		//生成随机的测试数据
 		n = make_rand_dot_info(&data_ids, &sleep_ids);
 		if (n <= 0) {
@@ -90,8 +91,8 @@ int main(void) {
 			break;
 		}
 		//填写header
-		n = fill_header_data(&pkt->header, 1, 0, n);
-
+		n = fill_header_data(&pkt->header, HS_OPCODE_WRITEDATA, 0, n);
+		write_dump(pkt, stderr);
 		//开始任务
 		ap_task.data_len = n;
 		assign_ap_task(&ap_task, 1);
@@ -100,6 +101,8 @@ int main(void) {
 
 		free(data_ids);
 		free(sleep_ids);
+
+		break;
 	}
 
 	return ret;

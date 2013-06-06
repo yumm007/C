@@ -8,6 +8,9 @@
 #define FILE_KICKOFF		"ap_kickoff.txt"
 #define FILE_ACK			"ap_ack.bin"
 
+#define AP_LISTEN_PORT	20000
+
+#define CHECK_ACK_10MS_N	(5000/10)
 #define TRY_TIMES	3
 #define WAIT_SEC	5
 

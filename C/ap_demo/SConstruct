@@ -6,6 +6,7 @@ Program(
 'src/htp/pc_htp_protocol.c', 
 'src/htp/simple_ftp_client.c', 
 'test/main.c',
+'test/data_dump.c'
 ],
 CPPPATH='inc',
 CCFLAGS = '-Wall'
