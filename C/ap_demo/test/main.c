@@ -64,7 +64,7 @@ static int make_rand_dot_info(struct dot_info_t **data_ids, uint32_t **sleep_ids
 int main(void) {
 	int ret = 0, data_n, sleep_n, n;
 	struct AP_TASK_T ap_task = {
-		.ap_name = "127.0.0.1",
+		.ap_name = "192.168.1.233",
 	};
 
 	struct dot_info_t *data_ids = NULL;
@@ -99,6 +99,8 @@ int main(void) {
 		ap_task.data_len = n;
 		ret = assign_ap_task(&ap_task, 1);
 		printf("task %d %s\n", ok++, ret == 0 ? "ok" : "failed");
+		if (ret != 0)
+			break;
 		
 		//·ÖÎöACK
 

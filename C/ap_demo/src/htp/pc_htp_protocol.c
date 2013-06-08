@@ -42,8 +42,12 @@ _ret:
 
 int htp_send_job(const char *ap_name, const uint8_t *buf, int len) {
 	char names[NAME_BUF_LEN];
+	int n;
 	snprintf(names, NAME_BUF_LEN, "%s_%s", ap_name, FILE_JOB_NAME);
-	return ftp_file_put(names, buf, len);
+	n = ftp_file_put(names, buf, len);
+	if (n == -1) 
+		printf("send job failed.\n");
+	return n;
 }
 
 //等待基站收完数据
@@ -62,13 +66,18 @@ int htp_check_job_rcved(const char *ap_list[], int n) {
 		sleep_ms(10);
 	}
 
+	printf("htp_check_job_rcved failed. try %d, ok_n = %d.\n", rty_times, ok_n);
 	return -1;
 }
 
 //发送kickoff
 int htp_send_kickoff(const char *ap_list[], int n) {
 	//临时代码，删除连接文件
-	return ftp_file_put(FILE_KICKOFF, (uint8_t *)"kickoff", sizeof("kickoff"));
+	int m = ftp_file_put(FILE_KICKOFF, (uint8_t *)"kickoff", sizeof("kickoff"));
+
+	if (m == -1)
+		printf("send kickoff file failed.\n");
+	return m;
 }
 
 //检查各个AP是否有返回ACK
@@ -87,6 +96,7 @@ int htp_check_ack_ready(const char *ap_list[], int n) {
 		sleep_ms(10);
 	}
 
+	printf("htp_check_ack_ready failed. try %d, ok_n = %d.\n", rty_times, ok_n);
 	return -1;
 }
 
@@ -109,7 +119,6 @@ static void del_all_ftp_file(const char *ap_list[], int n) {
 	char buf[NAME_BUF_LEN], dir[NAME_BUF_LEN];
 	static int dir_id = 0;
 
-	dir_id++;
 	snprintf(dir, NAME_BUF_LEN, "bak_%d", dir_id);
 
 	for (i = 0; i < n; i++) {
@@ -121,6 +130,7 @@ static void del_all_ftp_file(const char *ap_list[], int n) {
 		ftp_file_bak(buf, dir);
 	}
 	ftp_file_bak(FILE_KICKOFF, dir);
+	dir_id++;
 }
 
 int assign_ap_task(struct AP_TASK_T *task, int task_n) {
@@ -150,6 +160,8 @@ int assign_ap_task(struct AP_TASK_T *task, int task_n) {
 	}
 
 _err:
-	del_all_ftp_file(ap_list, n);
+	sleep(1);
+	if (ret == 0)
+		del_all_ftp_file(ap_list, n);
 	return ret;
 }
