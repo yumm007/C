@@ -22,14 +22,17 @@ int htp_send_start(const char *ap_list[], int n) {
 	struct sockaddr_in addr;
 
 	for (i = 0; i < n; i++) {
-		if ((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+		if ((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+			perror("socket");
 			goto _ret;
+		}
 		memset(&addr, 0, sizeof(addr));
 		addr.sin_family = AF_INET;
 		addr.sin_addr.s_addr = inet_addr(ap_list[i]);
 		addr.sin_port = htons(AP_LISTEN_PORT);
 
 		if (connect(sd, (void *)&addr, sizeof(addr)) == -1) {
+			perror("connect");
 			close(sd);
 			goto _ret;
 		}
@@ -37,6 +40,8 @@ int htp_send_start(const char *ap_list[], int n) {
 	}
 	ret = 0;
 _ret:
+	if (ret == -1)
+		printf("send start failed.\n");
 	return ret;
 }
 
@@ -63,7 +68,7 @@ int htp_check_job_rcved(const char *ap_list[], int n) {
 		}
 		if (ok_n == n)
 			return 0;
-		sleep_ms(10);
+		sleep_ms(100);
 	}
 
 	printf("htp_check_job_rcved failed. try %d, ok_n = %d.\n", rty_times, ok_n);
@@ -160,7 +165,6 @@ int assign_ap_task(struct AP_TASK_T *task, int task_n) {
 	}
 
 _err:
-	sleep(1);
 	if (ret == 0)
 		del_all_ftp_file(ap_list, n);
 	return ret;

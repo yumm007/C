@@ -250,6 +250,7 @@ _ret:
 
 //上传buf内容到ftp的文件中
 static int _ftp_file_put(const char *file_name, const uint8_t *buf, int buf_len) {
+#if 0
 	int ret = -1;
 	ftp_t ftp;
 
@@ -269,16 +270,52 @@ static int _ftp_file_put(const char *file_name, const uint8_t *buf, int buf_len)
 _ret:
 	ftp_disconnect(&ftp);
 	return ret;
+# else
+	int ret = -1, ret_code, file_size;
+	ftp_t ftp;
+
+	if (ftp_connect(&ftp) != 0)
+		return -1;
+
+	//先写入临时文件
+	snprintf(ftp.cmd_buf, BUFSIZE, "STOR %s.tmp\r\n", file_name);
+	if ((ret = ftp_cmd_tx(&ftp)) == -1) 
+		goto _ret;
+		
+	if (sock_write(ftp.data_sd, buf, buf_len) < buf_len)
+		goto _ret;
+	ftp_disconnect(&ftp);
+	
+	if (ftp_connect(&ftp) != 0)
+		return -1;	
+	//比较大小
+	snprintf(ftp.cmd_buf, BUFSIZE, "SIZE %s.tmp\r\n", file_name);
+	if ((ret = ftp_cmd_tx(&ftp)) == -1) 
+		goto _ret;
+	sscanf(ftp.cmd_buf, "%d %d", &ret_code, &file_size);
+	if (file_size != buf_len)
+		goto _ret;
+
+	//再改名
+	snprintf(ftp.cmd_buf, BUFSIZE, "RNFR %s.tmp\r\n", file_name);
+	if ((ret = ftp_cmd_tx(&ftp)) == -1) 
+		goto _ret;
+	snprintf(ftp.cmd_buf, BUFSIZE, "RNTO %s\r\n", file_name);
+	if ((ret = ftp_cmd_tx(&ftp)) == -1) 
+		goto _ret;
+	
+	ret = 0;
+_ret:
+	ftp_disconnect(&ftp);
+	return ret;
+#endif
 }
 
-//上传文件后检查文件大小，如果不对则重传三次
 int ftp_file_put(const char *file_name, const uint8_t *buf, int buf_len) {
 	int i, rty_times = 3, ret;
 
 	for (i = 0; i < rty_times; i++) {
-		if (_ftp_file_put(file_name, buf, buf_len) == 0 \
-			 && ftp_file_size(file_name) == buf_len)
-		{
+		if (_ftp_file_put(file_name, buf, buf_len) == 0) {
 			ret = buf_len;
 			break;	 
 		} else {

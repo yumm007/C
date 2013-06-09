@@ -99,8 +99,6 @@ int main(void) {
 		ap_task.data_len = n;
 		ret = assign_ap_task(&ap_task, 1);
 		printf("task %d %s\n", ok++, ret == 0 ? "ok" : "failed");
-		if (ret != 0)
-			break;
 		
 		//·ÖÎöACK
 
