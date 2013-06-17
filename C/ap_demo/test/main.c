@@ -104,6 +104,7 @@ int main(void) {
 
 		free(data_ids);
 		free(sleep_ids);
+		fflush(NULL);
 	}
 
 	return ret;

@@ -40,8 +40,10 @@ int htp_send_start(const char *ap_list[], int n) {
 	}
 	ret = 0;
 _ret:
-	if (ret == -1)
-		printf("send start failed.\n");
+	if (ret == -1) {
+		printf("send start failed. sleep 10 sec.\n");
+		sleep_ms(10000);
+	}
 	return ret;
 }
 
@@ -165,7 +167,7 @@ int assign_ap_task(struct AP_TASK_T *task, int task_n) {
 	}
 
 _err:
-	if (ret == 0)
+	//if (ret == 0)
 		del_all_ftp_file(ap_list, n);
 	return ret;
 }
