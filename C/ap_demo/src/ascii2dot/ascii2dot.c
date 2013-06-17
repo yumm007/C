@@ -134,10 +134,10 @@ static int lcd_flush(LCD_T *lcd, uint8_t *buf) {
 	return lcd->real_row * lcd->line /8 + 8;
 }
 
-static void spi_read(uint32_t addr, uint8_t *buf, int len) {
+static void spi_read(const char *fn, uint32_t addr, uint8_t *buf, int len) {
 	FILE *fp;
 
-	if ((fp = fopen("font.bin", "r")) == NULL) {
+	if ((fp = fopen(fn, "r")) == NULL) {
 		perror("fopen:");
 		return;
 	}
@@ -172,20 +172,21 @@ FONT_TYPE_T get_word_type(FONT_SIZE_T size, uint8_t is_hz) {
 }
 
 struct __font_bit_size {
+	const char *fn;
 	uint8_t r;		//宽度
 	uint8_t l;		//高度
 	uint8_t s;		//占用字节数
 };
 static const struct __font_bit_size font_bit_size[] = {
-	{8,12,12},		//ASC_12
-	{8,16,16},		//ASC_16
-	{16,24,48},		//ASC_24
-	{8,14,14},		//ASC_14
-	{16,16,32},		//HZK_16
-	{24,24,72},		//HZK_24
-	{14,14,28},		//HZK_14
-	{12,12,24},		//HZK_12	
-	{0,0,0},		//error
+	{"font_dir/songti_asc_12.bin",	8,12,12},		//ASC_12
+	{"font_dir/songti_asc_16.bin",	8,16,16},		//ASC_16
+	{"font_dir/songti_asc_24.bin",	16,24,48},		//ASC_24
+	{"font_dir/songti_asc_14.bin",	8,14,14},		//ASC_14
+	{"font_dir/songti_hz_16.bin",		16,16,32},		//HZK_16
+	{"font_dir/songti_hz_24.bin",		24,24,72},		//HZK_24
+	{"font_dir/songti_hz_14.bin",		14,14,28},		//HZK_14
+	{"font_dir/xingsong_hz_12.bin",	12,12,24},		//xingsong 12
+	{NULL, 0,0,0},		//error
 };
 
 static uint8_t get_bitmap(FONT_TYPE_T font_type, uint8_t *bit_buf, const uint8_t *str) {
@@ -194,34 +195,34 @@ static uint8_t get_bitmap(FONT_TYPE_T font_type, uint8_t *bit_buf, const uint8_t
 
 	switch (font_type) {
 		case ASC_12:
-			offset = ASC_12_OFFS + (*str) * len;		
+			offset = (*str) * len;		
 	    	break;
 		case ASC_16:
-	    	offset = ASC_16_OFFS + (*str) * len;		
+	    	offset = (*str) * len;		
 	    	break;
 		case ASC_24:
-	    	offset = ASC_24_OFFS + (*str) * len;		
+	    	offset = (*str) * len;		
 	    	break;
 		case ASC_14:
-	    	offset = ASC_14_OFFS + (*str - ' ') * len;		
+	    	offset = (*str - ' ') * len;		
 	    	break;
 		case HZK_16:
-	    	offset = HZK_16_OFFS + (94*(str[0] - 0xa0 -  1) + (str[1] - 0xa0 -1)) * len;		
+	    	offset = (94*(str[0] - 0xa0 -  1) + (str[1] - 0xa0 -1)) * len;		
 	    	break;
 		case HZK_24:
-	    	offset = HZK_24_OFFS + (94*(str[0] - 0xa0  - 15 - 1) + (str[1] - 0xa0 -1)) * len;		
+	    	offset = (94*(str[0] - 0xa0  - 15 - 1) + (str[1] - 0xa0 -1)) * len;		
 	    	break;
 		case HZK_14:
-	    	offset = HZK_14_OFFS + (94*(str[0] - 0xa0  - 15 - 1) + (str[1] - 0xa0 -1)) * len;		
+	    	offset = (94*(str[0] - 0xa0  - 15 - 1) + (str[1] - 0xa0 -1)) * len;		
 	    	break;
 		case HZK_12:
-	    	offset = HZK_12_OFFS + (94*(str[0] - 0xa0  - 15 - 1) + (str[1] - 0xa0 -1)) * len;		
+	    	offset = (94*(str[0] - 0xa0  - 15 - 1) + (str[1] - 0xa0 -1)) * len;		
 	    	break;
 		default:
 	    	break;	
   }
 
-	spi_read(offset, bit_buf, len);
+	spi_read(font_bit_size[font_type].fn, offset, bit_buf, len);
 
 	return len;
 }
