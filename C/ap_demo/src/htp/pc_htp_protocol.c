@@ -52,6 +52,13 @@ int htp_send_job(const char *ap_name, const uint8_t *buf, int len) {
 	int n;
 	snprintf(names, NAME_BUF_LEN, "%s_%s", ap_name, FILE_JOB_NAME);
 	n = ftp_file_put(names, buf, len);
+	//denug
+	{
+		FILE *fp;
+		fp = fopen(names, "w");
+		fwrite(buf, 1, len, fp);
+		fclose(fp);
+	}
 	if (n == -1) 
 		printf("send job failed.\n");
 	return n;

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stddef.h>
 #include "datatype.h"
 
 static const char *VER_STR[] = {
@@ -19,7 +20,7 @@ static void data_sleep_dump(FILE *fp, const struct HS_PKT_OP_WRITEDATA_T *w) {
 	for (i = 0; i < w->data_esl_num; i++) {
 		fprintf(fp, "ID=0x%08X,LEN=%d,CRC=0x%04X,CRC_LEN=%d;", \
 					d->id, d->len, *((uint16_t *)d->data), *(((uint16_t *)d->data)+1));
-		d = (void *)((char *)d + d->len);
+		d = (void *)((char *)d + d->len + offsetof(struct data_area_t, data));
 	}
 
 	s = (void *)d;

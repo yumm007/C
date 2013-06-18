@@ -107,6 +107,7 @@ static void lcd2dot(LCD_T *lcd, uint8_t *buf) {
 
 static int lcd_flush(LCD_T *lcd, uint8_t *buf) {
 	uint16_t xy[] = {0, 0, lcd->line / 8 -1, lcd->real_row -1};
+	int n;
 
 	memcpy(buf, xy, sizeof(xy));
 	lcd2dot(lcd, buf + sizeof(xy));	//头8个字节为xy坐标
@@ -130,8 +131,9 @@ static int lcd_flush(LCD_T *lcd, uint8_t *buf) {
 				}
 	}
 #endif
+	n =  lcd->real_row * lcd->line /8 + 8;
 	free(lcd->buf); free(lcd);
-	return lcd->real_row * lcd->line /8 + 8;
+	return n;
 }
 
 static void spi_read(const char *fn, uint32_t addr, uint8_t *buf, int len) {

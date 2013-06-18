@@ -96,6 +96,7 @@ int main(void) {
 		//填写header
 		n = fill_header_data(&pkt->header, HS_OPCODE_WRITEDATA, 0, n);
 		write_dump(pkt, stderr);
+
 		//开始任务
 		ap_task.data_len = n;
 		ret = assign_ap_task(&ap_task, 1);

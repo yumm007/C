@@ -9,6 +9,6 @@ Program(
 'test/data_dump.c'
 ],
 CPPPATH='inc',
-CCFLAGS = '-Wall'
+CCFLAGS = '-Wall -g'
 ) 
 

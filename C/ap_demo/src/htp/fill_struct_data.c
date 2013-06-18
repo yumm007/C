@@ -14,15 +14,15 @@ static int fill_write_data_data_sleep(const struct dot_info_t * info,\
 		d->len = lcd_display(info, d->data, len);
 		if (d->len == 0)
 			return -1;
-		n += d->len;
-		len -= d->len;
+		n += d->len + offsetof(struct data_area_t, data);
+		len -= d->len + offsetof(struct data_area_t, data);
+		//len -= d->len;
 		esl_data_dump(info, stderr, d->len);
-      d = (void *)((char *)d + d->len);
-		n += 8;
+      d = (void *)((char *)d + d->len + offsetof(struct data_area_t, data));
    }
 
    s = (void *)d;
-   for (i = 0; i < w->sleep_esl_num; i++, s++, sleep_id++, n += 4)
+   for (i = 0; i < w->sleep_esl_num; i++, s++, sleep_id++, n += sizeof(s->id))
 		s->id = *sleep_id;
 	return n;
 }
