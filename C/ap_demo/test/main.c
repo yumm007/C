@@ -46,10 +46,11 @@ static int make_rand_dot_info(struct dot_info_t **data_ids, uint32_t **sleep_ids
 		return -1;
 	}
 	
-	n = rand() % 20 + 1;
+	//n = rand() % 20 + 1;
+	n = 1;
 
 	for (i = 0; i < n; i++) {
-		(*data_ids)[i].type = i % 2 == 0 ? 20 : 29;
+		(*data_ids)[i].type = i % 2 == 0 ? 20 : 20;
 		(*data_ids)[i].dot_id = 0x56780001 + i;
 		(*data_ids)[i].product_id = 11111111 + i;
 		(*data_ids)[i].price = rand() % 100 / 0.9;

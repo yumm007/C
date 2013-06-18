@@ -18,12 +18,12 @@ static int fill_write_data_data_sleep(const struct dot_info_t * info,\
 		len -= d->len;
 		esl_data_dump(info, stderr, d->len);
       d = (void *)((char *)d + d->len);
+		n += 8;
    }
 
    s = (void *)d;
-   for (i = 0; i < w->sleep_esl_num; i++, s++, sleep_id++)
+   for (i = 0; i < w->sleep_esl_num; i++, s++, sleep_id++, n += 4)
 		s->id = *sleep_id;
-	
 	return n;
 }
 
@@ -46,7 +46,8 @@ int fill_write_data(struct HS_PKT_OP_WRITEDATA_T *w, int buf_len, const struct d
 
 	if ((n = fill_write_data_data_sleep(data_ids, sleep_ids, w, buf_len)) == -1)
 		return 0;
-	return ((char *)&(w->sleep[w->sleep_esl_num]) - (char *)w + n);
+	//return ((char *)&(w->sleep[w->sleep_esl_num]) - (char *)w + n);
+	return (offsetof(struct HS_PKT_OP_WRITEDATA_T, data) + n);
 }
 
 int fill_header_data(struct HS_PKT_HEADER_T *h, int op_code, int para, int data_len) {
