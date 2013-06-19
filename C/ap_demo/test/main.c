@@ -30,7 +30,7 @@ static void make_ascii(char *buf, int buf_len) {
 }
 
 static int make_rand_dot_info(struct dot_info_t **data_ids, uint32_t **sleep_ids) {
-	int i, n;
+	int i, n, off;
 	static int seed = 0;
 	
 	if (seed == 0) {
@@ -38,8 +38,8 @@ static int make_rand_dot_info(struct dot_info_t **data_ids, uint32_t **sleep_ids
 		seed = 1;
 	}
 
-	if ((*data_ids = malloc(sizeof(struct dot_info_t) * 25)) == NULL \
-		|| (*sleep_ids = malloc(sizeof(uint32_t) * 25)) == NULL) 
+	if ((*data_ids = calloc(sizeof(struct dot_info_t), 25)) == NULL \
+		|| (*sleep_ids = calloc(sizeof(uint32_t), 25)) == NULL) 
 	{
 		free(*data_ids);
 		free(*sleep_ids);
@@ -47,17 +47,21 @@ static int make_rand_dot_info(struct dot_info_t **data_ids, uint32_t **sleep_ids
 	}
 	
 	//n = rand() % 20 + 1;
-	n = 1;
+	n = 3;
 
 	for (i = 0; i < n; i++) {
 		(*data_ids)[i].type = i % 2 == 0 ? 20 : 20;
-		(*data_ids)[i].dot_id = 0x56780001 + i;
+		(*data_ids)[i].dot_id = 0x32547658 + i;
 		(*data_ids)[i].product_id = 11111111 + i;
 		(*data_ids)[i].price = rand() % 100 / 0.9;
-		make_ascii((*data_ids)[i].name, PRODUCT_NAME_MAX_LEN);
-		make_ascii((*data_ids)[i].origin, PORDUCT_ORIGIN_MAX_LEN);
+		off = sprintf((*data_ids)[i].name, "name: ");
+		make_ascii((*data_ids)[i].name + off, 20);
+		off = sprintf((*data_ids)[i].origin, "origin: ");
+		make_ascii((*data_ids)[i].origin + off, 6);
 		(*sleep_ids)[i] = (*data_ids)[i].dot_id;
 	}
+
+	(*data_ids)[i-1].type = 29;
 
 	return n;
 }

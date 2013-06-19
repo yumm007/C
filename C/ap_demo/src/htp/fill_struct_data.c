@@ -36,8 +36,8 @@ int fill_write_data(struct HS_PKT_OP_WRITEDATA_T *w, int buf_len, const struct d
 	w->para = 0x0;
 	w->powermode = 0x0;
 
-	w->wakeup_id = 0x56000000;
-	w->rf_ch = 0;
+	w->wakeup_id = 0x78563452;
+	w->rf_ch = 200;
 
 	w->data_esl_num = data_n;
 	w->sleep_esl_num = sleep_n;
