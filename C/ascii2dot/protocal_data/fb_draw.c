@@ -59,12 +59,12 @@ void fb_close()
      close(fb0.fd);
 }
 
-void fb_draw_point(int x, int y, int color)
+void fb_draw_point(int x, int y, unsigned int color)
 {
      unsigned long offet;
 
-     offet = fb0.bpp * (x + y * fb0.var.xres);
-     memset(fb0.fbp + offet, color, fb0.bpp);
+     offet = fb0.bpp * (x + (50 + y) * fb0.var.xres);
+     memcpy((unsigned int *)(fb0.fbp) + offet, &color, fb0.bpp);
 }
 
 int xres(void)
