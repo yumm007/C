@@ -315,24 +315,27 @@ static void set_lcd_row_line(FONT_TYPE_T font_type, int *rows, int *lines, \
 static void lcd_print_block(FONT_SIZE_T size, int start_x, int start_y, \
 									int end_x, int end_y, const uint8_t *str, LCD_T *lcd) 
 {
-	unsigned char is_hz;
+	unsigned char is_hz, is_sym, sym;
 	unsigned char bit_buf[FONT_MAX * (FONT_MAX/8)];
 	FONT_TYPE_T font_type;
 	int row = start_x, line = start_y;
 
 	while (*str != '\0') {
 		is_hz = (*str) > 0xa0 ? 1 : 0;	//判断是否为汉字	
+		is_sym = *str == 0xa3 ? 1 : 0;
+		if (is_sym)
+			sym = *(str + 1) - 128;
 		//返回字体类型
-		font_type = get_word_type(size, is_hz);
+		font_type = get_word_type(size, is_sym ? 0 : is_hz);
 		//设置屏幕输出的起始位置
 		set_lcd_row_line(font_type, &row, &line, start_x, start_y, end_x, end_y, lcd);
 
 		//从字库中取出当前字的点阵
 		memset(bit_buf, 0x0, sizeof(bit_buf));
-		get_bitmap(font_type, bit_buf, str);
+		get_bitmap(font_type, bit_buf, is_sym ? &sym : str);
 		send_bitmap(font_type, bit_buf, lcd);
 		//row, line始终指向下一个空白位置,可能换行也可能跳到行首
-		str = is_hz ? str + 2 : str + 1;	//指向下一个字符
+		str = (is_hz || is_sym) ? str + 2 : str + 1;	//指向下一个字符
 	}
 }
 
@@ -359,8 +362,8 @@ int main(int argc, char **argv) {
 	
 	fb_open();
 
-	lcd_print_block(FONT_12, 0, 0, 12*5, 0+12*4, (uint8_t *)"奥丽轩马蒙a斯法定产区红葡萄酒", lcd);
-	lcd_print_block(FONT_16, 0, 14, 0, 0, (uint8_t *)"法国 巴黎 猴", lcd);
+	lcd_print_block(FONT_12, 0, 0, 12*5, 0+12*4, (uint8_t *)"奥丽轩abc(马蒙a)斯法定产区红葡萄酒", lcd);
+	//lcd_print_block(FONT_16, 0, 14, 0, 0, (uint8_t *)"法国 巴黎 猴", lcd);
 	lcd_print_block(FONT_12, 90, 32, 90+2*8, 32+12,(uint8_t *)"381.4", lcd);
 	len = lcd_flush(lcd, lcd_buf); //保存至lcd_buf, 并返回长度
 
