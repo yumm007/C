@@ -62,7 +62,7 @@ void fb_draw_point(int x, int y, struct color_v *color)
      unsigned long offet = 0;
 	  char *p;
 
-     offet = fb0.bpp * (x + y * fb0.var.xres);
+     offet = fb0.bpp * x + y * fb0.fix.line_length;
 	  p = fb0.fbp + offet;
 
 	  memcpy(p, color, fb0.bpp);

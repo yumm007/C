@@ -296,6 +296,7 @@ static void set_lcd_row_line(FONT_TYPE_T font_type, int *rows, int *lines, \
 	if (cur_line + font_size_l > end_y) {
 		cur_line = start_y;
 		cur_row = start_x;
+		return;
 	}
 
 	next_row = 	 cur_row + font_size_r;
@@ -362,7 +363,7 @@ int main(int argc, char **argv) {
 	
 	fb_open();
 
-	lcd_print_block(FONT_12, 0, 0, 12*5, 0+12*4, (uint8_t *)"奥丽轩abc(马蒙a)斯法定产区红葡萄酒", lcd);
+	lcd_print_block(FONT_12, 0, 0, 12*5, 0+12*2, (uint8_t *)"奥丽轩abc(马蒙a)斯法定产区红葡萄酒", lcd);
 	//lcd_print_block(FONT_16, 0, 14, 0, 0, (uint8_t *)"法国 巴黎 猴", lcd);
 	lcd_print_block(FONT_12, 90, 32, 90+2*8, 32+12,(uint8_t *)"381.4", lcd);
 	len = lcd_flush(lcd, lcd_buf); //保存至lcd_buf, 并返回长度
