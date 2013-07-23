@@ -126,9 +126,9 @@ static int lcd_flush(LCD_T *lcd, uint8_t *buf) {
 	for (i = 0; i < lcd->row; i++) {
 		for (j = 0; j < lcd->line / 8; j++)
 			for (k = 7; k >= 0; k--) {
-				//printf("%s", buf[i * LCD_LINE / 8 + j] & (1 << k) ? "--" : "  ");
-				//fb_draw_point(i, j*8 + 7 - k, buf[i * lcd->line / 8 + j + 8] & (1 << k) ? 0xff556677 : 0x0);
-				fb_draw_point(i, j*8 + 7 - k, buf[i * lcd->line / 8 + j + 8] & (1 << k) ? 0: ~0);
+					//printf("%s", buf[i * LCD_LINE / 8 + j] & (1 << k) ? "--" : "  ");
+					//fb_draw_point(i, j*8 + 7 - k, buf[i * lcd->line / 8 + j + 8] & (1 << k) ? 0xff556677 : 0x0);
+					fb_draw_point(i, j*8 + 7 - k, buf[i * lcd->line / 8 + j + 8] & (1 << k) ? 0: ~0);
 				}
 	}
 #endif
@@ -275,20 +275,27 @@ static void send_bitmap(FONT_TYPE_T font_type, uint8_t *tmp, LCD_T *lcd) {
 
 //设置屏幕起始和结束为止,并将
 //row, line指向下一个空白位置,可能换行也可能跳到行首
-static void set_lcd_row_line(FONT_TYPE_T font_type, int *rows, int *lines, LCD_T *lcd) {
+static void set_lcd_row_line(FONT_TYPE_T font_type, int *rows, int *lines, \
+										int start_x, int start_y, int end_x, int end_y, LCD_T *lcd) 
+{
 	int font_size_r, font_size_l, cur_row = *rows, cur_line = *lines, next_row, next_line;
+
+	if (end_x <= start_x)
+		end_x = lcd->row;
+	if (end_y <= start_y)
+		end_y = lcd->line;
 
 	font_size_r = font_bit_size[font_type].r;
 	font_size_l = font_bit_size[font_type].l;
 
-	if (cur_row + font_size_r > lcd->row) {
-		cur_row = 0;
+	if (cur_row + font_size_r > end_x) {
+		cur_row = start_x;
 		cur_line += font_size_l + lcd->lcd_line_empty;
 	}
 
-	if (cur_line + font_size_l > lcd->line) {
-		cur_line = 0;
-		cur_row = 0;
+	if (cur_line + font_size_l > end_y) {
+		cur_line = start_y;
+		cur_row = start_x;
 	}
 
 	next_row = 	 cur_row + font_size_r;
@@ -305,17 +312,20 @@ static void set_lcd_row_line(FONT_TYPE_T font_type, int *rows, int *lines, LCD_T
 
 }
 
-static void lcd_print(FONT_SIZE_T size, int row, int lines, const uint8_t *str, LCD_T *lcd) {
+static void lcd_print_block(FONT_SIZE_T size, int start_x, int start_y, \
+									int end_x, int end_y, const uint8_t *str, LCD_T *lcd) 
+{
 	unsigned char is_hz;
 	unsigned char bit_buf[FONT_MAX * (FONT_MAX/8)];
 	FONT_TYPE_T font_type;
+	int row = start_x, line = start_y;
 
 	while (*str != '\0') {
 		is_hz = (*str) > 0xa0 ? 1 : 0;	//判断是否为汉字	
 		//返回字体类型
 		font_type = get_word_type(size, is_hz);
 		//设置屏幕输出的起始位置
-		set_lcd_row_line(font_type, &row, &lines, lcd);
+		set_lcd_row_line(font_type, &row, &line, start_x, start_y, end_x, end_y, lcd);
 
 		//从字库中取出当前字的点阵
 		memset(bit_buf, 0x0, sizeof(bit_buf));
@@ -327,7 +337,6 @@ static void lcd_print(FONT_SIZE_T size, int row, int lines, const uint8_t *str, 
 }
 
 extern int protocal_data(const uint8_t *content, int len);
-
 int main(int argc, char **argv) {
 	int len, line, row;
 	LCD_T *lcd;
@@ -350,10 +359,9 @@ int main(int argc, char **argv) {
 	
 	fb_open();
 
-	//lcd_print(FONT_14, 0, 0, (uint8_t *)"abc一二三四@!好的这个是会自动换行的!满屏幕显示看看效果怎么样");
-	lcd_print(FONT_12, 0, 0, (uint8_t *)"奥丽轩马蒙斯法定产区红葡萄酒", lcd);
-	lcd_print(FONT_16, 0, 14, (uint8_t *)"法国 巴黎 猴", lcd);
-	lcd_print(FONT_12, 90, 32, (uint8_t *)"381.4", lcd);
+	lcd_print_block(FONT_12, 0, 0, 12*5, 0+12*4, (uint8_t *)"奥丽轩马蒙a斯法定产区红葡萄酒", lcd);
+	lcd_print_block(FONT_16, 0, 14, 0, 0, (uint8_t *)"法国 巴黎 猴", lcd);
+	lcd_print_block(FONT_12, 90, 32, 90+2*8, 32+12,(uint8_t *)"381.4", lcd);
 	len = lcd_flush(lcd, lcd_buf); //保存至lcd_buf, 并返回长度
 
 	protocal_data(lcd_buf, len);

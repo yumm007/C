@@ -71,7 +71,7 @@ void fb_draw_point_v2(int x, int y, struct color_v *color)
      unsigned long offet = 0;
 	  char *p;
 
-     offet = fb0.bpp * (x + y * fb0.var.xres);
+     offet = fb0.bpp * x + y * fb0.fix.line_length;
 	  p = fb0.fbp + offet;
 
 	  memcpy(p, color, fb0.bpp);
@@ -90,7 +90,7 @@ void fb_draw_point_v3(int x, int y, struct color_v *color)
 	  temp.g = (temp.g - 30 < 0 ? 0:temp.g - 30);
 	  temp.r = (temp.r - 10 < 0 ? 0:temp.r - 10);
 #endif
-     offet = fb0.bpp * (x-8 + (y-8) * fb0.var.xres);
+     offet = fb0.bpp * (x-8) + (y-8) * fb0.fix.line_length;
 	  p = fb0.fbp + offet;
 
 	  memcpy(p, &temp, fb0.bpp);
@@ -101,7 +101,7 @@ void get_fb_draw_point(int x, int y, struct color_v *color) {
      unsigned long offet = 0;
 	  char *p;
 
-     offet = fb0.bpp * (x + y * fb0.var.xres);
+     offet = fb0.bpp * x + y * fb0.fix.line_length;
 	  p = fb0.fbp + offet;
 
 	  memcpy(color, p, fb0.bpp);
