@@ -37,10 +37,10 @@ typedef struct tagBITMAPINFOHEADER { /* bmih */
 } __attribute__ ((packed)) BMP_FI;
 
 struct color_v {
-	char b;
-	char g;
-	char r;
-	char t;
+	unsigned char b;
+	unsigned char g;
+	unsigned char r;
+	unsigned char t;
 };
 
 int init_bmp(BMP_FH *bmp_fh, BMP_FI *bmp_fi, FILE *fp);
