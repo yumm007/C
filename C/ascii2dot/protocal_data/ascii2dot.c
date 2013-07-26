@@ -220,7 +220,7 @@ static uint8_t get_bitmap(FONT_TYPE_T font_type, uint8_t *bit_buf, const uint8_t
 	    	offset = (94*(str[0] - 0xa0  - 15 - 1) + (str[1] - 0xa0 -1)) * len;		
 	    	break;
 		case HZK_12:
-	    	offset = (94*(str[0] - 0xa0  - 15 - 1) + (str[1] - 0xa0 -1)) * len;		
+	    	offset = (94*(str[0] - 0xa0 - 1) + (str[1] - 0xa0 -1)) * len;		
 	    	break;
 		default:
 	    	break;	
@@ -324,6 +324,7 @@ static void lcd_print_block(FONT_SIZE_T size, int start_x, int start_y, \
 	while (*str != '\0') {
 		is_hz = (*str) > 0xa0 ? 1 : 0;	//判断是否为汉字	
 		is_sym = *str == 0xa3 ? 1 : 0;
+		is_sym = 0;
 		if (is_sym)
 			sym = *(str + 1) - 128;
 		//返回字体类型
@@ -365,7 +366,7 @@ int main(int argc, char **argv) {
 
 	lcd_print_block(FONT_12, 0, 0, 12*5, 0+12*2, (uint8_t *)"奥丽轩abc(马蒙a)斯法定产区红葡萄酒", lcd);
 	//lcd_print_block(FONT_16, 0, 14, 0, 0, (uint8_t *)"法国 巴黎 猴", lcd);
-	lcd_print_block(FONT_12, 90, 32, 90+2*8, 32+12,(uint8_t *)"381.4", lcd);
+	lcd_print_block(FONT_12, 40, 42, 90+10*8, 32+24,(uint8_t *)"$￥381.4", lcd);
 	len = lcd_flush(lcd, lcd_buf); //保存至lcd_buf, 并返回长度
 
 	protocal_data(lcd_buf, len);
