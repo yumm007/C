@@ -347,18 +347,39 @@ extern int qrcode_main(int argc, char **argv, uint8_t *qr_buf);
 
 static int set_qrcode(int start_x, int start_y, int end_x, int end_y, LCD_T *lcd) {
 
-	char *argvs[] = {"qrcode_mmain", "-s", "3", "-l", "L", "-m", "1", "-v", "2", "-t", "ASCII", "-o", "out.txt", "this is test line for qrcode http://www.hanshows.com"};
+	char *argvs[] = {"qrcode_mmain", "-s", "2", "-l", "L", "-m", "1", "-v", "1", "-t", "ASCII", "-o", "out.txt", "www.163.com"};
 	uint8_t qr_buf[1024*1024];
-	uint32_t *qr_width = (uint32_t *)qr_buf;
-	int i, j, point;
+	uint32_t qr_width;
+	int i, j, m, n, v, point, dot;
 
 	qrcode_main(sizeof(argvs) / sizeof(argvs[0]), argvs, qr_buf);
+	qr_width =*((uint32_t *)qr_buf);
+	dot = atoi(argvs[2]);
 	
-	for (i = 0; i < *qr_width; i++)
-		for (j = 0; j < *qr_width; j++) {
-			point = (start_y + i) * lcd->row + start_x + j;
-			set_arr_bit(lcd->buf, point, (qr_buf[4+i*(*qr_width)+j] & 0x01) ? 1 : 0);
+	for (i = 0; i < qr_width; i++)
+		for (j = 0; j < qr_width; j++) {
+			point = (start_y + i * dot) * lcd->row + start_x + j * dot;
+			v = (qr_buf[4+i*(qr_width)+j] & 0x01) ? 1 : 0;
+			for (m = 0; m < dot; m++)
+				for (n = 0; n < dot; n++)
+					set_arr_bit(lcd->buf, point + m * lcd->row + n, v);
 		}
+
+	for (i = 0; i < (qr_width+2) * dot; i++) {
+		point = (start_y - dot)*lcd->row + start_x-dot + i;
+		for (m = 0; m < dot; m++)
+			set_arr_bit(lcd->buf, point + m * lcd->row, 0);
+		point = (start_y + qr_width * dot)*lcd->row + start_x -dot + i;
+		for (m = 0; m < dot; m++)
+			set_arr_bit(lcd->buf, point + m * lcd->row, 0);
+	}
+	for (i = 0; i < (qr_width+1) * dot; i++) {
+		point = (start_y + i) * lcd->row + start_x;
+		for (m = 0; m < dot; m++) {
+			set_arr_bit(lcd->buf, point - dot + m, 0);
+			set_arr_bit(lcd->buf, point + qr_width * dot + m, 0);
+		}
+	}
 
 	return 0;
 }
