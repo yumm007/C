@@ -1,0 +1,11 @@
+Program(
+'ascii2dot',
+[
+Glob('*.c'),
+Glob('fb/*.c'),
+Glob('qrcode/*.c'),
+Glob('ascii/*.c'),
+],
+CPPPATH=['qrcode', 'fb', 'ascii'],
+CCFLAGS=['-Wall', '-DHAVE_CONFIG_H'],
+)

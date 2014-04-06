@@ -18,7 +18,7 @@ int fb_open(void)
 
      fb0.fd = open("/dev/fb0", O_RDWR);
      if (-1 == fb0.fd) {
-	  perror("open");
+	  perror("1 open");
 	  goto error;
      }
 

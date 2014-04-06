@@ -342,6 +342,27 @@ static void lcd_print_block(FONT_SIZE_T size, int start_x, int start_y, \
 }
 
 extern int protocal_data(const uint8_t *content, int len);
+extern int qrcode_main(int argc, char **argv, uint8_t *qr_buf);
+
+
+static int set_qrcode(int start_x, int start_y, int end_x, int end_y, LCD_T *lcd) {
+
+	char *argvs[] = {"qrcode_mmain", "-s", "3", "-l", "L", "-m", "1", "-v", "2", "-t", "ASCII", "-o", "out.txt", "this is test line for qrcode http://www.hanshows.com"};
+	uint8_t qr_buf[1024*1024];
+	uint32_t *qr_width = (uint32_t *)qr_buf;
+	int i, j, point;
+
+	qrcode_main(sizeof(argvs) / sizeof(argvs[0]), argvs, qr_buf);
+	
+	for (i = 0; i < *qr_width; i++)
+		for (j = 0; j < *qr_width; j++) {
+			point = (start_y + i) * lcd->row + start_x + j;
+			set_arr_bit(lcd->buf, point, (qr_buf[4+i*(*qr_width)+j] & 0x01) ? 1 : 0);
+		}
+
+	return 0;
+}
+
 int main(int argc, char **argv) {
 	int len, line, row;
 	LCD_T *lcd;
@@ -364,12 +385,15 @@ int main(int argc, char **argv) {
 	
 	fb_open();
 
-	lcd_print_block(FONT_12, 0, 0, 12*5, 0+12*2, (uint8_t *)"奥丽轩abc(马蒙a)斯法定产区红葡萄酒", lcd);
+	//lcd_print_block(FONT_12, 0, 0, 12*5, 0+12*2, (uint8_t *)"奥丽轩abc(马蒙a)斯法定产区红葡萄酒", lcd);
+	lcd_print_block(FONT_12, 0, 0, 12*28, 0+12*2, (uint8_t *)"this is a test line for host", lcd);
 	//lcd_print_block(FONT_16, 0, 14, 0, 0, (uint8_t *)"法国 巴黎 猴", lcd);
-	lcd_print_block(FONT_12, 40, 42, 90+10*8, 32+24,(uint8_t *)"$￥381.4", lcd);
+	//lcd_print_block(FONT_12, 40, 42, 90+10*8, 32+24,(uint8_t *)"$￥381.4", lcd);
+	//lcd_print_block(FONT_12, 40, 42, 90+10*20, 32+24,(uint8_t *)"Price: 381.4", lcd);
+
+	set_qrcode(20, 30, 120, 150, lcd);
+
 	len = lcd_flush(lcd, lcd_buf); //保存至lcd_buf, 并返回长度
-
 	protocal_data(lcd_buf, len);
-
 	return 0;
 }
