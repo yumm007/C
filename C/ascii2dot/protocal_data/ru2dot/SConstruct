@@ -1,0 +1,25 @@
+import platform
+
+exe_name = 'bin/' + platform.system()
+'''
+if platform.system() == 'Linux':
+	exe_name += '_Linux'
+else:
+	exe_name += '_Windows'
+'''
+
+if platform.architecture()[0] == '32bit':
+	exe_name += '_32'
+else:
+	exe_name += '_64'
+
+Program(
+exe_name, 
+[
+Glob('src/*.c'),
+Glob('main/*.c'),
+],
+CPPPATH=['inc'],
+CCFLAGS = '-Wall -g',
+) 
+

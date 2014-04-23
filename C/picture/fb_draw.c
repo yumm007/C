@@ -119,12 +119,12 @@ static int read_color(struct color_v *color, int bpp, FILE *fp) {
 	return 0.299 * color->r + 0.587 * color->g + 0.114 * color->b;
 }
 
+unsigned char bmp[4096*1024*4];
 void draw_pic(BMP_FI *bmp_fi, FILE *fp, int x, int y) {
 	int i, j, bpp, offset, thresh;
 	struct color_v color = {0,0,0,0};
 	struct color_v white = {0xff, 0xff, 0xff, 0xff};
 	struct color_v black = {0, 0, 0, 0};
-	unsigned char bmp[4096*1024];
 
 	bpp = bmp_fi->biBitCount / 8;
 	offset = (4 - (bmp_fi->biWidth * bpp) % 4) % 4;

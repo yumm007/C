@@ -23,6 +23,8 @@ typedef enum {
     FONT_24	= 24,
 	 FONT_14 = 14,
 
+	 RU_12	= 15,
+
     FONT_MAX	= FONT_24,
 } FONT_SIZE_T;
 
@@ -35,6 +37,8 @@ typedef enum {
     HZK_24,
 	 HZK_14,
 	 HZK_12,
+
+	 RU_ASC_12,
 
     FONT_ERR,
 } FONT_TYPE_T;
@@ -166,6 +170,9 @@ FONT_TYPE_T get_word_type(FONT_SIZE_T size, uint8_t is_hz) {
 	case FONT_14:
 	    ret = !is_hz ? ASC_14: HZK_14;
 	    break;
+	case RU_12:
+		ret = RU_ASC_12;
+		break;
 	default:
 	    ret = FONT_ERR;
 	    break;
@@ -189,6 +196,7 @@ static const struct __font_bit_size font_bit_size[] = {
 	{"font_dir/songti_hz_24.bin",		24,24,72},		//HZK_24
 	{"font_dir/songti_hz_14.bin",		14,14,28},		//HZK_14
 	{"font_dir/xingsong_hz_12.bin",	12,12,24},		//新宋12号字体
+	{"font_dir/ru12,bin",				16,12,24},		//RU 12
 
 	{NULL,0,0,0},		//error
 };
@@ -222,6 +230,9 @@ static uint8_t get_bitmap(FONT_TYPE_T font_type, uint8_t *bit_buf, const uint8_t
 		case HZK_12:
 	    	offset = (94*(str[0] - 0xa0 - 1) + (str[1] - 0xa0 -1)) * len;		
 	    	break;
+		case RU_ASC_12:
+			offset = 98 * (*(uint16_t *)str +2);
+			break;
 		default:
 	    	break;	
   }
@@ -337,13 +348,15 @@ static void lcd_print_block(FONT_SIZE_T size, int start_x, int start_y, \
 		get_bitmap(font_type, bit_buf, is_sym ? &sym : str);
 		send_bitmap(font_type, bit_buf, lcd);
 		//row, line始终指向下一个空白位置,可能换行也可能跳到行首
-		str = (is_hz || is_sym) ? str + 2 : str + 1;	//指向下一个字符
+		if (font_type == RU_ASC_12)
+			str += 2;
+		else
+			str = (is_hz || is_sym) ? str + 2 : str + 1;	//指向下一个字符
 	}
 }
 
 extern int protocal_data(const uint8_t *content, int len);
 extern int qrcode_main(int argc, char **argv, uint8_t *qr_buf);
-
 
 static int set_qrcode(int start_x, int start_y, int end_x, int end_y, LCD_T *lcd) {
 
@@ -365,7 +378,7 @@ static int set_qrcode(int start_x, int start_y, int end_x, int end_y, LCD_T *lcd
 					set_arr_bit(lcd->buf, point + m * lcd->row + n, v);
 		}
 
-	for (i = 0; i < (qr_width+2) * dot; i++) {
+	for (i = 0; i < (qr_width+2) * dot; i++) { //head and tail space
 		point = (start_y - dot)*lcd->row + start_x-dot + i;
 		for (m = 0; m < dot; m++)
 			set_arr_bit(lcd->buf, point + m * lcd->row, 0);
@@ -373,7 +386,7 @@ static int set_qrcode(int start_x, int start_y, int end_x, int end_y, LCD_T *lcd
 		for (m = 0; m < dot; m++)
 			set_arr_bit(lcd->buf, point + m * lcd->row, 0);
 	}
-	for (i = 0; i < (qr_width+1) * dot; i++) {
+	for (i = 0; i < (qr_width+1) * dot; i++) { //left and right space
 		point = (start_y + i) * lcd->row + start_x;
 		for (m = 0; m < dot; m++) {
 			set_arr_bit(lcd->buf, point - dot + m, 0);
@@ -384,10 +397,30 @@ static int set_qrcode(int start_x, int start_y, int end_x, int end_y, LCD_T *lcd
 	return 0;
 }
 
+int bmp_main(const char *fn, uint32_t *x, uint32_t *y, uint8_t *bmp_buf);
+
+static int set_pic(int start_x, int start_y, int end_x, int end_y, const char *fn ,LCD_T *lcd) {
+   uint8_t pic_buf[1024*1024];
+   int i, j, point;
+	uint32_t width, height;
+
+   bmp_main(fn, &width, &height, pic_buf);
+	fprintf(stderr, "width, height = %u, %u\n", width, height);
+
+   for (i = 0; i < height; i++)
+      for (j = 0; j < width; j++) {
+         point = (start_y + i) * lcd->row + start_x + j;
+         set_arr_bit(lcd->buf, point, (pic_buf[i*(width)+j] & 0x01) ? 1 : 0);
+      }
+
+   return 0;
+}
+
 int main(int argc, char **argv) {
 	int len, line, row;
 	LCD_T *lcd;
 	uint8_t lcd_buf[1024*1024];
+	uint8_t ru_str[] = {0x0d, 0x04, 0x00};
 
 	if (argc == 1) {
 		line = 172;
@@ -407,14 +440,18 @@ int main(int argc, char **argv) {
 	fb_open();
 
 	//lcd_print_block(FONT_12, 0, 0, 12*5, 0+12*2, (uint8_t *)"奥丽轩abc(马蒙a)斯法定产区红葡萄酒", lcd);
-	lcd_print_block(FONT_12, 0, 0, 12*28, 0+12*2, (uint8_t *)"this is a test line for host", lcd);
+	//lcd_print_block(FONT_12, 0, 0, 12*28, 0+12*2, (uint8_t *)"this is a test line for host", lcd);
+	lcd_print_block(RU_12, 0, 0, 12*28, 0+12*2, ru_str, lcd);
 	//lcd_print_block(FONT_16, 0, 14, 0, 0, (uint8_t *)"法国 巴黎 猴", lcd);
 	//lcd_print_block(FONT_12, 40, 42, 90+10*8, 32+24,(uint8_t *)"$￥381.4", lcd);
 	//lcd_print_block(FONT_12, 40, 42, 90+10*20, 32+24,(uint8_t *)"Price: 381.4", lcd);
 
 	set_qrcode(20, 30, 120, 150, lcd);
+	set_pic(100, 30, 160, 150, "pic.bmp", lcd);
+	//set_line(100, 30, 160, 200, lcd)
 
 	len = lcd_flush(lcd, lcd_buf); //保存至lcd_buf, 并返回长度
 	protocal_data(lcd_buf, len);
 	return 0;
 }
+
