@@ -2,7 +2,6 @@
 *.o
 *.swp
 *.hex
-*.bin
 
 # Libraries
 *.lib
