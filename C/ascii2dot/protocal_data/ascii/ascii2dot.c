@@ -153,6 +153,27 @@ static void spi_read(const char *filename, uint32_t addr, uint8_t *buf, int len)
 	fclose(fp);
 }
 
+static void ru_read(const char *filename, uint32_t addr, uint8_t *data, int len) {
+
+	FILE *font_file;
+	char buf[98-2];	//remove width and height
+	int i = 0;
+	int j = 0;
+
+	font_file = fopen(filename, "rb");
+	//skip width and height
+	fseek(font_file, addr, SEEK_SET);
+	fread(buf, sizeof(buf), 1, font_file);
+	fclose(font_file);
+
+	memset(data, 0, 72);
+	for (i = 0, j = 0; j < (24 - 2); i++) 
+		if ((i % 4) < 2) {
+			data[j] = buf[i];
+			j++;
+		}
+}
+
 //返回字体类型
 FONT_TYPE_T get_word_type(FONT_SIZE_T size, uint8_t is_hz) {
   FONT_TYPE_T ret;
@@ -196,10 +217,13 @@ static const struct __font_bit_size font_bit_size[] = {
 	{"font_dir/songti_hz_24.bin",		24,24,72},		//HZK_24
 	{"font_dir/songti_hz_14.bin",		14,14,28},		//HZK_14
 	{"font_dir/xingsong_hz_12.bin",	12,12,24},		//新宋12号字体
-	{"font_dir/ru12,bin",				16,12,24},		//RU 12
+	{"font_dir/ru12.bin",				16,12,24},		//RU 12
 
 	{NULL,0,0,0},		//error
 };
+
+
+
 
 static uint8_t get_bitmap(FONT_TYPE_T font_type, uint8_t *bit_buf, const uint8_t *str) {
 	uint32_t offset;
@@ -231,13 +255,16 @@ static uint8_t get_bitmap(FONT_TYPE_T font_type, uint8_t *bit_buf, const uint8_t
 	    	offset = (94*(str[0] - 0xa0 - 1) + (str[1] - 0xa0 -1)) * len;		
 	    	break;
 		case RU_ASC_12:
-			offset = 98 * (*(uint16_t *)str +2);
+			offset = 98 * (*(uint16_t *)str) +2;
 			break;
 		default:
 	    	break;	
   }
 
-	spi_read(font_bit_size[font_type].fn, offset, bit_buf, len);
+	if (font_type != RU_ASC_12)
+		spi_read(font_bit_size[font_type].fn, offset, bit_buf, len);
+	else
+		ru_read(font_bit_size[font_type].fn, offset, bit_buf, len);
 
 	return len;
 }
@@ -420,7 +447,8 @@ int main(int argc, char **argv) {
 	int len, line, row;
 	LCD_T *lcd;
 	uint8_t lcd_buf[1024*1024];
-	uint8_t ru_str[] = {0x0d, 0x04, 0x00};
+	//
+	uint8_t ru_str[] = {0x11, 0x04, 0x3e,0x04,0x40,0x04,0x38,0x04,0x41,0x04, 0x00};
 
 	if (argc == 1) {
 		line = 172;
@@ -446,8 +474,8 @@ int main(int argc, char **argv) {
 	//lcd_print_block(FONT_12, 40, 42, 90+10*8, 32+24,(uint8_t *)"$￥381.4", lcd);
 	//lcd_print_block(FONT_12, 40, 42, 90+10*20, 32+24,(uint8_t *)"Price: 381.4", lcd);
 
-	set_qrcode(20, 30, 120, 150, lcd);
-	set_pic(100, 30, 160, 150, "pic.bmp", lcd);
+	//set_qrcode(20, 30, 120, 150, lcd);
+	//set_pic(100, 30, 160, 150, "pic.bmp", lcd);
 	//set_line(100, 30, 160, 200, lcd)
 
 	len = lcd_flush(lcd, lcd_buf); //保存至lcd_buf, 并返回长度
