@@ -1,5 +1,5 @@
 all:
-	gcc bit_dir.c -o b
+	gcc bit_dir.c -o b -g
 	./b
 
 clean:
