@@ -178,7 +178,7 @@ int main(void) {
 
 	printf("旋转180度.\n");
 	memset(buf, 0, sizeof(buf));
-	change_dict(180, 9, 12, c, buf);
+	change_dict(180, 9, 12, c, buf)
 	print_byte_map(9, 12, buf);
 
 	printf("旋转270度.\n");
